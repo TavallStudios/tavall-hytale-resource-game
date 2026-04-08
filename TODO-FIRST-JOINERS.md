@@ -1,16 +1,10 @@
-# TODO-FIRST-JOINERS
+# TODO - First Joiners
 
-## First Join Placement
-- Replace temporary first-join placement (`castle spawns at current player location`) with a guided placement flow.
-- Add safe-zone validation and anti-overlap checks for first castle placement.
-- Add placement preview UI before final commit.
+## Placement Flow
+- Replace the current spawn-at-player-location castle placement with a guided placement flow.
+- Add a first-join UI walkthrough explaining castle ownership and location confirmation.
+- Add cancellation/redo flow for castle placement.
 
-## Onboarding UX
-- Add first-join tutorial panel for castle controls, interior entry, and resource basics.
-- Add first-join objective markers for citizen/troop pipeline steps.
-- Add onboarding transitions from exterior castle to interior walkthrough.
-
-## First Session Data Shaping
-- Tune starter resources and initial population after bot playtest feedback.
-- Add first-join event telemetry for drop-off and confusion hotspots.
-- Add profile flags for onboarding completion and re-entry behavior.
+## Onboarding
+- Add first-join tutorial UI for citizen/troop upgrades.
+- Add a first-join interior tour marker path.

@@ -1,43 +1,34 @@
 # TODO
 
+## Castle & Placement
+- Replace the temporary "spawn at player location" castle flow with a proper placement experience.
+- Swap the placeholder NPC castle asset with a true castle model + interaction collider.
+- Add ownership transfer and multi-castle support.
+
 ## Interiors
-- Move interiors from same-process world instances to dedicated interior server instances.
-- Add interior transfer handoff contracts for cross-process routing.
-- Add interior server availability and failover handling.
+- Move interiors to dedicated interior server instances instead of same-process coordinates.
+- Add interior generation templates and upgradeable layouts.
+- Add interior construction stations and visual upgrades.
 
-## Visual Replacement Pipeline
-- Replace placeholder castle/interior assets with production art packs.
-- Add dedicated visual replacement registry for UI and entity skins by progression tier.
-- Add animation paths for citizen and troop anchor entities.
+## Population & Jobs
+- Implement per-citizen simulation with individual stats feeding aggregated medians.
+- Build job loops for gatherer/builder/trainee/soldier roles.
+- Add job assignment UI and persistent job metadata.
 
-## Castle and Interaction Expansion
-- Expand castle info panel beyond placeholder values.
-- Add permission layers and ownership checks for non-dev command access.
-- Add interaction states for castle upgrades and unlock trees.
+## Citizen Aging
+- Finalize the real-world aging cadence ("1 Real world da..." pending).
+- Add lifecycle milestones and retirement handling.
 
-## Citizen/Troop Simulation
-- Add full unit metadata persistence and loading for individual unit history beyond summary bootstrapping.
-- Add richer citizen/troop simulation loops for movement, work, and battle preparation.
-- Add aggregated stat pipelines for battle and productivity medians.
-- Add branching promotion trees and specialization states.
+## Resources & Economy
+- Add production buildings for Food/Wood/Iron generation.
+- Add storage limits, decay, and transport logic.
 
-## Jobs and Stations
-- Implement job loops for gatherer, builder, trainee, and soldier.
-- Add resource/work stations in interior with interaction hooks.
-- Add castle action triggers tied to job outputs.
+## UI & UX
+- Replace placeholder UI visuals with final art and flow.
+- Add in-world prompts when looking at the castle.
+- Add tutorial prompts for first interior visit.
 
-## Aging and Time
-- Finalize aging cadence from unresolved requirement (`"1 Real world da..."` from prior notes) and tune progression impacts.
-- Add age-based stat drift and role constraints once cadence is finalized.
-- Link kingdom clock day/night state to citizen behavior and world mood.
-
-## Persistence and Reliability
-- Wire a real Redis client adapter and production Postgres DataSource configuration.
-- Add migration tooling for schema evolution and index tuning.
-- Add transactional guards and retry policies for persistence failures.
-- Add cache invalidation policy tuning and observability metrics.
-
-## Bot and Automation Testing
-- Expand hytale bot harness scenarios for multi-player load and contention.
-- Add deterministic replay runs for command mutation and UI navigation.
-- Add failure-injection scenarios for Redis/Postgres unavailability.
+## Persistence & Infrastructure
+- Add migrations for future population metadata and per-citizen tables.
+- Add Redis/Postgres health checks and reconnection handling.
+- Add metrics around cache hit rates and save latency.
