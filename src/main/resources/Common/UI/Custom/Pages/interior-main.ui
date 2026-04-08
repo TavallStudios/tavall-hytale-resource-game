@@ -1,0 +1,19 @@
+﻿$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Castle Interior"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+  Label { Text: "Placeholder interior layout with citizen/troop anchors."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+    TextButton #ExitInteriorButton { Text: "Exit Interior"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; }
+  }
+
+  Label { Text: "Future: build stations, upgrades, and decor."; Style: $C.@MutedTextStyle; }
+}

@@ -1,0 +1,16 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Troops"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Label { Text: "Total Troops"; Style: $C.@MutedTextStyle; }
+  Label #TroopCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
+
+  Label { Text: "Future: formations, combat readiness, and equipment."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+}

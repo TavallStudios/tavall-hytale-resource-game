@@ -1,0 +1,25 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Debug UI Navigator"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #CastleMainButton { Text: "Castle Main"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "Castle Info"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; }
+  }
+
+  Group { LayoutMode: Left; Anchor: (Bottom: 16); TextButton #InteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+
+  Group { LayoutMode: Right; TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; } }
+}

@@ -1,0 +1,39 @@
+@PageOverlay {}
+
+@Container {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+}
+
+@DefaultTextButtonStyle = (
+  BackgroundColor: #2a3642,
+  BackgroundColorHover: #3a4b5c,
+  BackgroundColorPressed: #202b35,
+  TextColor: #f0f5fb,
+  TextColorHover: #ffffff,
+  TextColorPressed: #c2ccd4,
+  FontSize: 16,
+  RenderBold: true
+);
+
+@SecondaryTextButtonStyle = (
+  BackgroundColor: #1c2530,
+  BackgroundColorHover: #273241,
+  BackgroundColorPressed: #131a22,
+  TextColor: #c8d2dc,
+  TextColorHover: #ffffff,
+  TextColorPressed: #a2aab3,
+  FontSize: 15
+);
+
+@SectionHeaderStyle = (
+  FontSize: 18,
+  RenderBold: true,
+  RenderUppercase: true
+);
+
+@MutedTextStyle = (
+  FontSize: 14,
+  TextColor: #a7b0ba
+);

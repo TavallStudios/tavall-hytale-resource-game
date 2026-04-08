@@ -1,0 +1,54 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Citizen to Troop Upgrades"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 12);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Citizens"; Style: $C.@MutedTextStyle; }
+      Label #CitizenCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Troops"; Style: $C.@MutedTextStyle; }
+      Label #TroopCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group { Anchor: (Width: 140); LayoutMode: Top; Label { Text: "Food"; Style: $C.@MutedTextStyle; } Label #FoodCount { Style: (FontSize: 18); } }
+    Group { Anchor: (Width: 140); LayoutMode: Top; Label { Text: "Wood"; Style: $C.@MutedTextStyle; } Label #WoodCount { Style: (FontSize: 18); } }
+    Group { Anchor: (Width: 140); LayoutMode: Top; Label { Text: "Iron"; Style: $C.@MutedTextStyle; } Label #IronCount { Style: (FontSize: 18); } }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #PromoteButton { Text: "Promote Citizen"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; Anchor: (Right: 8); }
+    TextButton #DemoteButton { Text: "Demote Troop"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; }
+  }
+
+  Label #PromotionCost { Style: $C.@MutedTextStyle; Anchor: (Bottom: 8); }
+  Label #PromoteStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 4); }
+  Label #DemoteStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 12); }
+  Label #FeedbackStatus { Style: (FontSize: 16, RenderBold: true); Anchor: (Bottom: 16); }
+
+  Label { Text: "Future: branching upgrade paths, training buildings, and equipment."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+}
