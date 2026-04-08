@@ -1,0 +1,16 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Citizens"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Label { Text: "Total Citizens"; Style: $C.@MutedTextStyle; }
+  Label #CitizenCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
+
+  Label { Text: "Future: job assignment, productivity, and aging."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+}

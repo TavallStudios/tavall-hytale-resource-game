@@ -1,0 +1,24 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  LayoutMode: Top;
+
+  Label { Text: "Castle Info"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Top;
+    Anchor: (Bottom: 16);
+
+    Label { Text: "Castle ID"; Style: $C.@MutedTextStyle; }
+    Label #CastleId { Style: (FontSize: 16); Anchor: (Bottom: 10); }
+
+    Label { Text: "World"; Style: $C.@MutedTextStyle; }
+    Label #WorldName { Style: (FontSize: 16); }
+  }
+
+  Label { Text: "Future: layout upgrades, defenses, and banners."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+}
