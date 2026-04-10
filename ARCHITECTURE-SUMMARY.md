@@ -1,7 +1,7 @@
 # Architecture Summary
 
 ## Core Systems
-- ResourceGamePlugin bootstraps all services and registers commands/events.
+- ResourceGamePlugin now boots through a repo-local Tavall-style DI composition root and resolves runtime services through `IResourceGameDomain`.
 - PlayerDataService hydrates PlayerProfile + PlayerGameState via Redis-first cache and Postgres fallback.
 - CastleSpawnService spawns the placeholder castle entity and tracks it in CastleEntityRegistry.
 - CastleInteractionService listens for near/look interactions and opens the castle UI.
@@ -16,6 +16,11 @@
 - Custom .ui pages live under Common/UI/Custom/Pages.
 - UiPageRegistry + UiNavigator build and open pages.
 - UiActionService routes button actions to game services.
+
+## Dependency Composition
+- `dependency/` contains a repo-local compatibility layer that mirrors the shared Tavall token/domain access pattern while the upstream `tavall-di` module remains non-buildable in this monorepo.
+- `ResourceGameDependencyModule` is the single composition root for service registration.
+- Runtime-facing services resolve through interfaces first so the repo can swap to the shared DI package later with a smaller migration.
 
 ## Persistence
 - PlayerProfileRepository and PlayerGameStateRepository use explicit Postgres tables.
