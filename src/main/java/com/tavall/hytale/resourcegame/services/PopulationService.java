@@ -1,5 +1,10 @@
 package com.tavall.hytale.resourcegame.services;
 
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PopulationSummary;
@@ -16,17 +21,17 @@ import java.util.UUID;
 /**
  * Manages citizen and troop counts as a single continuum.
  */
-public final class PopulationService {
-    private final PlayerSessionStore sessionStore;
-    private final PlayerGameStateService gameStateService;
-    private final ResourceService resourceService;
+public final class PopulationService implements IPopulationService, IDependencyInjectableConcrete {
+    private final IPlayerSessionStore sessionStore;
+    private final IPlayerGameStateService gameStateService;
+    private final IResourceService resourceService;
     private final PopulationDisplayGateway displayService;
     private final PromotionCost promotionCost;
 
     public PopulationService(
-            PlayerSessionStore sessionStore,
-            PlayerGameStateService gameStateService,
-            ResourceService resourceService,
+            IPlayerSessionStore sessionStore,
+            IPlayerGameStateService gameStateService,
+            IResourceService resourceService,
             PopulationDisplayGateway displayService,
             PromotionCost promotionCost
     ) {

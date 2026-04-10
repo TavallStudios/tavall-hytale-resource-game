@@ -1,5 +1,9 @@
 package com.tavall.hytale.resourcegame.services;
 
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
@@ -13,11 +17,11 @@ import java.util.UUID;
 /**
  * Mutates resources for a player session.
  */
-public final class ResourceService {
-    private final PlayerSessionStore sessionStore;
-    private final PlayerGameStateService gameStateService;
+public final class ResourceService implements IResourceService, IDependencyInjectableConcrete {
+    private final IPlayerSessionStore sessionStore;
+    private final IPlayerGameStateService gameStateService;
 
-    public ResourceService(PlayerSessionStore sessionStore, PlayerGameStateService gameStateService) {
+    public ResourceService(IPlayerSessionStore sessionStore, IPlayerGameStateService gameStateService) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
     }

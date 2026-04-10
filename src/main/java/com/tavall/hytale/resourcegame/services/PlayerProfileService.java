@@ -2,6 +2,8 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.cache.CacheKeyFactory;
 import com.tavall.hytale.resourcegame.cache.JacksonCacheCodec;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerProfileService;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.persistence.PlayerProfileStore;
 import org.tavall.abstractcache.cache.interfaces.ICacheValue;
@@ -17,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Loads and caches player profile data.
  */
-public final class PlayerProfileService {
+public final class PlayerProfileService implements IPlayerProfileService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(PlayerProfileService.class.getName());
     private static final Duration PROFILE_TTL = Duration.ofMinutes(30);
 

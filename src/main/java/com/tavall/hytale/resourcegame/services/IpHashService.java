@@ -1,5 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IIpHashService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -7,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Hashes IP addresses for safe storage.
  */
-public final class IpHashService {
+public final class IpHashService implements IIpHashService, IDependencyInjectableConcrete {
     public String hash(String rawValue) {
         if (rawValue == null || rawValue.isBlank()) {
             return "unknown";

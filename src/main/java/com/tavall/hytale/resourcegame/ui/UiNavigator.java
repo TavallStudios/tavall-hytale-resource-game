@@ -7,6 +7,9 @@ import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiPageRegistry;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 
@@ -17,14 +20,14 @@ import java.util.logging.Level;
 /**
  * Opens and updates UI pages for players.
  */
-public final class UiNavigator {
+public final class UiNavigator implements IUiNavigator, IDependencyInjectableConcrete {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final int MAX_RETRIES = 40;
     private static final long RETRY_DELAY_MILLIS = 250L;
 
-    private final UiPageRegistry registry;
+    private final IUiPageRegistry registry;
 
-    public UiNavigator(UiPageRegistry registry) {
+    public UiNavigator(IUiPageRegistry registry) {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 

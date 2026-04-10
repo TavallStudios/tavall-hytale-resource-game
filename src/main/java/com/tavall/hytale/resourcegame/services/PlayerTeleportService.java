@@ -12,13 +12,14 @@ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponen
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Centralizes safe player teleports through the server teleport component pipeline.
  */
-public final class PlayerTeleportService {
+public final class PlayerTeleportService implements IPlayerTeleportService, IDependencyInjectableConcrete {
     public Vector3d standingPosition(Player player, Vector3d floorPosition) {
         Ref<EntityStore> ref = player.getPlayerRef().getReference();
         if (ref == null || !ref.isValid()) {

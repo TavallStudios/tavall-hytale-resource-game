@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tavall.hytale.resourcegame.cache.CacheKeyFactory;
 import com.tavall.hytale.resourcegame.cache.JacksonCacheCodec;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
@@ -24,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * Loads and persists player game state with cache support.
  */
-public final class PlayerGameStateService {
+public final class PlayerGameStateService implements IPlayerGameStateService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(PlayerGameStateService.class.getName());
     private static final Duration STATE_TTL = Duration.ofMinutes(15);
 

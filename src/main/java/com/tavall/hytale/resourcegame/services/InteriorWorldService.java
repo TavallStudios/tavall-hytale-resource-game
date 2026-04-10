@@ -6,6 +6,13 @@ import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.InteriorSessionData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -14,7 +21,6 @@ import com.tavall.hytale.resourcegame.interior.InteriorLayout;
 import com.tavall.hytale.resourcegame.interior.InteriorLayoutService;
 import com.tavall.hytale.resourcegame.interior.InteriorStructureService;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
-import com.tavall.hytale.resourcegame.ui.UiNavigator;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
 
 import java.time.Instant;
@@ -27,30 +33,30 @@ import java.util.logging.Level;
 /**
  * Handles interior transitions within the same server instance.
  */
-public final class InteriorWorldService {
+public final class InteriorWorldService implements IInteriorWorldService, IDependencyInjectableConcrete {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final Vector3d INTERIOR_ORIGIN = new Vector3d(0.5, 120.0, 0.5);
     private static final long INTERIOR_UI_DELAY_MILLIS = 3000L;
     private static final long EXIT_UI_DELAY_MILLIS = 2000L;
 
-    private final PlayerSessionStore sessionStore;
-    private final PlayerGameStateService gameStateService;
-    private final InteriorInstanceService interiorInstanceService;
+    private final IPlayerSessionStore sessionStore;
+    private final IPlayerGameStateService gameStateService;
+    private final IInteriorInstanceService interiorInstanceService;
     private final InteriorLayoutService layoutService;
     private final InteriorStructureService structureService;
-    private final PlayerTeleportService playerTeleportService;
+    private final IPlayerTeleportService playerTeleportService;
     private final PopulationDisplayGateway displayService;
-    private final UiNavigator uiNavigator;
+    private final IUiNavigator uiNavigator;
 
     public InteriorWorldService(
-            PlayerSessionStore sessionStore,
-            PlayerGameStateService gameStateService,
-            InteriorInstanceService interiorInstanceService,
+            IPlayerSessionStore sessionStore,
+            IPlayerGameStateService gameStateService,
+            IInteriorInstanceService interiorInstanceService,
             InteriorLayoutService layoutService,
             InteriorStructureService structureService,
-            PlayerTeleportService playerTeleportService,
+            IPlayerTeleportService playerTeleportService,
             PopulationDisplayGateway displayService,
-            UiNavigator uiNavigator
+            IUiNavigator uiNavigator
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");

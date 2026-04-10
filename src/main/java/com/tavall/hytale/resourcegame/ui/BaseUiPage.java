@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 
@@ -18,13 +19,13 @@ public abstract class BaseUiPage extends InteractiveCustomUIPage<UiActionEventDa
     private final Player player;
     private final UiNavigationContext context;
     private final PlayerGameState state;
-    private final UiActionService actionService;
+    private final IUiActionService actionService;
 
     protected BaseUiPage(
             Player player,
             UiNavigationContext context,
             PlayerGameState state,
-            UiActionService actionService
+            IUiActionService actionService
     ) {
         super(player.getPlayerRef(), CustomPageLifetime.CanDismiss, UiActionEventData.CODEC);
         this.player = Objects.requireNonNull(player, "player");
@@ -45,7 +46,7 @@ public abstract class BaseUiPage extends InteractiveCustomUIPage<UiActionEventDa
         return state;
     }
 
-    protected UiActionService actionService() {
+    protected IUiActionService actionService() {
         return actionService;
     }
 

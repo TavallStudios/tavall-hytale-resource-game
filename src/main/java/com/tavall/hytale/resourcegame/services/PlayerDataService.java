@@ -5,7 +5,14 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
-import com.tavall.hytale.resourcegame.clock.KingdomClockService;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IIpHashService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerProfileService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
@@ -20,24 +27,24 @@ import java.util.logging.Level;
 /**
  * Orchestrates player initialization and persistence.
  */
-public final class PlayerDataService {
+public final class PlayerDataService implements IPlayerDataService, IDependencyInjectableConcrete {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final double INITIAL_CASTLE_Z_OFFSET = 4.0;
 
-    private final PlayerProfileService profileService;
-    private final PlayerGameStateService gameStateService;
-    private final PlayerSessionStore sessionStore;
-    private final CastleSpawnService castleSpawnService;
-    private final IpHashService ipHashService;
-    private final KingdomClockService clockService;
+    private final IPlayerProfileService profileService;
+    private final IPlayerGameStateService gameStateService;
+    private final IPlayerSessionStore sessionStore;
+    private final ICastleSpawnService castleSpawnService;
+    private final IIpHashService ipHashService;
+    private final IKingdomClockService clockService;
 
     public PlayerDataService(
-            PlayerProfileService profileService,
-            PlayerGameStateService gameStateService,
-            PlayerSessionStore sessionStore,
-            CastleSpawnService castleSpawnService,
-            IpHashService ipHashService,
-            KingdomClockService clockService
+            IPlayerProfileService profileService,
+            IPlayerGameStateService gameStateService,
+            IPlayerSessionStore sessionStore,
+            ICastleSpawnService castleSpawnService,
+            IIpHashService ipHashService,
+            IKingdomClockService clockService
     ) {
         this.profileService = Objects.requireNonNull(profileService, "profileService");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");

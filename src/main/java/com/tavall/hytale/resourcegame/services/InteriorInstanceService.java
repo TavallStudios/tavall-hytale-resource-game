@@ -2,7 +2,8 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
-
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -10,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Resolves dedicated same-process interior worlds for players.
  */
-public final class InteriorInstanceService {
+public final class InteriorInstanceService implements IInteriorInstanceService, IDependencyInjectableConcrete {
     private static final String WORLD_NAME_PREFIX = "kingdom-interior-";
     private static final String WORLD_GENERATOR = "Void";
     private static final String WORLD_STORAGE = "Empty";
