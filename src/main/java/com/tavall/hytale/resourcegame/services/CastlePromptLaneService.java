@@ -2,6 +2,9 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayout;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayoutService;
@@ -12,17 +15,17 @@ import java.util.Objects;
 /**
  * Aligns players onto a safe in-world lane for castle prompt interaction.
  */
-public final class CastlePromptLaneService {
+public final class CastlePromptLaneService implements ICastlePromptLaneService, IDependencyInjectableConcrete {
     private static final long TELEPORT_DELAY_MILLIS = 750L;
 
     private final CastlePromptLaneLayoutService layoutService;
     private final CastlePromptLaneStructureService structureService;
-    private final PlayerTeleportService playerTeleportService;
+    private final IPlayerTeleportService playerTeleportService;
 
     public CastlePromptLaneService(
             CastlePromptLaneLayoutService layoutService,
             CastlePromptLaneStructureService structureService,
-            PlayerTeleportService playerTeleportService
+            IPlayerTeleportService playerTeleportService
     ) {
         this.layoutService = Objects.requireNonNull(layoutService, "layoutService");
         this.structureService = Objects.requireNonNull(structureService, "structureService");

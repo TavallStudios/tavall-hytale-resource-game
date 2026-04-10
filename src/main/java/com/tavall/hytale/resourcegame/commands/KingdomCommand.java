@@ -9,19 +9,19 @@ import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
-import com.tavall.hytale.resourcegame.services.CastleSpawnService;
-import com.tavall.hytale.resourcegame.services.CastlePromptLaneService;
-import com.tavall.hytale.resourcegame.services.InteriorWorldService;
-import com.tavall.hytale.resourcegame.services.PlayerDataService;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
-import com.tavall.hytale.resourcegame.services.PlayerSessionStore;
-import com.tavall.hytale.resourcegame.services.PopulationService;
-import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
-import com.tavall.hytale.resourcegame.ui.UiNavigator;
 
 import java.util.List;
 import java.util.Locale;
@@ -36,25 +36,25 @@ import java.util.logging.Level;
 public final class KingdomCommand extends AbstractAsyncCommand {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    private final PlayerSessionStore sessionStore;
-    private final UiNavigator uiNavigator;
-    private final PopulationService populationService;
-    private final ResourceService resourceService;
-    private final InteriorWorldService interiorWorldService;
-    private final CastleSpawnService castleSpawnService;
-    private final CastlePromptLaneService castlePromptLaneService;
-    private final PlayerDataService playerDataService;
+    private final IPlayerSessionStore sessionStore;
+    private final IUiNavigator uiNavigator;
+    private final IPopulationService populationService;
+    private final IResourceService resourceService;
+    private final IInteriorWorldService interiorWorldService;
+    private final ICastleSpawnService castleSpawnService;
+    private final ICastlePromptLaneService castlePromptLaneService;
+    private final IPlayerDataService playerDataService;
 
     public KingdomCommand(
             String name,
-            PlayerSessionStore sessionStore,
-            UiNavigator uiNavigator,
-            PopulationService populationService,
-            ResourceService resourceService,
-            InteriorWorldService interiorWorldService,
-            CastleSpawnService castleSpawnService,
-            CastlePromptLaneService castlePromptLaneService,
-            PlayerDataService playerDataService
+            IPlayerSessionStore sessionStore,
+            IUiNavigator uiNavigator,
+            IPopulationService populationService,
+            IResourceService resourceService,
+            IInteriorWorldService interiorWorldService,
+            ICastleSpawnService castleSpawnService,
+            ICastlePromptLaneService castlePromptLaneService,
+            IPlayerDataService playerDataService
     ) {
         super(name, "Kingdom debug command");
         this.sessionStore = sessionStore;

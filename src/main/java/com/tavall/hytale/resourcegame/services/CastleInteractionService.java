@@ -9,10 +9,13 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.config.CastleAssetConfig;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
-import com.tavall.hytale.resourcegame.ui.UiNavigator;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
 import com.tavall.hytale.resourcegame.world.VectorMath;
 
@@ -22,16 +25,16 @@ import java.util.UUID;
 /**
  * Detects castle interactions and opens the main UI.
  */
-public final class CastleInteractionService {
+public final class CastleInteractionService implements ICastleInteractionService, IDependencyInjectableConcrete {
     private final CastleEntityRegistry registry;
-    private final PlayerSessionStore sessionStore;
-    private final UiNavigator uiNavigator;
+    private final IPlayerSessionStore sessionStore;
+    private final IUiNavigator uiNavigator;
     private final CastleAssetConfig assetConfig;
 
     public CastleInteractionService(
             CastleEntityRegistry registry,
-            PlayerSessionStore sessionStore,
-            UiNavigator uiNavigator,
+            IPlayerSessionStore sessionStore,
+            IUiNavigator uiNavigator,
             CastleAssetConfig assetConfig
     ) {
         this.registry = Objects.requireNonNull(registry, "registry");

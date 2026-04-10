@@ -12,6 +12,8 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import com.tavall.hytale.resourcegame.config.CastleAssetConfig;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
 import it.unimi.dsi.fastutil.Pair;
@@ -22,7 +24,7 @@ import java.util.UUID;
 /**
  * Spawns and tracks player castles.
  */
-public final class CastleSpawnService {
+public final class CastleSpawnService implements ICastleSpawnService, IDependencyInjectableConcrete {
     private final CastleAssetConfig assetConfig;
     private final CastleEntityRegistry registry;
 

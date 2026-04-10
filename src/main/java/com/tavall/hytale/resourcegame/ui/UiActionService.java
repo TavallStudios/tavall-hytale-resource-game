@@ -1,30 +1,32 @@
 package com.tavall.hytale.resourcegame.ui;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
-import com.tavall.hytale.resourcegame.services.InteriorWorldService;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
-import com.tavall.hytale.resourcegame.services.PlayerSessionStore;
-import com.tavall.hytale.resourcegame.services.PopulationService;
-
 import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Routes UI actions to services.
  */
-public final class UiActionService {
-    private final UiNavigator uiNavigator;
-    private final InteriorWorldService interiorWorldService;
-    private final PopulationService populationService;
-    private final PlayerSessionStore sessionStore;
+public final class UiActionService implements IUiActionService, IDependencyInjectableConcrete {
+    private final IUiNavigator uiNavigator;
+    private final IInteriorWorldService interiorWorldService;
+    private final IPopulationService populationService;
+    private final IPlayerSessionStore sessionStore;
 
     public UiActionService(
-            UiNavigator uiNavigator,
-            InteriorWorldService interiorWorldService,
-            PopulationService populationService,
-            PlayerSessionStore sessionStore
+            IUiNavigator uiNavigator,
+            IInteriorWorldService interiorWorldService,
+            IPopulationService populationService,
+            IPlayerSessionStore sessionStore
     ) {
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.interiorWorldService = Objects.requireNonNull(interiorWorldService, "interiorWorldService");

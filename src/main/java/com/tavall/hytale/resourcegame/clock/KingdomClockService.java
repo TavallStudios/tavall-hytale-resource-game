@@ -1,6 +1,8 @@
 package com.tavall.hytale.resourcegame.clock;
 
 import com.tavall.hytale.resourcegame.config.KingdomClockConfig;
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
 import com.tavall.hytale.resourcegame.domain.KingdomClockState;
 import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -13,7 +15,7 @@ import java.util.Objects;
 /**
  * Kingdom clock service using real-world time.
  */
-public final class KingdomClockService {
+public final class KingdomClockService implements IKingdomClockService, IDependencyInjectableConcrete {
     private final KingdomClockConfig config;
 
     public KingdomClockService(KingdomClockConfig config) {

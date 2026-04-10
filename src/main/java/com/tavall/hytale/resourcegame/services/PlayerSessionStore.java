@@ -1,5 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory session cache for active players.
  */
-public final class PlayerSessionStore {
+public final class PlayerSessionStore implements IPlayerSessionStore, IDependencyInjectableConcrete {
     private final Map<UUID, PlayerSession> sessions = new ConcurrentHashMap<>();
 
     public PlayerSession get(UUID playerId) {

@@ -6,7 +6,9 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-
+import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,14 +18,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Opens the castle UI once when a player moves into a valid near-and-looking focus state.
  */
-public final class CastleProximityPromptService {
+public final class CastleProximityPromptService implements ICastleProximityPromptService, IDependencyInjectableConcrete {
     private static final long SCAN_INTERVAL_MILLIS = 250L;
 
-    private final CastleInteractionService castleInteractionService;
+    private final ICastleInteractionService castleInteractionService;
     private final Set<UUID> focusedPlayers = ConcurrentHashMap.newKeySet();
     private ScheduledFuture<?> scanTask;
 
-    public CastleProximityPromptService(CastleInteractionService castleInteractionService) {
+    public CastleProximityPromptService(ICastleInteractionService castleInteractionService) {
         this.castleInteractionService = castleInteractionService;
     }
 
