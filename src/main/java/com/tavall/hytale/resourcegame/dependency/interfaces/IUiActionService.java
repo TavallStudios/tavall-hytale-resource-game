@@ -15,4 +15,8 @@ public interface IUiActionService extends IDependencyInjectableInterface {
     UpgradeActionState demoteActionState(PlayerGameState state);
 
     String promotionCostSummary();
+
+    String upgradeTutorialMessage(PlayerGameState state);
+
+    String interiorTutorialMessage(PlayerGameState state);
 }

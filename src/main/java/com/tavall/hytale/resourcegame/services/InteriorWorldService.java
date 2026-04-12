@@ -82,22 +82,27 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
         String interiorWorldName = interiorInstanceService.worldNameFor(playerId);
         InteriorLayout layout = layoutService.createLayout(INTERIOR_ORIGIN);
         Vector3d entryPosition = interiorEntryPosition(player, layout);
+        Instant now = Instant.now();
+        boolean firstInteriorVisit = gameStateService.isInteriorTutorialPending(state);
+        PlayerGameState tutorialState = firstInteriorVisit
+                ? gameStateService.markInteriorTutorialSeen(state, now)
+                : state;
         InteriorSessionData interiorSession = new InteriorSessionData(
                 interiorWorldName,
                 castleLocation,
-                Instant.now()
+                now
         );
-        PlayerGameState updated = state.withInteriorSession(interiorSession, Instant.now());
+        PlayerGameState updated = tutorialState.withInteriorSession(interiorSession, now);
         session.updateGameState(updated);
         CompletableFuture<UiNavigationContext> transition = interiorInstanceService.resolveInteriorWorld(playerId)
-                .thenApply(world -> prepareInteriorWorld(world, player, updated, layout, entryPosition));
+                .thenApply(world -> prepareInteriorWorld(world, player, updated, layout, entryPosition, firstInteriorVisit));
         HytaleServer.SCHEDULED_EXECUTOR.schedule(
                 () -> transition.thenAccept(context -> uiNavigator.open(UiPageType.INTERIOR_MAIN, player, context, updated)),
                 INTERIOR_UI_DELAY_MILLIS,
                 TimeUnit.MILLISECONDS
         );
         gameStateService.cacheState(playerId, updated);
-        AsyncTask.runAsync(() -> gameStateService.persistState(updated, Instant.now()));
+        AsyncTask.runAsync(() -> gameStateService.persistState(updated, now));
     }
 
     public void exitInterior(Player player) {
@@ -140,14 +145,18 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
             Player player,
             PlayerGameState updated,
             InteriorLayout layout,
-            Vector3d entryPosition
+            Vector3d entryPosition,
+            boolean firstInteriorVisit
     ) {
         world.execute(() -> {
             structureService.ensureStructure(world, layout);
             displayService.ensureDisplays(player.getUuid(), world, layout, updated.populationSummary());
             playerTeleportService.teleport(player, world, entryPosition);
         });
-        return new UiNavigationContext(player.getUuid(), player.getDisplayName());
+        String tutorialMessage = firstInteriorVisit
+                ? "First interior visit: anchor displays show your citizen and troop totals while later stations grow around them."
+                : "Interior tutorial complete: citizen and troop anchors stay here while the upgrade pipeline grows.";
+        return new UiNavigationContext(player.getUuid(), player.getDisplayName(), tutorialMessage);
     }
 
     private Vector3d interiorEntryPosition(Player player, InteriorLayout layout) {

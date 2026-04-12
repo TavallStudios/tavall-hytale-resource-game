@@ -11,12 +11,15 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
+import com.tavall.hytale.resourcegame.domain.InfrastructureHealthSnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
@@ -25,6 +28,7 @@ import com.tavall.hytale.resourcegame.ui.UiPageType;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -44,6 +48,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private final ICastleSpawnService castleSpawnService;
     private final ICastlePromptLaneService castlePromptLaneService;
     private final IPlayerDataService playerDataService;
+    private final IPlayerGameStateService gameStateService;
+    private final IInfrastructureHealthService infrastructureHealthService;
 
     public KingdomCommand(
             String name,
@@ -54,7 +60,9 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             IInteriorWorldService interiorWorldService,
             ICastleSpawnService castleSpawnService,
             ICastlePromptLaneService castlePromptLaneService,
-            IPlayerDataService playerDataService
+            IPlayerDataService playerDataService,
+            IPlayerGameStateService gameStateService,
+            IInfrastructureHealthService infrastructureHealthService
     ) {
         super(name, "Kingdom debug command");
         this.sessionStore = sessionStore;
@@ -65,6 +73,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         this.castleSpawnService = castleSpawnService;
         this.castlePromptLaneService = castlePromptLaneService;
         this.playerDataService = playerDataService;
+        this.gameStateService = gameStateService;
+        this.infrastructureHealthService = infrastructureHealthService;
         addAliases("kd");
         setPermissionGroup(GameMode.Adventure);
         setAllowsExtraArguments(true);
@@ -132,6 +142,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
 
     private void handleData(CommandContext context, PlayerSession session) {
         PlayerGameState state = session.gameState();
+        InfrastructureHealthSnapshot healthSnapshot = infrastructureHealthService.snapshot();
         if (state.castleLocation() != null) {
             context.sendMessage(Message.raw(
                     "Castle: "
@@ -149,6 +160,10 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("Food: " + state.resources().food()).color("yellow"));
         context.sendMessage(Message.raw("Wood: " + state.resources().wood()).color("yellow"));
         context.sendMessage(Message.raw("Iron: " + state.resources().iron()).color("yellow"));
+        context.sendMessage(Message.raw("Cache: " + healthSnapshot.cacheSummary()).color("yellow"));
+        context.sendMessage(Message.raw("Persistence: " + healthSnapshot.persistenceSummary()).color("yellow"));
+        context.sendMessage(Message.raw("Interior tutorial: " + tutorialStatus(gameStateService.isInteriorTutorialPending(state))).color("yellow"));
+        context.sendMessage(Message.raw("Upgrade tutorial: " + tutorialStatus(gameStateService.isUpgradeTutorialPending(state))).color("yellow"));
     }
 
     private void handleCastle(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
@@ -180,11 +195,15 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             return;
         }
         String action = tokens.get(1);
-        int amount = parseInt(tokens.get(2));
+        OptionalInt amount = parseAmount(tokens.get(2));
+        if (amount.isEmpty()) {
+            context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+            return;
+        }
         if ("add".equalsIgnoreCase(action)) {
-            populationService.addCitizens(playerId, amount);
+            populationService.addCitizens(playerId, amount.getAsInt());
         } else if ("set".equalsIgnoreCase(action)) {
-            populationService.setCitizens(playerId, amount);
+            populationService.setCitizens(playerId, amount.getAsInt());
         } else {
             context.sendMessage(Message.raw("Unknown action.").color("red"));
         }
@@ -196,11 +215,15 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             return;
         }
         String action = tokens.get(1);
-        int amount = parseInt(tokens.get(2));
+        OptionalInt amount = parseAmount(tokens.get(2));
+        if (amount.isEmpty()) {
+            context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+            return;
+        }
         if ("add".equalsIgnoreCase(action)) {
-            populationService.addTroops(playerId, amount);
+            populationService.addTroops(playerId, amount.getAsInt());
         } else if ("set".equalsIgnoreCase(action)) {
-            populationService.setTroops(playerId, amount);
+            populationService.setTroops(playerId, amount.getAsInt());
         } else {
             context.sendMessage(Message.raw("Unknown action.").color("red"));
         }
@@ -213,15 +236,19 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         }
         String action = tokens.get(1);
         ResourceType type = parseResource(tokens.get(2));
-        int amount = parseInt(tokens.get(3));
         if (type == null) {
             context.sendMessage(Message.raw("Unknown resource type.").color("red"));
             return;
         }
+        OptionalInt amount = parseAmount(tokens.get(3));
+        if (amount.isEmpty()) {
+            context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+            return;
+        }
         if ("add".equalsIgnoreCase(action)) {
-            resourceService.addResource(playerId, type, amount);
+            resourceService.addResource(playerId, type, amount.getAsInt());
         } else if ("set".equalsIgnoreCase(action)) {
-            resourceService.setResource(playerId, type, amount);
+            resourceService.setResource(playerId, type, amount.getAsInt());
         } else {
             context.sendMessage(Message.raw("Unknown action.").color("red"));
         }
@@ -281,11 +308,15 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         };
     }
 
-    private int parseInt(String token) {
+    private OptionalInt parseAmount(String token) {
         try {
-            return Integer.parseInt(token);
+            return OptionalInt.of(Integer.parseInt(token));
         } catch (NumberFormatException ex) {
-            return 0;
+            return OptionalInt.empty();
         }
+    }
+
+    private String tutorialStatus(boolean pending) {
+        return pending ? "pending" : "complete";
     }
 }

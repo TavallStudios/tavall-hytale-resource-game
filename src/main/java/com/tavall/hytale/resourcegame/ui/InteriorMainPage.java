@@ -25,6 +25,12 @@ public final class InteriorMainPage extends BaseUiPage {
     @Override
     public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
         uiCommandBuilder.append(PAGE_DOCUMENT);
+        uiCommandBuilder.set(
+                "#TutorialStatus.Text",
+                context().feedbackMessage().isBlank()
+                        ? actionService().interiorTutorialMessage(state())
+                        : context().feedbackMessage()
+        );
         bind(uiEventBuilder, "#ExitInteriorButton", UiActions.EXIT_INTERIOR);
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
