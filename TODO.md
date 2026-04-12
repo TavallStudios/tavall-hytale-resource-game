@@ -25,8 +25,6 @@
 
 ## UI & UX
 - Replace placeholder UI visuals with final art and flow.
-- Add in-world prompts when looking at the castle.
-- Add tutorial prompts for first interior visit.
 
 ## Persistence & Infrastructure
 - Add migrations for future population metadata and per-citizen tables.

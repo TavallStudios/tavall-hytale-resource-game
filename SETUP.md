@@ -31,10 +31,13 @@ Apply files in schema/postgres in order:
 - Remote resource-game flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-resource-game-flow.ps1`
 - Remote persistence flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-persistence-flow.ps1`
 - Remote command alias flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-command-alias-flow.ps1`
+- Remote data-health flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-data-health-flow.ps1`
+- Remote onboarding flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-onboarding-flow.ps1`
 - Remote UI edge flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-ui-edge-flow.ps1`
 - Remote visual counter flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-visual-counter-flow.ps1`
 - Remote full suite runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-full-suite.ps1`
 - Generic QUIC smoke runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-bot-harness.ps1 -Scenario connect-only`
 - Bot harness logs and run summaries are written to `bot-logs/`.
+- `/kd ui` exposes cache mode, persistence mode, and onboarding milestone status directly on the debug page for deterministic bot assertions.
 - QUIC bridge source lives at `scripts/HytaleQuicTcpBridge.java`; remote bootstrap logic lives at `scripts/remote-quic-harness.ps1`.
 - The shared Java smoke harness expects a server on `127.0.0.1:25565`.
