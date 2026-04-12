@@ -21,6 +21,8 @@ Apply files in schema/postgres in order:
 2. 002_player_game_state.sql
 
 ## Testing
+- The remote Hytale server should run with `--transport QUIC` for real-client parity.
+- The existing TypeScript bot harness remains TCP-only, so the remote wrappers boot a repo-owned local TCP-to-QUIC bridge on the remote host before each scenario.
 - Use external TS bot harness to run the join/interact/interior/resource flows.
 - Use /kd debug help for in-game command validation.
 - Repo-local bot harness wrapper: `powershell -ExecutionPolicy Bypass -File .\scripts\run-bot-harness.ps1`
@@ -32,5 +34,7 @@ Apply files in schema/postgres in order:
 - Remote UI edge flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-ui-edge-flow.ps1`
 - Remote visual counter flow runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-visual-counter-flow.ps1`
 - Remote full suite runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-full-suite.ps1`
+- Generic QUIC smoke runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-bot-harness.ps1 -Scenario connect-only`
 - Bot harness logs and run summaries are written to `bot-logs/`.
+- QUIC bridge source lives at `scripts/HytaleQuicTcpBridge.java`; remote bootstrap logic lives at `scripts/remote-quic-harness.ps1`.
 - The shared Java smoke harness expects a server on `127.0.0.1:25565`.

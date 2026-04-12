@@ -1,10 +1,11 @@
-﻿param(
+param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-persistence-flow.mjs",
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
     [string]$RemotePluginJarPath = "/srv/hytale/Server/mods/tavall-hytale-resource-game.jar",
     [string]$ServerRoot = "/srv/hytale",
+    [string]$Transport = "QUIC",
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5520,
     [string]$Username = "PersistenceBot",
@@ -20,8 +21,10 @@
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "remote-quic-harness.ps1")
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -150,7 +153,7 @@ function Restart-RemoteServer {
     $jdbcUrl = "jdbc:postgresql://127.0.0.1:{0}/{1}" -f $PostgresPort, $PostgresDatabase
     $script = @'
 set -e
-pid=$(lsof -ti tcp:{0} || true)
+pid=$(lsof -ti :{0} || true)
 if [ -n "$pid" ]; then
   kill $pid || true
   sleep 2
@@ -163,16 +166,21 @@ export TAVALL_REDIS_HOST='{5}'
 export TAVALL_REDIS_PORT='{6}'
 export TAVALL_REDIS_PASSWORD=''
 export TAVALL_REDIS_TLS='false'
-nohup ./start.sh --transport TCP --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {7} --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
 for i in $(seq 1 60); do
-  if lsof -ti tcp:{0} >/dev/null 2>&1; then
+  if [ "{7}" = "QUIC" ]; then
+    if ss -lun | grep -q ":{0} "; then
+      echo SERVER_READY
+      exit 0
+    fi
+  elif lsof -ti tcp:{0} >/dev/null 2>&1; then
     echo SERVER_READY
     exit 0
   fi
   sleep 2
 done
 exit 1
-'@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort
+'@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort, $Transport
     Invoke-RemoteBash -Script $script | Out-Null
 }
 
@@ -258,6 +266,13 @@ redis-cli FLUSHDB >/dev/null
 Invoke-RemoteBash -Script $bootstrapScript | Out-Null
 
 Restart-RemoteServer
+Ensure-RemoteQuicBridge `
+    -SshAlias $SshAlias `
+    -BridgeSourcePath $bridgeSourcePath `
+    -LogPath $logPath `
+    -BridgePort $Port `
+    -ServerHost $ServerHost `
+    -ServerPort $Port
 Start-Sleep -Seconds 2
 Invoke-RemoteScenario -Mode "seed" -RemoteOutputDir $remotePhaseOneDir -LocalResultPath $phaseOneResultPath -LocalTracePath $phaseOneTracePath
 
@@ -272,6 +287,13 @@ $dbSnapshot = Invoke-RemoteBash -Script $dbSnapshotScript
 Set-Content -Path $dbSnapshotPath -Value $dbSnapshot -Encoding utf8
 
 Restart-RemoteServer
+Ensure-RemoteQuicBridge `
+    -SshAlias $SshAlias `
+    -BridgeSourcePath $bridgeSourcePath `
+    -LogPath $logPath `
+    -BridgePort $Port `
+    -ServerHost $ServerHost `
+    -ServerPort $Port
 Start-Sleep -Seconds 2
 Invoke-RemoteScenario -Mode "verify" -RemoteOutputDir $remotePhaseTwoDir -LocalResultPath $phaseTwoResultPath -LocalTracePath $phaseTwoTracePath
 
