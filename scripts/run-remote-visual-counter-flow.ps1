@@ -5,6 +5,7 @@ param(
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
     [string]$RemotePluginJarPath = "/srv/hytale/Server/mods/tavall-hytale-resource-game.jar",
     [string]$ServerRoot = "/srv/hytale",
+    [string]$Transport = "QUIC",
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5520,
     [string]$Username = "VisualCounterBot",
@@ -13,8 +14,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "remote-quic-harness.ps1")
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -130,7 +133,7 @@ function Invoke-RemoteBash {
 function Restart-RemoteServer {
     $script = @'
 set -e
-pid=$(lsof -ti tcp:{0} || true)
+pid=$(lsof -ti :{0} || true)
 if [ -n "$pid" ]; then
   kill $pid || true
   sleep 2
@@ -138,16 +141,21 @@ fi
 cd {1}
 unset TAVALL_POSTGRES_URL TAVALL_POSTGRES_USER TAVALL_POSTGRES_PASSWORD
 unset TAVALL_REDIS_HOST TAVALL_REDIS_PORT TAVALL_REDIS_PASSWORD TAVALL_REDIS_TLS
-nohup ./start.sh --transport TCP --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {7} --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
 for i in $(seq 1 60); do
-  if lsof -ti tcp:{0} >/dev/null 2>&1; then
+  if [ "{7}" = "QUIC" ]; then
+    if ss -lun | grep -q ":{0} "; then
+      echo SERVER_READY
+      exit 0
+    fi
+  elif lsof -ti tcp:{0} >/dev/null 2>&1; then
     echo SERVER_READY
     exit 0
   fi
   sleep 2
 done
 exit 1
-'@ -f $Port, $ServerRoot
+'@ -f $Port, $ServerRoot, '', '', '', '', '', $Transport
     Invoke-RemoteBash -Script $script | Out-Null
 }
 
@@ -169,6 +177,13 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
 ) | Out-Null
 
 Restart-RemoteServer
+Ensure-RemoteQuicBridge `
+    -SshAlias $SshAlias `
+    -BridgeSourcePath $bridgeSourcePath `
+    -LogPath $logPath `
+    -BridgePort $Port `
+    -ServerHost $ServerHost `
+    -ServerPort $Port
 Start-Sleep -Seconds 2
 
 $remoteCommand = "cd $RemoteHarnessDir && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"

@@ -10,8 +10,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "remote-quic-harness.ps1")
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -74,6 +76,14 @@ Write-LogLine ("[{0}] SSH alias={1}" -f (Get-Date).ToString("o"), $SshAlias)
 Write-LogLine ("[{0}] Scenario={1}" -f (Get-Date).ToString("o"), $Scenario)
 Write-LogLine ("[{0}] RemoteHarnessDir={1}" -f (Get-Date).ToString("o"), $RemoteHarnessDir)
 Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHost, $Port)
+
+Ensure-RemoteQuicBridge `
+    -SshAlias $SshAlias `
+    -BridgeSourcePath $bridgeSourcePath `
+    -LogPath $logPath `
+    -BridgePort $Port `
+    -ServerHost $ServerHost `
+    -ServerPort $Port
 
 $remoteCommand = @"
 set -e

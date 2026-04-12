@@ -10,8 +10,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "remote-quic-harness.ps1")
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -84,6 +86,14 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $ScenarioScriptPath,
     ("{0}:{1}" -f $SshAlias, $remoteScriptPath)
 ) | Out-Null
+
+Ensure-RemoteQuicBridge `
+    -SshAlias $SshAlias `
+    -BridgeSourcePath $bridgeSourcePath `
+    -LogPath $logPath `
+    -BridgePort $Port `
+    -ServerHost $ServerHost `
+    -ServerPort $Port
 
 $remoteCommand = "cd $RemoteHarnessDir && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"
 $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
