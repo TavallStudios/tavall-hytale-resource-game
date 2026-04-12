@@ -16,6 +16,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IIpHashService;
@@ -50,6 +51,7 @@ import com.tavall.hytale.resourcegame.services.DebugCommandService;
 import com.tavall.hytale.resourcegame.services.InteriorInstanceService;
 import com.tavall.hytale.resourcegame.services.InteriorWorldService;
 import com.tavall.hytale.resourcegame.services.IpHashService;
+import com.tavall.hytale.resourcegame.services.InfrastructureHealthService;
 import com.tavall.hytale.resourcegame.services.JsonMapperProvider;
 import com.tavall.hytale.resourcegame.services.PlayerDataService;
 import com.tavall.hytale.resourcegame.services.PlayerGameStateService;
@@ -128,6 +130,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         CastleEntityRegistry castleEntityRegistry = new CastleEntityRegistry();
         CastleAssetConfig castleAssetConfig = CastleAssetConfig.defaults();
         PopulationDisplayConfig populationDisplayConfig = PopulationDisplayConfig.defaults();
+        InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
 
         CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, castleEntityRegistry);
         PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
@@ -159,8 +162,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 populationDisplayService,
                 uiNavigator
         );
-        UiActionService uiActionService = new UiActionService(uiNavigator, interiorWorldService, populationService, sessionStore);
-        registerUiPages(pageRegistry, uiActionService);
+        UiActionService uiActionService = new UiActionService(uiNavigator, interiorWorldService, populationService, sessionStore, gameStateService);
+        registerUiPages(pageRegistry, uiActionService, infrastructureHealthService, gameStateService);
 
         KingdomClockService clockService = new KingdomClockService(clockConfig);
         PlayerDataService playerDataService = new PlayerDataService(
@@ -186,7 +189,9 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 interiorWorldService,
                 castleSpawnService,
                 castlePromptLaneService,
-                playerDataService
+                playerDataService,
+                gameStateService,
+                infrastructureHealthService
         );
 
         registerSingleton(IPlayerProfileService.class, profileService);
@@ -209,9 +214,15 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(ICastleInteractionService.class, castleInteractionService);
         registerSingleton(ICastleProximityPromptService.class, castleProximityPromptService);
         registerSingleton(IDebugCommandService.class, debugCommandService);
+        registerSingleton(IInfrastructureHealthService.class, infrastructureHealthService);
     }
 
-    private void registerUiPages(IUiPageRegistry registry, IUiActionService actionService) {
+    private void registerUiPages(
+            IUiPageRegistry registry,
+            IUiActionService actionService,
+            IInfrastructureHealthService infrastructureHealthService,
+            IPlayerGameStateService gameStateService
+    ) {
         registry.register(UiPageType.CASTLE_MAIN, (player, context, state) -> new CastleMainPage(player, context, state, actionService));
         registry.register(UiPageType.CASTLE_INFO, (player, context, state) -> new CastleInfoPage(player, context, state, actionService));
         registry.register(UiPageType.CASTLE_CITIZENS, (player, context, state) -> new CastleCitizensPage(player, context, state, actionService));
@@ -219,7 +230,17 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registry.register(UiPageType.CASTLE_RESOURCES, (player, context, state) -> new CastleResourcesPage(player, context, state, actionService));
         registry.register(UiPageType.CASTLE_UPGRADES, (player, context, state) -> new CastleUpgradesPage(player, context, state, actionService));
         registry.register(UiPageType.INTERIOR_MAIN, (player, context, state) -> new InteriorMainPage(player, context, state, actionService));
-        registry.register(UiPageType.DEBUG_NAVIGATOR, (player, context, state) -> new DebugNavigatorPage(player, context, state, actionService));
+        registry.register(
+                UiPageType.DEBUG_NAVIGATOR,
+                (player, context, state) -> new DebugNavigatorPage(
+                        player,
+                        context,
+                        state,
+                        actionService,
+                        infrastructureHealthService,
+                        gameStateService
+                )
+        );
     }
 
     private <T> void registerSingleton(Class<T> token, T instance) {

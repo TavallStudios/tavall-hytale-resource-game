@@ -3,6 +3,7 @@ package com.tavall.hytale.resourcegame.ui;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
@@ -10,6 +11,9 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
+import com.tavall.hytale.resourcegame.tasks.AsyncTask;
+
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,17 +25,20 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
     private final IInteriorWorldService interiorWorldService;
     private final IPopulationService populationService;
     private final IPlayerSessionStore sessionStore;
+    private final IPlayerGameStateService gameStateService;
 
     public UiActionService(
             IUiNavigator uiNavigator,
             IInteriorWorldService interiorWorldService,
             IPopulationService populationService,
-            IPlayerSessionStore sessionStore
+            IPlayerSessionStore sessionStore,
+            IPlayerGameStateService gameStateService
     ) {
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.interiorWorldService = Objects.requireNonNull(interiorWorldService, "interiorWorldService");
         this.populationService = Objects.requireNonNull(populationService, "populationService");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
+        this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
     }
 
     public void handle(Player player, UiNavigationContext context, UiActionEventData eventData) {
@@ -82,6 +89,10 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             boolean promoted = populationService.promoteCitizen(playerId);
             PlayerSession updatedSession = sessionStore.get(playerId);
             if (updatedSession != null) {
+                if (promoted) {
+                    PlayerGameState updatedState = markUpgradeTutorialSeen(playerId, updatedSession.gameState());
+                    updatedSession.updateGameState(updatedState);
+                }
                 String feedback = promoted
                         ? "Promotion complete."
                         : populationService.promoteActionState(updatedSession.gameState()).message();
@@ -93,6 +104,10 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             boolean demoted = populationService.demoteTroop(playerId);
             PlayerSession updatedSession = sessionStore.get(playerId);
             if (updatedSession != null) {
+                if (demoted) {
+                    PlayerGameState updatedState = markUpgradeTutorialSeen(playerId, updatedSession.gameState());
+                    updatedSession.updateGameState(updatedState);
+                }
                 String feedback = demoted
                         ? "Demotion complete."
                         : populationService.demoteActionState(updatedSession.gameState()).message();
@@ -111,5 +126,29 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
 
     public String promotionCostSummary() {
         return populationService.promotionCostSummary();
+    }
+
+    public String upgradeTutorialMessage(PlayerGameState state) {
+        if (gameStateService.isUpgradeTutorialPending(state)) {
+            return "First join tip: promote citizens here when Food, Wood, and Iron are ready.";
+        }
+        return "Tutorial complete: use this page to convert citizens when resources allow.";
+    }
+
+    public String interiorTutorialMessage(PlayerGameState state) {
+        if (gameStateService.isInteriorTutorialPending(state)) {
+            return "First interior visit: anchor displays show your citizen and troop totals while later stations grow around them.";
+        }
+        return "Interior tutorial complete: citizen and troop anchors stay here while the upgrade pipeline grows.";
+    }
+
+    private PlayerGameState markUpgradeTutorialSeen(UUID playerId, PlayerGameState state) {
+        Instant now = Instant.now();
+        PlayerGameState updated = gameStateService.markUpgradeTutorialSeen(state, now);
+        if (updated != state) {
+            gameStateService.cacheState(playerId, updated);
+            AsyncTask.runAsync(() -> gameStateService.persistState(updated, now));
+        }
+        return updated;
     }
 }

@@ -10,17 +10,20 @@ public final class GameStateMetadata {
     private final TroopMetaData troopMetaData;
     private final AgingState agingState;
     private final Map<CitizenJobType, Integer> jobCounts;
+    private final OnboardingProgress onboardingProgress;
 
     public GameStateMetadata(
             CitizenMetaData citizenMetaData,
             TroopMetaData troopMetaData,
             AgingState agingState,
-            Map<CitizenJobType, Integer> jobCounts
+            Map<CitizenJobType, Integer> jobCounts,
+            OnboardingProgress onboardingProgress
     ) {
         this.citizenMetaData = citizenMetaData;
         this.troopMetaData = troopMetaData;
         this.agingState = agingState;
-        this.jobCounts = jobCounts;
+        this.jobCounts = jobCounts == null ? Map.of() : Map.copyOf(jobCounts);
+        this.onboardingProgress = onboardingProgress == null ? OnboardingProgress.defaults() : onboardingProgress;
     }
 
     public CitizenMetaData citizenMetaData() {
@@ -39,12 +42,21 @@ public final class GameStateMetadata {
         return jobCounts;
     }
 
+    public OnboardingProgress onboardingProgress() {
+        return onboardingProgress;
+    }
+
     public static GameStateMetadata fromPopulation(PopulationSummary populationSummary) {
+        return fromPopulation(populationSummary, OnboardingProgress.defaults());
+    }
+
+    public static GameStateMetadata fromPopulation(PopulationSummary populationSummary, OnboardingProgress onboardingProgress) {
         return new GameStateMetadata(
                 populationSummary.citizenMetaData(),
                 populationSummary.troopMetaData(),
                 populationSummary.agingState(),
-                populationSummary.citizenMetaData().jobCounts()
+                populationSummary.citizenMetaData().jobCounts(),
+                onboardingProgress
         );
     }
 }

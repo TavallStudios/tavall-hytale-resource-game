@@ -6,5 +6,5 @@
 - Add cancellation/redo flow for castle placement.
 
 ## Onboarding
-- Add first-join tutorial UI for citizen/troop upgrades.
+- Expand the current first-join citizen/troop tutorial banner into a guided multi-step walkthrough.
 - Add a first-join interior tour marker path.

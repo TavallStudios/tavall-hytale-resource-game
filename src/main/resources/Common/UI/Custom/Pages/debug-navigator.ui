@@ -6,6 +6,12 @@ $C.@Container {
   LayoutMode: Top;
 
   Label { Text: "Debug UI Navigator"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
+  Label { Text: "Infra Status"; Style: $C.@SectionHeaderStyle; Anchor: (Bottom: 8); }
+  Label #CacheStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 4); }
+  Label #PersistenceStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 12); }
+  Label { Text: "Onboarding Status"; Style: $C.@SectionHeaderStyle; Anchor: (Bottom: 8); }
+  Label #InteriorTutorialStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 4); }
+  Label #UpgradeTutorialStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
 
   Group {
     LayoutMode: Left;

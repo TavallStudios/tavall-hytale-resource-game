@@ -7,6 +7,7 @@ $C.@Container {
 
   Label { Text: "Castle Interior"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
   Label { Text: "Placeholder interior layout with citizen/troop anchors."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+  Label #TutorialStatus { Style: (FontSize: 16, RenderBold: true); Anchor: (Bottom: 16); }
 
   Group {
     LayoutMode: Left;

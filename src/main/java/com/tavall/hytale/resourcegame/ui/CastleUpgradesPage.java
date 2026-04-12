@@ -35,6 +35,7 @@ public final class CastleUpgradesPage extends BaseUiPage {
         uiCommandBuilder.set("#PromotionCost.Text", actionService().promotionCostSummary());
         uiCommandBuilder.set("#PromoteStatus.Text", promoteState.message());
         uiCommandBuilder.set("#DemoteStatus.Text", demoteState.message());
+        uiCommandBuilder.set("#TutorialStatus.Text", actionService().upgradeTutorialMessage(state()));
         uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Awaiting action." : context().feedbackMessage());
         bind(uiEventBuilder, "#PromoteButton", UiActions.PROMOTE);
         bind(uiEventBuilder, "#DemoteButton", UiActions.DEMOTE);
