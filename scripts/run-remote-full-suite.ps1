@@ -25,6 +25,8 @@ $steps = @(
     @{ name = "castle"; script = ".\scripts\run-remote-castle-interaction-flow.ps1" },
     @{ name = "resource"; script = ".\scripts\run-remote-resource-game-flow.ps1" },
     @{ name = "command-alias"; script = ".\scripts\run-remote-command-alias-flow.ps1" },
+    @{ name = "data-health"; script = ".\scripts\run-remote-data-health-flow.ps1" },
+    @{ name = "onboarding"; script = ".\scripts\run-remote-onboarding-flow.ps1" },
     @{ name = "ui-edge"; script = ".\scripts\run-remote-ui-edge-flow.ps1" },
     @{ name = "visual-counter"; script = ".\scripts\run-remote-visual-counter-flow.ps1" }
 )
