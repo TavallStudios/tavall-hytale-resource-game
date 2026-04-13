@@ -1,0 +1,10 @@
+{
+  "name": "remote-visual-counter-flow",
+  "success": false,
+  "startedAt": "2026-04-13T05:55:21.431Z",
+  "endedAt": "2026-04-13T05:55:37.682Z",
+  "assertions": [],
+  "pages": [],
+  "error": "Timed out waiting for worldJoin after 15000ms",
+  "finalServerMessage": null
+}
