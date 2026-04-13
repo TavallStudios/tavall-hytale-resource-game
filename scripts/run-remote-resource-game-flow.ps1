@@ -3,7 +3,7 @@ param(
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-resource-game-flow.mjs",
     [string]$ServerHost = "127.0.0.1",
-    [int]$Port = 5520,
+    [int]$Port = 5522,
     [string]$Username = "ResourceGameBot",
     [string]$LogDir = ""
 )

@@ -1,11 +1,12 @@
 param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
-    [string]$RemoteServerLogDir = "/srv/hytale/Server/logs",
+    [string]$RemoteServerLogDir = "/srv/hytale-startup-patch-test/Server/logs",
     [string]$Scenario = "connect-only",
     [string]$ServerHost = "127.0.0.1",
-    [int]$Port = 5520,
+    [int]$Port = 5522,
     [string]$Username = "ResourceGameBot",
+    [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$LogDir = ""
 )
 
@@ -83,7 +84,8 @@ Ensure-RemoteQuicBridge `
     -LogPath $logPath `
     -BridgePort $Port `
     -ServerHost $ServerHost `
-    -ServerPort $Port
+    -ServerPort $Port `
+    -ServerRoot $ServerRoot
 
 $remoteCommand = @"
 set -e

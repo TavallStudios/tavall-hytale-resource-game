@@ -31,7 +31,7 @@
 
 ## Bot Testing
 - Repo-local wrapper scripts in `scripts/` invoke the shared TypeScript smoke harness.
-- The real remote server now runs in QUIC mode for client parity.
-- Because the shared TypeScript bot harness is still TCP-only, the remote wrappers bootstrap `scripts/HytaleQuicTcpBridge.java` through `scripts/remote-quic-harness.ps1` and expose the QUIC server to the bots through a local TCP bridge on the remote host.
+- The bot harness talks QUIC directly so it matches the real client transport.
+- QUIC connectivity is handled by the stdio bridge in `tavall-java-game-tools/hytale-bots/scripts/HytaleQuicStdioBridge.java`, which the bot client spawns on demand.
 - Dedicated remote wrappers cover castle interaction, resource flow, persistence rehydration, `/kd` alias navigation, data-health status, onboarding UI, UI edge cases, and interior population display updates on `/srv/hytale`.
 - Run output is captured in `bot-logs/` so bot failures can be reviewed per run.

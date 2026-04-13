@@ -3,11 +3,12 @@ param(
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-persistence-flow.mjs",
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
-    [string]$RemotePluginJarPath = "/srv/hytale/Server/mods/tavall-hytale-resource-game.jar",
-    [string]$ServerRoot = "/srv/hytale",
+    [string]$RemotePluginJarPath = "/srv/hytale-startup-patch-test/Server/mods/tavall-hytale-resource-game.jar",
+    [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$Transport = "QUIC",
+    [string]$AuthMode = "OFFLINE",
     [string]$ServerHost = "127.0.0.1",
-    [int]$Port = 5520,
+    [int]$Port = 5522,
     [string]$Username = "PersistenceBot",
     [string]$StableUuid = "123e4567-e89b-12d3-a456-426614174000",
     [string]$PostgresContainerName = "tavall-resource-game-postgres",
@@ -166,7 +167,7 @@ export TAVALL_REDIS_HOST='{5}'
 export TAVALL_REDIS_PORT='{6}'
 export TAVALL_REDIS_PASSWORD=''
 export TAVALL_REDIS_TLS='false'
-nohup ./start.sh --transport {7} --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {7} --auth-mode {8} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
 for i in $(seq 1 60); do
   if [ "{7}" = "QUIC" ]; then
     if ss -lun | grep -q ":{0} "; then
@@ -180,7 +181,7 @@ for i in $(seq 1 60); do
   sleep 2
 done
 exit 1
-'@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort, $Transport
+'@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort, $Transport, $AuthMode
     Invoke-RemoteBash -Script $script | Out-Null
 }
 
@@ -272,7 +273,8 @@ Ensure-RemoteQuicBridge `
     -LogPath $logPath `
     -BridgePort $Port `
     -ServerHost $ServerHost `
-    -ServerPort $Port
+    -ServerPort $Port `
+    -ServerRoot $ServerRoot
 Start-Sleep -Seconds 2
 Invoke-RemoteScenario -Mode "seed" -RemoteOutputDir $remotePhaseOneDir -LocalResultPath $phaseOneResultPath -LocalTracePath $phaseOneTracePath
 
@@ -293,7 +295,8 @@ Ensure-RemoteQuicBridge `
     -LogPath $logPath `
     -BridgePort $Port `
     -ServerHost $ServerHost `
-    -ServerPort $Port
+    -ServerPort $Port `
+    -ServerRoot $ServerRoot
 Start-Sleep -Seconds 2
 Invoke-RemoteScenario -Mode "verify" -RemoteOutputDir $remotePhaseTwoDir -LocalResultPath $phaseTwoResultPath -LocalTracePath $phaseTwoTracePath
 

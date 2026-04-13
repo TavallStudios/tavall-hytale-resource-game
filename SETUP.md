@@ -14,6 +14,7 @@
 - TAVALL_REDIS_PASSWORD
 - TAVALL_REDIS_TLS
 - TAVALL_KINGDOM_TIMEZONE
+- HYTALE_SERVER_JAR (path to HytaleServer.jar used by the QUIC bot bridge)
 
 ## Schema
 Apply files in schema/postgres in order:
@@ -22,7 +23,7 @@ Apply files in schema/postgres in order:
 
 ## Testing
 - The remote Hytale server should run with `--transport QUIC` for real-client parity.
-- The existing TypeScript bot harness remains TCP-only, so the remote wrappers boot a repo-owned local TCP-to-QUIC bridge on the remote host before each scenario.
+- The bot harness connects via QUIC using a stdio bridge that is spawned by the client (no TCP bridge).
 - Use external TS bot harness to run the join/interact/interior/resource flows.
 - Use /kd debug help for in-game command validation.
 - Repo-local bot harness wrapper: `powershell -ExecutionPolicy Bypass -File .\scripts\run-bot-harness.ps1`
@@ -39,5 +40,5 @@ Apply files in schema/postgres in order:
 - Generic QUIC smoke runner: `powershell -ExecutionPolicy Bypass -File .\scripts\run-remote-bot-harness.ps1 -Scenario connect-only`
 - Bot harness logs and run summaries are written to `bot-logs/`.
 - `/kd ui` exposes cache mode, persistence mode, and onboarding milestone status directly on the debug page for deterministic bot assertions.
-- QUIC bridge source lives at `scripts/HytaleQuicTcpBridge.java`; remote bootstrap logic lives at `scripts/remote-quic-harness.ps1`.
+- QUIC bridge source lives at `tavall-java-game-tools/hytale-bots/scripts/HytaleQuicStdioBridge.java`.
 - The shared Java smoke harness expects a server on `127.0.0.1:25565`.

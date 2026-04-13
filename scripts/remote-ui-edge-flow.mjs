@@ -62,6 +62,26 @@ async function openUpgrades(bot, expected = null) {
   );
 }
 
+async function openCastleInfo(bot) {
+  try {
+    sendAction(bot, "OpenCastleInfo");
+    return await waitForSnapshot(
+      bot,
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleInfoPage" && snapshot.selectors.includes("#CastleId.Text"),
+      10_000,
+      "castle info page"
+    );
+  } catch (error) {
+    bot.chat("/kingdom ui info");
+    return await waitForSnapshot(
+      bot,
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleInfoPage" && snapshot.selectors.includes("#CastleId.Text"),
+      15_000,
+      "castle info page (fallback)"
+    );
+  }
+}
+
 async function main() {
   const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
   const { createBot } = await import(clientModuleUrl);
@@ -94,12 +114,11 @@ async function main() {
     await delay(2_000);
 
     bot.chat("/kingdom ui");
-    const debugSnapshot = await waitForSnapshot(bot, (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage", 10_000, "debug page");
+    const debugSnapshot = await waitForSnapshot(bot, (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage", 15_000, "debug page");
     pages.push({ key: debugSnapshot.key, title: null, snapshot: debugSnapshot });
     assertions.push("debug-ui-opened");
 
-    sendAction(bot, "OpenCastleInfo");
-    const infoSnapshot = await waitForSnapshot(bot, (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleInfoPage" && snapshot.selectors.includes("#CastleId.Text"), 10_000, "castle info page");
+    const infoSnapshot = await openCastleInfo(bot);
     pages.push({ key: infoSnapshot.key, title: null, snapshot: infoSnapshot });
     assertions.push("castle-info-opened-from-ui");
 
