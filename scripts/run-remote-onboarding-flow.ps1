@@ -3,11 +3,12 @@
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-onboarding-flow.mjs",
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
-    [string]$RemotePluginJarPath = "/srv/hytale/Server/mods/tavall-hytale-resource-game.jar",
-    [string]$ServerRoot = "/srv/hytale",
+    [string]$RemotePluginJarPath = "/srv/hytale-startup-patch-test/Server/mods/tavall-hytale-resource-game.jar",
+    [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$Transport = "QUIC",
+    [string]$AuthMode = "OFFLINE",
     [string]$ServerHost = "127.0.0.1",
-    [int]$Port = 5520,
+    [int]$Port = 5522,
     [string]$Username = "OnboardingBot",
     [string]$StableUuid = "",
     [string]$LogDir = ""
@@ -144,9 +145,9 @@ fi
 cd {1}
 unset TAVALL_POSTGRES_URL TAVALL_POSTGRES_USER TAVALL_POSTGRES_PASSWORD
 unset TAVALL_REDIS_HOST TAVALL_REDIS_PORT TAVALL_REDIS_PASSWORD TAVALL_REDIS_TLS
-nohup ./start.sh --transport {7} --auth-mode INSECURE --allow-op > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {2} --auth-mode {3} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
 for i in $(seq 1 60); do
-  if [ "{7}" = "QUIC" ]; then
+  if [ "{2}" = "QUIC" ]; then
     if ss -lun | grep -q ":{0} "; then
       echo SERVER_READY
       exit 0
@@ -158,7 +159,7 @@ for i in $(seq 1 60); do
   sleep 2
 done
 exit 1
-'@ -f $Port, $ServerRoot, '', '', '', '', '', $Transport
+'@ -f $Port, $ServerRoot, $Transport, $AuthMode
     Invoke-RemoteBash -Script $script | Out-Null
 }
 
@@ -186,7 +187,8 @@ Ensure-RemoteQuicBridge `
     -LogPath $logPath `
     -BridgePort $Port `
     -ServerHost $ServerHost `
-    -ServerPort $Port
+    -ServerPort $Port `
+    -ServerRoot $ServerRoot
 Start-Sleep -Seconds 2
 
 $remoteCommand = "cd $RemoteHarnessDir && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"
@@ -227,4 +229,3 @@ $summary = [ordered]@{
 $summary | ConvertTo-Json -Depth 5 | Set-Content -Path $summaryPath -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] Onboarding flow passed" -f (Get-Date).ToString("o"))
-

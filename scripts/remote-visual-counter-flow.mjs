@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,7 +21,31 @@ async function writeJson(filePath, value) {
 }
 
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const explicitClientPath = process.env.HYTALE_BOT_CLIENT;
+  const localClientPath = path.resolve(process.cwd(), "packages/client/dist/index.js");
+  const monorepoClientPath = path.resolve(
+    process.cwd(),
+    "..",
+    "..",
+    "tavall-java-game-tools",
+    "hytale-bots",
+    "packages",
+    "client",
+    "dist",
+    "index.js"
+  );
+  const resolvedClientPath =
+    (explicitClientPath && existsSync(explicitClientPath) && explicitClientPath) ||
+    (existsSync(localClientPath) && localClientPath) ||
+    (existsSync(monorepoClientPath) && monorepoClientPath);
+
+  if (!resolvedClientPath) {
+    throw new Error(
+      "Unable to locate bot client build. Set HYTALE_BOT_CLIENT to the dist index.js path."
+    );
+  }
+
+  const clientModuleUrl = pathToFileURL(resolvedClientPath).href;
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";

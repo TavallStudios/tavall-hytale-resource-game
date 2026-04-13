@@ -57,13 +57,15 @@ function Ensure-RemoteQuicBridge {
         [string]$SshAlias,
         [string]$BridgeSourcePath,
         [string]$LogPath,
-        [string]$RemoteBridgeDir = "/srv/hytale/_bot/quic-bridge",
+        [string]$RemoteBridgeDir = "/srv/hytale-startup-patch-test/_bot/quic-bridge",
         [string]$BridgeHost = "127.0.0.1",
         [int]$BridgePort = 5520,
         [string]$ServerHost = "127.0.0.1",
-        [int]$ServerPort = 5520
+        [int]$ServerPort = 5520,
+        [string]$ServerRoot = "/srv/hytale-startup-patch-test"
     )
 
+    $serverJarPath = "{0}/Server/HytaleServer.jar" -f $ServerRoot
     $remoteSourcePath = "$RemoteBridgeDir/HytaleQuicTcpBridge.java"
     Invoke-RemoteLoggedBash -SshAlias $SshAlias -Script ("mkdir -p {0}" -f $RemoteBridgeDir) -LogPath $LogPath | Out-Null
     $copyExitCode = & scp.exe -F C:\Users\TJ\.ssh\config $BridgeSourcePath "${SshAlias}:$remoteSourcePath" 2>&1 | Tee-Object -Variable scpOutput
@@ -81,13 +83,13 @@ function Ensure-RemoteQuicBridge {
 set -e
 mkdir -p {0}
 rm -f {0}/*.class
-javac -cp /srv/hytale/Server/HytaleServer.jar -d {0} {1}
+javac -cp {6} -d {0} {1}
 bridge_pid=$(lsof -ti tcp:{3} || true)
 if [ -n "$bridge_pid" ]; then
   kill $bridge_pid || true
   sleep 1
 fi
-nohup java -cp /srv/hytale/Server/HytaleServer.jar:{0} HytaleQuicTcpBridge {2} {3} {4} {5} > {0}/bridge.out 2>&1 < /dev/null &
+nohup java -cp {6}:{0} HytaleQuicTcpBridge {2} {3} {4} {5} > {0}/bridge.out 2>&1 < /dev/null &
 for i in $(seq 1 30); do
   if lsof -ti tcp:{3} >/dev/null 2>&1; then
     echo BRIDGE_READY
@@ -98,7 +100,7 @@ done
 echo BRIDGE_START_FAILED
 cat {0}/bridge.out || true
 exit 1
-'@ -f $RemoteBridgeDir, $remoteSourcePath, $BridgeHost, $BridgePort, $ServerHost, $ServerPort
+'@ -f $RemoteBridgeDir, $remoteSourcePath, $BridgeHost, $BridgePort, $ServerHost, $ServerPort, $serverJarPath
 
     $result = Invoke-RemoteLoggedBash -SshAlias $SshAlias -Script $script -LogPath $LogPath
     if ($result -notmatch "BRIDGE_READY") {
