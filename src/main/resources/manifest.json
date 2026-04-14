@@ -12,7 +12,7 @@
   ],
   "Website": "",
   "DisabledByDefault": false,
-  "IncludesAssetPack": true,
+  "IncludesAssetPack": false,
   "Dependencies": {},
   "OptionalDependencies": {},
   "ServerVersion": "*",
