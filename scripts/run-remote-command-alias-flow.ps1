@@ -123,6 +123,8 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $tracePath
 ) | Out-Null
 
+Minimize-TranscriptArtifact -Path $tracePath
+
 $summary = [ordered]@{
     startedAt = $startedAt
     completedAt = (Get-Date).ToString("o")

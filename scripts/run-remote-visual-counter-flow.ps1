@@ -240,6 +240,8 @@ if ($displayEvidence -notmatch "Population displays updated for $StableUuid\. ci
     throw "Troop display update evidence not found in server log."
 }
 
+Minimize-TranscriptArtifact -Path $tracePath
+
 $summary = [ordered]@{
     startedAt = $startedAt
     completedAt = (Get-Date).ToString("o")

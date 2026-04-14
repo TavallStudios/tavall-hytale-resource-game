@@ -327,6 +327,9 @@ if ($cacheEvidence -notmatch "Population displays ready for $StableUuid") {
     throw "Population display readiness evidence not found in server log."
 }
 
+Minimize-TranscriptArtifact -Path $phaseOneTracePath
+Minimize-TranscriptArtifact -Path $phaseTwoTracePath
+
 $summary = [ordered]@{
     startedAt = $startedAt
     completedAt = (Get-Date).ToString("o")
