@@ -1,16 +1,15 @@
-$C = "../Common.ui";
-
-$C.@PageOverlay {}
-
-$C.@Container {
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
   LayoutMode: Top;
 
   Label { Text: "Citizens"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
 
-  Label { Text: "Total Citizens"; Style: $C.@MutedTextStyle; }
+  Label { Text: "Total Citizens"; Style: (FontSize: 14, TextColor: #a7b0ba); }
   Label #CitizenCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
 
-  Label { Text: "Future: job assignment, productivity, and aging."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+  Label { Text: "Future: job assignment, productivity medians, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
-  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); } }
 }

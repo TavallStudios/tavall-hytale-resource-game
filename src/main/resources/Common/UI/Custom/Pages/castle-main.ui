@@ -1,8 +1,7 @@
-$C = "../Common.ui";
-
-$C.@PageOverlay {}
-
-$C.@Container {
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
   LayoutMode: Top;
 
   Group #Header {
@@ -17,7 +16,7 @@ $C.@Container {
 
     Label #Subtitle {
       Text: "Citizen to army pipeline preview";
-      Style: $C.@MutedTextStyle;
+      Style: (FontSize: 14, TextColor: #a7b0ba);
     }
   }
 
@@ -28,54 +27,60 @@ $C.@Container {
     Group {
       Anchor: (Width: 180);
       LayoutMode: Top;
-      Label { Text: "Citizens"; Style: $C.@SectionHeaderStyle; }
+      Label { Text: "Citizens"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
       Label #CitizenCount { Style: (FontSize: 20); }
     }
 
     Group {
       Anchor: (Width: 180);
       LayoutMode: Top;
-      Label { Text: "Troops"; Style: $C.@SectionHeaderStyle; }
+      Label { Text: "Troops"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
       Label #TroopCount { Style: (FontSize: 20); }
     }
 
     Group {
       Anchor: (Width: 260);
       LayoutMode: Top;
-      Label { Text: "Resources"; Style: $C.@SectionHeaderStyle; }
-      Label { Text: "Food:"; Style: $C.@MutedTextStyle; }
+      Label { Text: "Resources"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
+      Label { Text: "Food:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
       Label #FoodCount { Style: (FontSize: 18); }
     }
 
     Group {
       Anchor: (Width: 120);
       LayoutMode: Top;
-      Label { Text: "Wood:"; Style: $C.@MutedTextStyle; }
+      Label { Text: "Wood:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
       Label #WoodCount { Style: (FontSize: 18); }
     }
 
     Group {
       Anchor: (Width: 120);
       LayoutMode: Top;
-      Label { Text: "Iron:"; Style: $C.@MutedTextStyle; }
+      Label { Text: "Iron:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
       Label #IronCount { Style: (FontSize: 18); }
     }
+  }
+
+  Label {
+    Text: "Outside the menu: citizen yard, troop drill, and starter resource nodes are live placeholder visuals around the castle.";
+    Style: (FontSize: 14, TextColor: #a7b0ba);
+    Anchor: (Bottom: 16);
   }
 
   Group #Actions {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #EnterInteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; Anchor: (Right: 8); }
-    TextButton #CastleInfoButton { Text: "View Castle Info"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
-    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
-    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
-    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; Anchor: (Right: 8); }
-    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; }
+    TextButton #EnterInteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "View Castle Info"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); }
   }
 
   Group #Footer {
     LayoutMode: Right;
-    TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); Style: $C.@SecondaryTextButtonStyle; }
+    TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); }
   }
 }
