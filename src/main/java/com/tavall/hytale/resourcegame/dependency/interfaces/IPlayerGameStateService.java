@@ -19,9 +19,13 @@ public interface IPlayerGameStateService extends IDependencyInjectableInterface 
 
     boolean isInteriorTutorialPending(PlayerGameState state);
 
+    boolean isInteriorTourPending(PlayerGameState state);
+
     boolean isUpgradeTutorialPending(PlayerGameState state);
 
     PlayerGameState markInteriorTutorialSeen(PlayerGameState state, Instant now);
+
+    PlayerGameState markInteriorTourSeen(PlayerGameState state, Instant now);
 
     PlayerGameState markUpgradeTutorialSeen(PlayerGameState state, Instant now);
 }

@@ -163,6 +163,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("Cache: " + healthSnapshot.cacheSummary()).color("yellow"));
         context.sendMessage(Message.raw("Persistence: " + healthSnapshot.persistenceSummary()).color("yellow"));
         context.sendMessage(Message.raw("Interior tutorial: " + tutorialStatus(gameStateService.isInteriorTutorialPending(state))).color("yellow"));
+        context.sendMessage(Message.raw("Interior tour: " + tutorialStatus(gameStateService.isInteriorTourPending(state))).color("yellow"));
         context.sendMessage(Message.raw("Upgrade tutorial: " + tutorialStatus(gameStateService.isUpgradeTutorialPending(state))).color("yellow"));
     }
 

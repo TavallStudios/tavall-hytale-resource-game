@@ -101,6 +101,10 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         return metadataOf(state, Instant.now()).onboardingProgress().firstInteriorTutorialPending();
     }
 
+    public boolean isInteriorTourPending(PlayerGameState state) {
+        return metadataOf(state, Instant.now()).onboardingProgress().firstInteriorTourPending();
+    }
+
     public boolean isUpgradeTutorialPending(PlayerGameState state) {
         return metadataOf(state, Instant.now()).onboardingProgress().firstUpgradeTutorialPending();
     }
@@ -111,6 +115,14 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             return state;
         }
         return rewriteMetadata(state, progress.markInteriorTutorialSeen(), now);
+    }
+
+    public PlayerGameState markInteriorTourSeen(PlayerGameState state, Instant now) {
+        OnboardingProgress progress = metadataOf(state, now).onboardingProgress();
+        if (!progress.firstInteriorTourPending()) {
+            return state;
+        }
+        return rewriteMetadata(state, progress.markInteriorTourSeen(), now);
     }
 
     public PlayerGameState markUpgradeTutorialSeen(PlayerGameState state, Instant now) {
