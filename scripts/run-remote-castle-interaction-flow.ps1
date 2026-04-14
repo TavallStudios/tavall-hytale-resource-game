@@ -121,6 +121,8 @@ if ($exitCode -eq 0) {
     ) | Out-Null
 }
 
+Minimize-TranscriptArtifact -Path $tracePath
+
 $summary = [ordered]@{
     startedAt = $startedAt
     completedAt = (Get-Date).ToString("o")
