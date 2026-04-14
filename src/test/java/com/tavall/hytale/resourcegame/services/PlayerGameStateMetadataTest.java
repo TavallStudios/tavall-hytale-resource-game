@@ -46,7 +46,7 @@ public final class PlayerGameStateMetadataTest {
                 new TroopMetaData(0.74, 0.63, 0.58),
                 new AgingState(now, Duration.ofHours(12))
         );
-        GameStateMetadata metadata = GameStateMetadata.fromPopulation(summary, new OnboardingProgress(false, true));
+        GameStateMetadata metadata = GameStateMetadata.fromPopulation(summary, new OnboardingProgress(false, true, false));
         PlayerGameState seeded = new PlayerGameState(
                 0L,
                 99L,
@@ -70,6 +70,7 @@ public final class PlayerGameStateMetadataTest {
         assertEquals(0.74, loaded.populationSummary().troopMetaData().combatMedian());
         assertEquals(Duration.ofHours(12), loaded.populationSummary().agingState().totalAge());
         assertFalse(service.isInteriorTutorialPending(loaded));
+        assertFalse(service.isInteriorTourPending(loaded));
         assertTrue(service.isUpgradeTutorialPending(loaded));
     }
 
@@ -92,10 +93,13 @@ public final class PlayerGameStateMetadataTest {
         );
 
         PlayerGameState afterInterior = service.markInteriorTutorialSeen(state, now.plusSeconds(5));
-        PlayerGameState afterUpgrade = service.markUpgradeTutorialSeen(afterInterior, now.plusSeconds(10));
+        PlayerGameState afterTour = service.markInteriorTourSeen(afterInterior, now.plusSeconds(8));
+        PlayerGameState afterUpgrade = service.markUpgradeTutorialSeen(afterTour, now.plusSeconds(10));
 
         assertFalse(service.isInteriorTutorialPending(afterInterior));
-        assertTrue(service.isUpgradeTutorialPending(afterInterior));
+        assertTrue(service.isInteriorTourPending(afterInterior));
+        assertFalse(service.isInteriorTourPending(afterTour));
+        assertTrue(service.isUpgradeTutorialPending(afterTour));
         assertFalse(service.isUpgradeTutorialPending(afterUpgrade));
         assertEquals(state.populationSummary().citizenCount(), afterUpgrade.populationSummary().citizenCount());
         assertEquals(state.populationSummary().troopCount(), afterUpgrade.populationSummary().troopCount());
