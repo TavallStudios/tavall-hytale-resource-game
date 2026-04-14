@@ -130,14 +130,14 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
 
     public String upgradeTutorialMessage(PlayerGameState state) {
         if (gameStateService.isUpgradeTutorialPending(state)) {
-            return "First join tip: promote citizens here when Food, Wood, and Iron are ready.";
+            return "Step 1: confirm citizens and troops. Step 2: check the Food, Wood, and Iron cost. Step 3: promote once the route is ready.";
         }
         return "Tutorial complete: use this page to convert citizens when resources allow.";
     }
 
     public String interiorTutorialMessage(PlayerGameState state) {
-        if (gameStateService.isInteriorTutorialPending(state)) {
-            return "First interior visit: anchor displays show your citizen and troop totals while later stations grow around them.";
+        if (gameStateService.isInteriorTutorialPending(state) || gameStateService.isInteriorTourPending(state)) {
+            return "Step 1: follow the tour markers. Step 2: inspect the citizen and troop anchors. Step 3: leave through the exit lane when you are done.";
         }
         return "Interior tutorial complete: citizen and troop anchors stay here while the upgrade pipeline grows.";
     }

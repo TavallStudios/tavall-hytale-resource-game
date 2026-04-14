@@ -1,3 +1,29 @@
+function Write-SharedLogLine {
+    param(
+        [string]$Path,
+        [string]$Message
+    )
+
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+        try {
+            $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+            try {
+                $payload = $encoding.GetBytes($Message + [Environment]::NewLine)
+                $stream.Write($payload, 0, $payload.Length)
+                $stream.Flush()
+            } finally {
+                $stream.Dispose()
+            }
+            return
+        } catch {
+            Start-Sleep -Milliseconds 75
+        }
+    }
+
+    throw "Failed to append to log file: $Path"
+}
+
 function Invoke-RemoteLoggedBash {
     param(
         [string]$SshAlias,
@@ -30,13 +56,13 @@ function Invoke-RemoteLoggedBash {
 
         foreach ($line in ($stdout -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $LogPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $LogPath -Message $line
                 Write-Host $line
             }
         }
         foreach ($line in ($stderr -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $LogPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $LogPath -Message $line
                 Write-Host $line
             }
         }
@@ -71,7 +97,7 @@ function Ensure-RemoteQuicBridge {
     $copyExitCode = & scp.exe -F C:\Users\TJ\.ssh\config $BridgeSourcePath "${SshAlias}:$remoteSourcePath" 2>&1 | Tee-Object -Variable scpOutput
     foreach ($line in $scpOutput) {
         if ($line -ne "") {
-            Add-Content -Path $LogPath -Value $line -Encoding utf8
+            Write-SharedLogLine -Path $LogPath -Message $line
             Write-Host $line
         }
     }
@@ -106,4 +132,23 @@ exit 1
     if ($result -notmatch "BRIDGE_READY") {
         throw "Remote QUIC bridge did not report readiness."
     }
+}
+
+function Minimize-TranscriptArtifact {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) {
+        return
+    }
+
+    $fileInfo = Get-Item -LiteralPath $Path
+    $summary = [ordered]@{
+        retained = $false
+        originalSizeBytes = $fileInfo.Length
+        minimizedAt = (Get-Date).ToString("o")
+        note = "Raw transcript removed after run to keep bot-logs compact. Re-run with a dedicated debug transcript path if full trace data is needed."
+    }
+
+    Remove-Item -LiteralPath $Path -Force
+    $summary | ConvertTo-Json -Depth 4 | Set-Content -Path $Path -Encoding utf8
 }

@@ -43,6 +43,7 @@ public final class DebugNavigatorPage extends BaseUiPage {
         uiCommandBuilder.set("#CacheStatus.Text", healthSnapshot.cacheSummary());
         uiCommandBuilder.set("#PersistenceStatus.Text", healthSnapshot.persistenceSummary());
         uiCommandBuilder.set("#InteriorTutorialStatus.Text", tutorialStatus(gameStateService.isInteriorTutorialPending(state())));
+        uiCommandBuilder.set("#InteriorTourStatus.Text", tutorialStatus(gameStateService.isInteriorTourPending(state())));
         uiCommandBuilder.set("#UpgradeTutorialStatus.Text", tutorialStatus(gameStateService.isUpgradeTutorialPending(state())));
         bind(uiEventBuilder, "#CastleMainButton", UiActions.OPEN_CASTLE_MAIN);
         bind(uiEventBuilder, "#CastleInfoButton", UiActions.OPEN_CASTLE_INFO);

@@ -11,6 +11,7 @@ $C.@Container {
   Label #PersistenceStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 12); }
   Label { Text: "Onboarding Status"; Style: $C.@SectionHeaderStyle; Anchor: (Bottom: 8); }
   Label #InteriorTutorialStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 4); }
+  Label #InteriorTourStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 4); }
   Label #UpgradeTutorialStatus { Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
 
   Group {

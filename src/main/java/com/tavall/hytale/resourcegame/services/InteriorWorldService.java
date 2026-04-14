@@ -44,6 +44,7 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
     private final IInteriorInstanceService interiorInstanceService;
     private final InteriorLayoutService layoutService;
     private final InteriorStructureService structureService;
+    private final InteriorTourMarkerService interiorTourMarkerService;
     private final IPlayerTeleportService playerTeleportService;
     private final PopulationDisplayGateway displayService;
     private final IUiNavigator uiNavigator;
@@ -54,6 +55,7 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
             IInteriorInstanceService interiorInstanceService,
             InteriorLayoutService layoutService,
             InteriorStructureService structureService,
+            InteriorTourMarkerService interiorTourMarkerService,
             IPlayerTeleportService playerTeleportService,
             PopulationDisplayGateway displayService,
             IUiNavigator uiNavigator
@@ -63,6 +65,7 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
         this.interiorInstanceService = Objects.requireNonNull(interiorInstanceService, "interiorInstanceService");
         this.layoutService = Objects.requireNonNull(layoutService, "layoutService");
         this.structureService = Objects.requireNonNull(structureService, "structureService");
+        this.interiorTourMarkerService = Objects.requireNonNull(interiorTourMarkerService, "interiorTourMarkerService");
         this.playerTeleportService = Objects.requireNonNull(playerTeleportService, "playerTeleportService");
         this.displayService = Objects.requireNonNull(displayService, "displayService");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
@@ -83,10 +86,15 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
         InteriorLayout layout = layoutService.createLayout(INTERIOR_ORIGIN);
         Vector3d entryPosition = interiorEntryPosition(player, layout);
         Instant now = Instant.now();
-        boolean firstInteriorVisit = gameStateService.isInteriorTutorialPending(state);
-        PlayerGameState tutorialState = firstInteriorVisit
-                ? gameStateService.markInteriorTutorialSeen(state, now)
-                : state;
+        boolean firstInteriorTutorialPending = gameStateService.isInteriorTutorialPending(state);
+        boolean firstInteriorTourPending = gameStateService.isInteriorTourPending(state);
+        PlayerGameState tutorialState = state;
+        if (firstInteriorTutorialPending) {
+            tutorialState = gameStateService.markInteriorTutorialSeen(tutorialState, now);
+        }
+        if (firstInteriorTourPending) {
+            tutorialState = gameStateService.markInteriorTourSeen(tutorialState, now);
+        }
         InteriorSessionData interiorSession = new InteriorSessionData(
                 interiorWorldName,
                 castleLocation,
@@ -95,7 +103,15 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
         PlayerGameState updated = tutorialState.withInteriorSession(interiorSession, now);
         session.updateGameState(updated);
         CompletableFuture<UiNavigationContext> transition = interiorInstanceService.resolveInteriorWorld(playerId)
-                .thenApply(world -> prepareInteriorWorld(world, player, updated, layout, entryPosition, firstInteriorVisit));
+                .thenApply(world -> prepareInteriorWorld(
+                        world,
+                        player,
+                        updated,
+                        layout,
+                        entryPosition,
+                        firstInteriorTutorialPending,
+                        firstInteriorTourPending
+                ));
         HytaleServer.SCHEDULED_EXECUTOR.schedule(
                 () -> transition.thenAccept(context -> uiNavigator.open(UiPageType.INTERIOR_MAIN, player, context, updated)),
                 INTERIOR_UI_DELAY_MILLIS,
@@ -146,15 +162,17 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
             PlayerGameState updated,
             InteriorLayout layout,
             Vector3d entryPosition,
-            boolean firstInteriorVisit
+            boolean firstInteriorTutorialPending,
+            boolean firstInteriorTourPending
     ) {
         world.execute(() -> {
             structureService.ensureStructure(world, layout);
+            interiorTourMarkerService.ensureTourMarkers(player.getUuid(), world, layout, firstInteriorTourPending);
             displayService.ensureDisplays(player.getUuid(), world, layout, updated.populationSummary());
             playerTeleportService.teleport(player, world, entryPosition);
         });
-        String tutorialMessage = firstInteriorVisit
-                ? "First interior visit: anchor displays show your citizen and troop totals while later stations grow around them."
+        String tutorialMessage = (firstInteriorTutorialPending || firstInteriorTourPending)
+                ? "Step 1: follow the tour markers. Step 2: inspect the citizen and troop anchors. Step 3: leave through the exit lane when you are done."
                 : "Interior tutorial complete: citizen and troop anchors stay here while the upgrade pipeline grows.";
         return new UiNavigationContext(player.getUuid(), player.getDisplayName(), tutorialMessage);
     }

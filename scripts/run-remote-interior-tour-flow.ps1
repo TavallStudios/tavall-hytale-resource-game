@@ -1,15 +1,15 @@
 ﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
-    [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-data-health-flow.mjs",
+    [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-interior-tour-flow.mjs",
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
     [string]$RemotePluginJarPath = "/srv/hytale-startup-patch-test/Server/mods/tavall-hytale-resource-game.jar",
     [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$Transport = "QUIC",
     [string]$AuthMode = "OFFLINE",
     [string]$ServerHost = "127.0.0.1",
-    [int]$Port = 5522,
-    [string]$Username = "HealthBot",
+    [int]$Port = 5523,
+    [string]$Username = "InteriorTourBot",
     [string]$StableUuid = "",
     [string]$LogDir = ""
 )
@@ -30,7 +30,7 @@ if ([string]::IsNullOrWhiteSpace($LogDir)) {
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$baseName = "remote-data-health-flow-{0}" -f $timestamp
+$baseName = "remote-interior-tour-flow-{0}" -f $timestamp
 $logPath = Join-Path $LogDir ($baseName + ".log")
 $summaryPath = Join-Path $LogDir ($baseName + ".json")
 $resultPath = Join-Path $LogDir ($baseName + "-scenario-result.json")
@@ -40,7 +40,7 @@ $remoteOutputDir = "/tmp/{0}" -f $baseName
 
 function Write-LogLine {
     param([string]$Message)
-    Add-Content -Path $logPath -Value $Message -Encoding utf8
+    Write-SharedLogLine -Path $logPath -Message $Message
     Write-Host $Message
 }
 
@@ -67,7 +67,7 @@ function Invoke-ProcessCapture {
                 continue
             }
             Get-Content -Path $path | ForEach-Object {
-                Add-Content -Path $logPath -Value $_ -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $_
                 Write-Host $_
             }
         }
@@ -113,13 +113,13 @@ function Invoke-RemoteBash {
 
         foreach ($line in ($stdout -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $logPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $line
                 Write-Host $line
             }
         }
         foreach ($line in ($stderr -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $logPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $line
                 Write-Host $line
             }
         }
@@ -165,7 +165,7 @@ exit 1
 }
 
 $startedAt = (Get-Date).ToString("o")
-Write-LogLine ("[{0}] Starting remote data-health flow" -f $startedAt)
+Write-LogLine ("[{0}] Starting remote interior tour flow" -f $startedAt)
 Write-LogLine ("[{0}] SSH alias={1}" -f (Get-Date).ToString("o"), $SshAlias)
 Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHost, $Port)
 Write-LogLine ("[{0}] StableUuid={1}" -f (Get-Date).ToString("o"), $StableUuid)
@@ -205,7 +205,7 @@ $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
     $remoteCommand
 ) -AllowFailure
 if ($exitCode -ne 0) {
-    throw "Remote data-health scenario failed"
+    throw "Remote interior tour scenario failed"
 }
 
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
@@ -235,5 +235,6 @@ $summary = [ordered]@{
 
 $summary | ConvertTo-Json -Depth 5 | Set-Content -Path $summaryPath -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
-Write-LogLine ("[{0}] Data-health flow passed" -f (Get-Date).ToString("o"))
+Write-LogLine ("[{0}] Interior tour flow passed" -f (Get-Date).ToString("o"))
+
 

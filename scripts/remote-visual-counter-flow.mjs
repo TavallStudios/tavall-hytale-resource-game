@@ -1,51 +1,11 @@
-import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, findNearbyEntityByPosition, resolveBotClientModuleUrl, waitForPageOrNull, waitForWorldSnapshot, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForPageOrNull(bot, pageKey, timeoutMs) {
-  try {
-    return await bot.waitForPage(pageKey, timeoutMs);
-  } catch {
-    return null;
-  }
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
+const CITIZEN_ANCHOR = { x: 3.5, y: 121.0, z: 2.5 };
+const TROOP_ANCHOR = { x: -2.5, y: 121.0, z: 2.5 };
 
 async function main() {
-  const explicitClientPath = process.env.HYTALE_BOT_CLIENT;
-  const localClientPath = path.resolve(process.cwd(), "packages/client/dist/index.js");
-  const monorepoClientPath = path.resolve(
-    process.cwd(),
-    "..",
-    "..",
-    "tavall-java-game-tools",
-    "hytale-bots",
-    "packages",
-    "client",
-    "dist",
-    "index.js"
-  );
-  const resolvedClientPath =
-    (explicitClientPath && existsSync(explicitClientPath) && explicitClientPath) ||
-    (existsSync(localClientPath) && localClientPath) ||
-    (existsSync(monorepoClientPath) && monorepoClientPath);
-
-  if (!resolvedClientPath) {
-    throw new Error(
-      "Unable to locate bot client build. Set HYTALE_BOT_CLIENT to the dist index.js path."
-    );
-  }
-
-  const clientModuleUrl = pathToFileURL(resolvedClientPath).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";
@@ -69,11 +29,11 @@ async function main() {
 
   try {
     await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(2_000);
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 12
+    });
+    await delay(1_500);
 
     bot.chat("/kingdom citizens set 8");
     await delay(350);
@@ -88,6 +48,19 @@ async function main() {
     if (interiorPage) {
       pages.push({ key: interiorPage.key, title: interiorPage.title ?? null, snapshot: bot.snapshotPage() });
       assertions.push("interior-ui-opened");
+    }
+    let initialInteriorSnapshot = captureWorldSnapshot(bot, 20);
+    if (initialInteriorSnapshot.nearbyEntities.length > 0) {
+      initialInteriorSnapshot = await waitForWorldSnapshot(
+        bot,
+        (snapshot) => findNearbyEntityByPosition(snapshot, CITIZEN_ANCHOR) && findNearbyEntityByPosition(snapshot, TROOP_ANCHOR),
+        10_000,
+        "population anchor entities",
+        20
+      );
+      assertions.push("population-anchors-visible");
+    } else {
+      assertions.push("population-anchor-scan-unavailable");
     }
     await delay(1_500);
 
@@ -114,6 +87,11 @@ async function main() {
         initialTroops: 2,
         updatedCitizens: 21,
         updatedTroops: 5
+      },
+      clientSnapshot: {
+        baseline: baseline.snapshot,
+        interiorInitial: initialInteriorSnapshot,
+        final: captureWorldSnapshot(bot, 12)
       },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
@@ -144,3 +122,4 @@ async function main() {
 }
 
 await main();
+

@@ -1,18 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";
@@ -34,11 +24,11 @@ async function main() {
 
   try {
     await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(3_000);
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 12
+    });
+    await delay(2_000);
 
     const lookAttempts = [
       [0, 0, 0],
@@ -73,6 +63,10 @@ async function main() {
       endedAt: new Date().toISOString(),
       assertions,
       pages,
+      clientSnapshot: {
+        baseline: baseline.snapshot,
+        final: captureWorldSnapshot(bot, 12)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     await bot.trace.flush(outputDir);
@@ -102,3 +96,4 @@ async function main() {
 }
 
 await main();
+

@@ -49,6 +49,7 @@ import com.tavall.hytale.resourcegame.services.CastleProximityPromptService;
 import com.tavall.hytale.resourcegame.services.CastleSpawnService;
 import com.tavall.hytale.resourcegame.services.DebugCommandService;
 import com.tavall.hytale.resourcegame.services.InteriorInstanceService;
+import com.tavall.hytale.resourcegame.services.InteriorTourMarkerService;
 import com.tavall.hytale.resourcegame.services.InteriorWorldService;
 import com.tavall.hytale.resourcegame.services.IpHashService;
 import com.tavall.hytale.resourcegame.services.InfrastructureHealthService;
@@ -134,6 +135,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
 
         CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, castleEntityRegistry);
         PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
+        InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(populationDisplayConfig);
         PlayerTeleportService playerTeleportService = new PlayerTeleportService();
         InteriorInstanceService interiorInstanceService = new InteriorInstanceService();
         IpHashService ipHashService = new IpHashService();
@@ -158,6 +160,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 interiorInstanceService,
                 new InteriorLayoutService(),
                 new InteriorStructureService(),
+                interiorTourMarkerService,
                 playerTeleportService,
                 populationDisplayService,
                 uiNavigator
