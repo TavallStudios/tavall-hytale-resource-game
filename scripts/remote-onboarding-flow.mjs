@@ -1,15 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -54,7 +44,7 @@ function sendAction(bot, action) {
 }
 
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";
@@ -78,17 +68,17 @@ async function main() {
 
   try {
     await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(2_000);
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 12
+    });
+    await delay(1_500);
 
     let upgradesSnapshot = await openPageByCommand(
       bot,
       "/kingdom ui upgrades",
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
-        && readSelectorValue(snapshot, "#TutorialStatus.Text") === "First join tip: promote citizens here when Food, Wood, and Iron are ready.",
+        && readSelectorValue(snapshot, "#TutorialStatus.Text") === "Step 1: confirm citizens and troops. Step 2: check the Food, Wood, and Iron cost. Step 3: promote once the route is ready.",
       15_000,
       "first upgrade tutorial"
     );
@@ -124,7 +114,7 @@ async function main() {
       bot,
       "/kingdom ui interior",
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.InteriorMainPage"
-        && readSelectorValue(snapshot, "#TutorialStatus.Text") === "First interior visit: anchor displays show your citizen and troop totals while later stations grow around them.",
+        && readSelectorValue(snapshot, "#TutorialStatus.Text") === "Step 1: follow the tour markers. Step 2: inspect the citizen and troop anchors. Step 3: leave through the exit lane when you are done.",
       20_000,
       "first interior tutorial"
     );
@@ -138,6 +128,10 @@ async function main() {
       endedAt: new Date().toISOString(),
       assertions,
       pages,
+      clientSnapshot: {
+        baseline: baseline.snapshot,
+        final: captureWorldSnapshot(bot, 12)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     await bot.trace.flush(outputDir);
@@ -167,3 +161,4 @@ async function main() {
 }
 
 await main();
+

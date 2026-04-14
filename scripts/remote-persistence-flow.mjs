@@ -1,10 +1,5 @@
-﻿import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 async function waitForSnapshot(bot, predicate, timeoutMs, label) {
   const startedAt = Date.now();
@@ -16,11 +11,6 @@ async function waitForSnapshot(bot, predicate, timeoutMs, label) {
     await delay(150);
   }
   throw new Error(`Timed out waiting for ${label}`);
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
 function readSelectorValue(snapshot, selector) {
@@ -73,7 +63,7 @@ async function openUpgradesAndAssert(bot, expected) {
 }
 
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const mode = process.argv[2] ?? "seed";
@@ -105,13 +95,15 @@ async function main() {
     autoAcknowledgePages: true
   });
 
+  let baselineSnapshot = null;
   try {
     await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(2_000);
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 12
+    });
+    baselineSnapshot = baseline.snapshot;
+    await delay(1_500);
 
     if (mode === "seed") {
       const commands = [
@@ -147,6 +139,10 @@ async function main() {
       assertions,
       pages,
       expected,
+      clientSnapshot: {
+        baseline: baselineSnapshot,
+        final: captureWorldSnapshot(bot, 12)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     await bot.trace.flush(outputDir);
@@ -161,6 +157,10 @@ async function main() {
       assertions,
       pages,
       expected,
+      clientSnapshot: {
+        baseline: baselineSnapshot,
+        final: captureWorldSnapshot(bot, 12)
+      },
       error: error instanceof Error ? error.message : String(error),
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
@@ -177,3 +177,5 @@ async function main() {
 }
 
 await main();
+
+

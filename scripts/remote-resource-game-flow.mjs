@@ -1,38 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForPageOrNull(bot, pageKey, timeoutMs) {
-  try {
-    return await bot.waitForPage(pageKey, timeoutMs);
-  } catch {
-    return null;
-  }
-}
-
-async function waitForPage(bot, timeoutMs) {
-  if (bot.ui.currentPage) {
-    return bot.ui.currentPage;
-  }
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      bot.off("page", onPage);
-      reject(new Error(`Timed out waiting for page after ${timeoutMs}ms`));
-    }, timeoutMs);
-
-    const onPage = (page) => {
-      clearTimeout(timer);
-      bot.off("page", onPage);
-      resolve(page);
-    };
-
-    bot.on("page", onPage);
-  });
-}
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, waitForPageOrNull, writeJson, captureWorldSnapshot, createTraceSession } from "./bot-flow-helpers.mjs";
 
 const PAGE_KEYS = {
   upgrades: "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage",
@@ -40,13 +7,8 @@ const PAGE_KEYS = {
   interior: "com.tavall.hytale.resourcegame.ui.InteriorMainPage"
 };
 
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
-
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";
@@ -67,14 +29,15 @@ async function main() {
     autoConnect: true,
     autoAcknowledgePages: true
   });
+  const trace = createTraceSession(bot, outputDir);
 
   try {
-    await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(2_000);
+    await trace.enable();
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 16
+    });
+    await delay(1_000);
 
     bot.chat("/kingdom resources set wood 80");
     await delay(300);
@@ -114,6 +77,7 @@ async function main() {
     await delay(1_000);
     assertions.push("exited-interior");
 
+    const finalSnapshot = captureWorldSnapshot(bot, 16);
     const result = {
       name: "resource-game-flow",
       success: true,
@@ -123,9 +87,13 @@ async function main() {
       pages,
       commandMessages,
       outputDir,
+      clientSnapshot: {
+        baseline: baseline.snapshot,
+        final: finalSnapshot
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
-    await bot.trace.flush(outputDir);
+    await trace.flush();
     await writeJson(resultPath, result);
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
@@ -142,7 +110,7 @@ async function main() {
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {
-      await bot.trace.flush(outputDir);
+      await trace.flush();
       await writeJson(resultPath, result);
     } catch {
     }
@@ -154,3 +122,5 @@ async function main() {
 }
 
 await main();
+
+

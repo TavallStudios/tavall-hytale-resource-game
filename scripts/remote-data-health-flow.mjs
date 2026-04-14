@@ -1,15 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
+﻿import path from "node:path";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -36,8 +26,14 @@ async function waitForSnapshot(bot, predicate, timeoutMs, label) {
   throw new Error(`Timed out waiting for ${label}`);
 }
 
+function assertInfraValue(selector, actualValue, allowedValues) {
+  if (!allowedValues.includes(actualValue)) {
+    throw new Error(`Unexpected ${selector}: ${actualValue}`);
+  }
+}
+
 async function main() {
-  const clientModuleUrl = pathToFileURL(path.resolve(process.cwd(), "packages/client/dist/index.js")).href;
+  const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
 
   const host = process.argv[2] ?? "127.0.0.1";
@@ -61,23 +57,41 @@ async function main() {
 
   try {
     await bot.trace.enable({ outputDir });
-    await bot.waitForReady(15_000);
-    assertions.push("connected");
-    await bot.waitForWorldActivity(10_000);
-    assertions.push("world-joined");
-    await delay(2_000);
+    const baseline = await ensureBotBaseline(bot, assertions, {
+      username,
+      nearbyRadius: 12
+    });
+    await delay(1_500);
 
     bot.chat("/kd ui");
     const debugSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage"
-        && readSelectorValue(snapshot, "#CacheStatus.Text") === "memory-only (Redis not configured)"
-        && readSelectorValue(snapshot, "#PersistenceStatus.Text") === "in-memory fallback (Postgres not configured)"
-        && readSelectorValue(snapshot, "#InteriorTutorialStatus.Text") === "pending"
-        && readSelectorValue(snapshot, "#UpgradeTutorialStatus.Text") === "pending",
-      10_000,
+        && readSelectorValue(snapshot, "#CacheStatus.Text") != null
+        && readSelectorValue(snapshot, "#PersistenceStatus.Text") != null
+        && readSelectorValue(snapshot, "#InteriorTutorialStatus.Text") != null
+        && readSelectorValue(snapshot, "#InteriorTourStatus.Text") != null
+        && readSelectorValue(snapshot, "#UpgradeTutorialStatus.Text") != null,
+      15_000,
       "debug status snapshot"
     );
+    assertInfraValue("#CacheStatus.Text", readSelectorValue(debugSnapshot, "#CacheStatus.Text"), [
+      "memory-only (Redis not configured)",
+      "memory+redis (connected)"
+    ]);
+    assertInfraValue("#PersistenceStatus.Text", readSelectorValue(debugSnapshot, "#PersistenceStatus.Text"), [
+      "in-memory fallback (Postgres not configured)",
+      "postgres (connected)"
+    ]);
+    if (readSelectorValue(debugSnapshot, "#InteriorTutorialStatus.Text") !== "pending") {
+      throw new Error(`Unexpected interior tutorial status: ${readSelectorValue(debugSnapshot, "#InteriorTutorialStatus.Text")}`);
+    }
+    if (readSelectorValue(debugSnapshot, "#InteriorTourStatus.Text") !== "pending") {
+      throw new Error(`Unexpected interior tour status: ${readSelectorValue(debugSnapshot, "#InteriorTourStatus.Text")}`);
+    }
+    if (readSelectorValue(debugSnapshot, "#UpgradeTutorialStatus.Text") !== "pending") {
+      throw new Error(`Unexpected upgrade tutorial status: ${readSelectorValue(debugSnapshot, "#UpgradeTutorialStatus.Text")}`);
+    }
     pages.push({ key: debugSnapshot.key, snapshot: debugSnapshot });
     assertions.push("debug-health-output");
 
@@ -131,6 +145,10 @@ async function main() {
       endedAt: new Date().toISOString(),
       assertions,
       pages,
+      clientSnapshot: {
+        baseline: baseline.snapshot,
+        final: captureWorldSnapshot(bot, 12)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     await bot.trace.flush(outputDir);
@@ -160,3 +178,4 @@ async function main() {
 }
 
 await main();
+

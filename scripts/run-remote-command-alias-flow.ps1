@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-command-alias-flow.mjs",
@@ -14,6 +14,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
+$helperScriptPath = Join-Path $PSScriptRoot "bot-flow-helpers.mjs"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -86,6 +87,12 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $ScenarioScriptPath,
     ("{0}:{1}" -f $SshAlias, $remoteScriptPath)
 ) | Out-Null
+Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
+    "-F", "C:\Users\TJ\.ssh\config",
+    $helperScriptPath,
+    ("{0}:/tmp/bot-flow-helpers.mjs" -f $SshAlias)
+) | Out-Null
+
 
 Ensure-RemoteQuicBridge `
     -SshAlias $SshAlias `
@@ -133,3 +140,4 @@ $summary = [ordered]@{
 $summary | ConvertTo-Json -Depth 5 | Set-Content -Path $summaryPath -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] Command alias flow passed" -f (Get-Date).ToString("o"))
+

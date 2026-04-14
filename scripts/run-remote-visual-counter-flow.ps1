@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-visual-counter-flow.mjs",
@@ -19,6 +19,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
+$helperScriptPath = Join-Path $PSScriptRoot "bot-flow-helpers.mjs"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -36,7 +37,7 @@ $remoteOutputDir = "/tmp/{0}" -f $baseName
 
 function Write-LogLine {
     param([string]$Message)
-    Add-Content -Path $logPath -Value $Message -Encoding utf8
+    Write-SharedLogLine -Path $logPath -Message $Message
     Write-Host $Message
 }
 
@@ -63,7 +64,7 @@ function Invoke-ProcessCapture {
                 continue
             }
             Get-Content -Path $path | ForEach-Object {
-                Add-Content -Path $logPath -Value $_ -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $_
                 Write-Host $_
             }
         }
@@ -109,13 +110,13 @@ function Invoke-RemoteBash {
 
         foreach ($line in ($stdout -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $logPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $line
                 Write-Host $line
             }
         }
         foreach ($line in ($stderr -split "`r?`n")) {
             if ($line -ne "") {
-                Add-Content -Path $logPath -Value $line -Encoding utf8
+                Write-SharedLogLine -Path $logPath -Message $line
                 Write-Host $line
             }
         }
@@ -171,6 +172,12 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $ScenarioScriptPath,
     ("{0}:{1}" -f $SshAlias, $remoteScriptPath)
 ) | Out-Null
+Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
+    "-F", "C:\Users\TJ\.ssh\config",
+    $helperScriptPath,
+    ("{0}:/tmp/bot-flow-helpers.mjs" -f $SshAlias)
+) | Out-Null
+
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $PluginJarPath,
@@ -251,3 +258,4 @@ $summary = [ordered]@{
 $summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] Visual counter flow passed" -f (Get-Date).ToString("o"))
+

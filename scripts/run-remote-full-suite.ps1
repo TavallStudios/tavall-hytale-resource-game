@@ -27,6 +27,7 @@ $steps = @(
     @{ name = "command-alias"; script = ".\scripts\run-remote-command-alias-flow.ps1" },
     @{ name = "data-health"; script = ".\scripts\run-remote-data-health-flow.ps1" },
     @{ name = "onboarding"; script = ".\scripts\run-remote-onboarding-flow.ps1" },
+    @{ name = "interior-tour"; script = ".\scripts\run-remote-interior-tour-flow.ps1" },
     @{ name = "ui-edge"; script = ".\scripts\run-remote-ui-edge-flow.ps1" },
     @{ name = "visual-counter"; script = ".\scripts\run-remote-visual-counter-flow.ps1" }
 )
@@ -37,6 +38,7 @@ foreach ($step in $steps) {
     if ($LASTEXITCODE -ne 0) {
         throw "Remote suite step failed: $($step.name)"
     }
+    powershell -ExecutionPolicy Bypass -File .\scripts\prune-bot-logs.ps1 -LogDir $LogDir | Out-Null
     $results += [ordered]@{
         name = $step.name
         status = "passed"

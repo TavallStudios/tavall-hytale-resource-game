@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-castle-interaction-flow.mjs",
@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $bridgeSourcePath = Join-Path $PSScriptRoot "HytaleQuicTcpBridge.java"
+$helperScriptPath = Join-Path $PSScriptRoot "bot-flow-helpers.mjs"
 if ([string]::IsNullOrWhiteSpace($LogDir)) {
     $LogDir = Join-Path $repoRoot "bot-logs"
 }
@@ -84,6 +85,12 @@ $copyScriptExit = Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
 if ($copyScriptExit -ne 0) {
     throw "Failed to copy remote castle interaction scenario script"
 }
+Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
+    "-F", "C:\Users\TJ\.ssh\config",
+    $helperScriptPath,
+    ("{0}:/tmp/bot-flow-helpers.mjs" -f $SshAlias)
+) | Out-Null
+
 
 Ensure-RemoteQuicBridge `
     -SshAlias $SshAlias `
@@ -136,3 +143,4 @@ Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath
 Write-LogLine ("[{0}] ExitCode={1}" -f (Get-Date).ToString("o"), $exitCode)
 
 exit $exitCode
+
