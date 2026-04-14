@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
@@ -20,10 +21,16 @@ import java.util.UUID;
 public final class ResourceService implements IResourceService, IDependencyInjectableConcrete {
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
+    private final ICastleSiteVisualService castleSiteVisualService;
 
-    public ResourceService(IPlayerSessionStore sessionStore, IPlayerGameStateService gameStateService) {
+    public ResourceService(
+            IPlayerSessionStore sessionStore,
+            IPlayerGameStateService gameStateService,
+            ICastleSiteVisualService castleSiteVisualService
+    ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
+        this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
     }
 
     public PlayerGameState addResource(UUID playerId, ResourceType type, int amount) {
@@ -60,6 +67,7 @@ public final class ResourceService implements IResourceService, IDependencyInjec
         };
         PlayerGameState updatedState = session.gameState().withResources(updated, Instant.now());
         session.updateGameState(updatedState);
+        castleSiteVisualService.refreshSite(playerId, updatedState);
         gameStateService.cacheState(playerId, updatedState);
         AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, Instant.now()));
         return updatedState;

@@ -15,6 +15,7 @@ import com.tavall.hytale.resourcegame.services.PlayerSession;
 import com.tavall.hytale.resourcegame.services.PlayerSessionStore;
 import com.tavall.hytale.resourcegame.services.PopulationService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
+import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerProfileStore;
 import com.tavall.hytale.resourcegame.support.RecordingPopulationDisplayGateway;
@@ -87,12 +88,14 @@ public final class VerticalSliceServiceTest {
         );
 
         PlayerSessionStore sessionStore = new PlayerSessionStore();
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService);
+        RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
         RecordingPopulationDisplayGateway displayGateway = new RecordingPopulationDisplayGateway();
         PopulationService populationService = new PopulationService(
                 sessionStore,
                 gameStateService,
                 resourceService,
+                castleSiteVisualService,
                 displayGateway,
                 PromotionCost.defaultCost()
         );
@@ -125,6 +128,8 @@ public final class VerticalSliceServiceTest {
         assertEquals(28, finalState.resources().iron());
         assertEquals(14, displayGateway.lastSummary(playerId).citizenCount());
         assertEquals(1, displayGateway.lastSummary(playerId).troopCount());
+        assertEquals(14, castleSiteVisualService.lastState(playerId).populationSummary().citizenCount());
+        assertTrue(castleSiteVisualService.refreshCount(playerId) >= 4, "castle site visuals should refresh on mutations");
 
         TestAwait.until(
                 () -> gameStateStore.snapshot(44L)
@@ -150,11 +155,13 @@ public final class VerticalSliceServiceTest {
         );
 
         PlayerSessionStore sessionStore = new PlayerSessionStore();
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService);
+        RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
         PopulationService populationService = new PopulationService(
                 sessionStore,
                 gameStateService,
                 resourceService,
+                castleSiteVisualService,
                 new RecordingPopulationDisplayGateway(),
                 PromotionCost.defaultCost()
         );

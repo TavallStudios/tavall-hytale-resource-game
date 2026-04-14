@@ -1,8 +1,7 @@
-$C = "../Common.ui";
-
-$C.@PageOverlay {}
-
-$C.@Container {
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
   LayoutMode: Top;
 
   Label { Text: "Resources"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
@@ -11,17 +10,17 @@ $C.@Container {
     LayoutMode: Top;
     Anchor: (Bottom: 16);
 
-    Label { Text: "Food"; Style: $C.@MutedTextStyle; }
+    Label { Text: "Food"; Style: (FontSize: 14, TextColor: #a7b0ba); }
     Label #FoodCount { Style: (FontSize: 22); Anchor: (Bottom: 8); }
 
-    Label { Text: "Wood"; Style: $C.@MutedTextStyle; }
+    Label { Text: "Wood"; Style: (FontSize: 14, TextColor: #a7b0ba); }
     Label #WoodCount { Style: (FontSize: 22); Anchor: (Bottom: 8); }
 
-    Label { Text: "Iron"; Style: $C.@MutedTextStyle; }
+    Label { Text: "Iron"; Style: (FontSize: 14, TextColor: #a7b0ba); }
     Label #IronCount { Style: (FontSize: 22); }
   }
 
-  Label { Text: "Future: storage buildings and production chains."; Style: $C.@MutedTextStyle; Anchor: (Bottom: 16); }
+  Label { Text: "Future: storage buildings, hauling routes, and production chains."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
-  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: $C.@DefaultTextButtonStyle; } }
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); } }
 }

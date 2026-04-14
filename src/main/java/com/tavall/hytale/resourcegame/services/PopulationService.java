@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
@@ -25,6 +26,7 @@ public final class PopulationService implements IPopulationService, IDependencyI
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
     private final IResourceService resourceService;
+    private final ICastleSiteVisualService castleSiteVisualService;
     private final PopulationDisplayGateway displayService;
     private final PromotionCost promotionCost;
 
@@ -32,12 +34,14 @@ public final class PopulationService implements IPopulationService, IDependencyI
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
             IResourceService resourceService,
+            ICastleSiteVisualService castleSiteVisualService,
             PopulationDisplayGateway displayService,
             PromotionCost promotionCost
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.resourceService = Objects.requireNonNull(resourceService, "resourceService");
+        this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.displayService = Objects.requireNonNull(displayService, "displayService");
         this.promotionCost = Objects.requireNonNull(promotionCost, "promotionCost");
     }
@@ -168,6 +172,7 @@ public final class PopulationService implements IPopulationService, IDependencyI
         PlayerGameState updated = session.gameState().withPopulation(updatedSummary, Instant.now());
         session.updateGameState(updated);
         displayService.updateDisplays(playerId, updatedSummary);
+        castleSiteVisualService.refreshSite(playerId, updated);
         gameStateService.cacheState(playerId, updated);
         AsyncTask.runAsync(() -> gameStateService.persistState(updated, Instant.now()));
         return updated;

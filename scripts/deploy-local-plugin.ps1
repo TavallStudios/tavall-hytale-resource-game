@@ -1,5 +1,5 @@
 param(
-    [string]$ServerRoot = "F:\\Games\\Hytale\\install\\release\\package\\game\\latest\\Server",
+    [string]$ServerRoot = "C:\\Users\\TJ\\Documents\\HyTaleDevServer",
     [switch]$Build,
     [string]$JarPath = ""
 )
@@ -15,7 +15,11 @@ if ($Build -or -not (Test-Path $JarPath)) {
     Write-Host "Building plugin jar..."
     Push-Location $repoRoot
     try {
-        $exitCode = (Start-Process -FilePath "mvn.cmd" -ArgumentList @("-DskipTests", "package") -Wait -NoNewWindow -PassThru).ExitCode
+        $mavenCommand = "mvn.cmd"
+        if (-not (Get-Command $mavenCommand -ErrorAction SilentlyContinue)) {
+            $mavenCommand = "C:\Tools\apache-maven-3.9.9\bin\mvn.cmd"
+        }
+        $exitCode = (Start-Process -FilePath $mavenCommand -ArgumentList @("-DskipTests", "package") -Wait -NoNewWindow -PassThru).ExitCode
         if ($exitCode -ne 0) {
             throw "Maven build failed with exit code $exitCode"
         }

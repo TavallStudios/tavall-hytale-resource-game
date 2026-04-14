@@ -14,6 +14,7 @@ import com.tavall.hytale.resourcegame.dependency.IDependencyModule;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
@@ -46,6 +47,7 @@ import com.tavall.hytale.resourcegame.population.PromotionCost;
 import com.tavall.hytale.resourcegame.services.CastleInteractionService;
 import com.tavall.hytale.resourcegame.services.CastlePromptLaneService;
 import com.tavall.hytale.resourcegame.services.CastleProximityPromptService;
+import com.tavall.hytale.resourcegame.services.CastleSiteVisualService;
 import com.tavall.hytale.resourcegame.services.CastleSpawnService;
 import com.tavall.hytale.resourcegame.services.DebugCommandService;
 import com.tavall.hytale.resourcegame.services.InteriorInstanceService;
@@ -76,6 +78,8 @@ import com.tavall.hytale.resourcegame.ui.UiNavigator;
 import com.tavall.hytale.resourcegame.ui.UiPageRegistry;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
+import com.tavall.hytale.resourcegame.world.CastleSiteLayoutService;
+import com.tavall.hytale.resourcegame.world.CastleSiteStructureService;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayoutService;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneStructureService;
 import org.tavall.abstractcache.semantic.SemanticCache;
@@ -132,8 +136,15 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         CastleAssetConfig castleAssetConfig = CastleAssetConfig.defaults();
         PopulationDisplayConfig populationDisplayConfig = PopulationDisplayConfig.defaults();
         InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
+        CastleSiteVisualService castleSiteVisualService = new CastleSiteVisualService(
+                castleEntityRegistry,
+                castleAssetConfig,
+                populationDisplayConfig,
+                new CastleSiteLayoutService(),
+                new CastleSiteStructureService()
+        );
 
-        CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, castleEntityRegistry);
+        CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, castleEntityRegistry, sessionStore, castleSiteVisualService);
         PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
         InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(populationDisplayConfig);
         PlayerTeleportService playerTeleportService = new PlayerTeleportService();
@@ -146,11 +157,12 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         );
         UiPageRegistry pageRegistry = new UiPageRegistry();
         UiNavigator uiNavigator = new UiNavigator(pageRegistry);
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService);
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
         PopulationService populationService = new PopulationService(
                 sessionStore,
                 gameStateService,
                 resourceService,
+                castleSiteVisualService,
                 populationDisplayService,
                 PromotionCost.defaultCost()
         );
@@ -200,6 +212,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IPlayerProfileService.class, profileService);
         registerSingleton(IPlayerGameStateService.class, gameStateService);
         registerSingleton(IPlayerSessionStore.class, sessionStore);
+        registerSingleton(ICastleSiteVisualService.class, castleSiteVisualService);
         registerSingleton(ICastleSpawnService.class, castleSpawnService);
         registerSingleton(PopulationDisplayGateway.class, populationDisplayService);
         registerSingleton(IPlayerTeleportService.class, playerTeleportService);
