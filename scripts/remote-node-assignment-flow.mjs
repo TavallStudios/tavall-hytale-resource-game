@@ -30,6 +30,18 @@ function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
 }
 
+function parseStockValue(snapshot) {
+  const raw = `${readSelectorValue(snapshot, "#StockStatus.Text")}`;
+  const match = raw.match(/^(\d+)\s*\/\s*(\d+)/);
+  if (!match) {
+    return null;
+  }
+  return {
+    current: Number.parseInt(match[1], 10),
+    max: Number.parseInt(match[2], 10)
+  };
+}
+
 async function openNodePage(bot, expected) {
   bot.chat("/kingdom nodes select 1");
   return waitForSnapshot(
@@ -86,7 +98,10 @@ async function main() {
     let snapshot = await openNodePage(bot, {
       "#AssignedTroops.Text": "0",
       "#AvailableTroops.Text": "9",
-      "#GainPerTick.Text": "+0/tick"
+      "#GainPerTick.Text": "+0/tick",
+      "#StockStatus.Text": "180 / 180 (100%)",
+      "#RegenStatus.Text": "+10 / tick",
+      "#RouteStatus.Text": "No supply lane"
     });
     pages.push({ key: snapshot.key, title: null, snapshot });
     assertions.push("node-ui-opened");
@@ -96,7 +111,8 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "3"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "6"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+12/tick",
+        && readSelectorValue(candidate, "#GainPerTick.Text") === "+12/tick"
+        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 1 convoy markers",
       5_000,
       "assign three update"
     );
@@ -107,18 +123,39 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "0"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+36/tick",
+        && readSelectorValue(candidate, "#GainPerTick.Text") === "+36/tick"
+        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
       5_000,
       "assign all update"
     );
     assertions.push("node-assign-all");
+
+    await delay(13_000);
+    bot.chat("/kingdom nodes select 1");
+    snapshot = await waitForSnapshot(
+      bot,
+      (candidate) => {
+        if (candidate.key !== "com.tavall.hytale.resourcegame.ui.ResourceNodePage") {
+          return false;
+        }
+        const stock = parseStockValue(candidate);
+        return readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
+          && stock != null
+          && stock.current < 180
+          && stock.max === 180;
+      },
+      10_000,
+      "node stock drain update"
+    );
+    assertions.push("node-stock-drained");
 
     sendAction(bot, "NodeRecallOne");
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "8"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "1"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+32/tick",
+        && readSelectorValue(candidate, "#GainPerTick.Text") === "+32/tick"
+        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
       5_000,
       "recall one update"
     );
@@ -129,7 +166,8 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "0"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "9"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+0/tick",
+        && readSelectorValue(candidate, "#GainPerTick.Text") === "+0/tick"
+        && readSelectorValue(candidate, "#RouteStatus.Text") === "No supply lane",
       5_000,
       "recall all update"
     );
