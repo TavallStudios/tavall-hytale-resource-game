@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateServ
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -35,6 +36,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
     private final CastleEconomyPlanner planner;
     private final IResourceNodeService resourceNodeService;
     private final IResourceNodeVisualService resourceNodeVisualService;
+    private final IUiNavigator uiNavigator;
     private ScheduledFuture<?> tickTask;
 
     public CastleEconomySimulationService(
@@ -43,7 +45,8 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
             ICastleSiteVisualService castleSiteVisualService,
             CastleEconomyPlanner planner,
             IResourceNodeService resourceNodeService,
-            IResourceNodeVisualService resourceNodeVisualService
+            IResourceNodeVisualService resourceNodeVisualService,
+            IUiNavigator uiNavigator
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
@@ -51,6 +54,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
         this.planner = Objects.requireNonNull(planner, "planner");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
+        this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
     @Override
@@ -101,6 +105,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
         gameStateService.cacheState(session.playerId(), updatedState);
         castleSiteVisualService.refreshSite(session.playerId(), updatedState);
         resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        uiNavigator.refreshTrackedPage(session.playerId(), updatedState);
         PlayerGameState persistedState = updatedState;
         AsyncTask.runAsync(() -> gameStateService.persistState(persistedState, now));
         LOGGER.fine(() -> "Economy tick applied for " + session.playerId());

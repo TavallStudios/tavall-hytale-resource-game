@@ -135,6 +135,11 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         return rewriteMetadata(state, progress.markUpgradeTutorialSeen(), now);
     }
 
+    @Override
+    public PlayerGameState resetOnboardingProgress(PlayerGameState state, Instant now) {
+        return rewriteMetadata(state, OnboardingProgress.defaults(), now);
+    }
+
     private PlayerGameState createDefaultState(long profileId, CastleLocationData spawnLocation, Instant now) {
         PopulationSummary populationSummary = new PopulationSummary(
                 12,

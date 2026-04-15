@@ -5,30 +5,32 @@ import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
-import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
-import com.tavall.hytale.resourcegame.domain.CastleLocationData;
-import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayout;
-import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayoutService;
-import com.tavall.hytale.resourcegame.world.CastlePromptLaneStructureService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodePromptLaneService;
+import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneLayout;
+import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneLayoutService;
+import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneStructureService;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
- * Aligns players onto a safe in-world lane for castle prompt interaction.
+ * Aligns players onto a safe in-world lane for resource-node prompt interaction.
  */
-public final class CastlePromptLaneService implements ICastlePromptLaneService, IDependencyInjectableConcrete {
+public final class ResourceNodePromptLaneService implements IResourceNodePromptLaneService, IDependencyInjectableConcrete {
+    private static final Logger LOGGER = Logger.getLogger(ResourceNodePromptLaneService.class.getName());
     private static final double ALIGNMENT_EPSILON = 0.25D;
     private static final long TELEPORT_DELAY_MILLIS = 750L;
 
-    private final CastlePromptLaneLayoutService layoutService;
-    private final CastlePromptLaneStructureService structureService;
+    private final ResourceNodePromptLaneLayoutService layoutService;
+    private final ResourceNodePromptLaneStructureService structureService;
     private final IPlayerTeleportService playerTeleportService;
 
-    public CastlePromptLaneService(
-            CastlePromptLaneLayoutService layoutService,
-            CastlePromptLaneStructureService structureService,
+    public ResourceNodePromptLaneService(
+            ResourceNodePromptLaneLayoutService layoutService,
+            ResourceNodePromptLaneStructureService structureService,
             IPlayerTeleportService playerTeleportService
     ) {
         this.layoutService = Objects.requireNonNull(layoutService, "layoutService");
@@ -36,12 +38,18 @@ public final class CastlePromptLaneService implements ICastlePromptLaneService, 
         this.playerTeleportService = Objects.requireNonNull(playerTeleportService, "playerTeleportService");
     }
 
-    public void alignPlayer(Player player, CastleLocationData castleLocation) {
-        CastlePromptLaneLayout layout = layoutService.createLayout(castleLocation);
-        Vector3d lookTarget = castleLocation.toVector();
+    @Override
+    public void alignPlayer(Player player, ResourceNodeData node) {
+        ResourceNodePromptLaneLayout layout = layoutService.createLayout(node);
+        Vector3d lookTarget = node.location().toVector();
         player.getWorld().execute(() -> {
             structureService.ensurePromptLane(player.getWorld(), layout);
             Vector3d alignmentPosition = playerTeleportService.standingPosition(player, layout.alignmentPoint());
+            LOGGER.info(() -> "Node prompt lane align for " + player.getUuid()
+                    + " node=" + node.nodeId()
+                    + " origin=" + layout.origin()
+                    + " alignmentBase=" + layout.alignmentPoint()
+                    + " teleport=" + alignmentPosition);
             if (alreadyAligned(player, alignmentPosition)) {
                 playerTeleportService.orientPlayer(player, lookTarget);
                 return;
@@ -65,7 +73,8 @@ public final class CastlePromptLaneService implements ICastlePromptLaneService, 
             return false;
         }
         double dx = currentPosition.getX() - alignmentPosition.getX();
+        double dy = currentPosition.getY() - alignmentPosition.getY();
         double dz = currentPosition.getZ() - alignmentPosition.getZ();
-        return Math.sqrt((dx * dx) + (dz * dz)) <= ALIGNMENT_EPSILON;
+        return Math.sqrt((dx * dx) + (dy * dy) + (dz * dz)) <= ALIGNMENT_EPSILON;
     }
 }

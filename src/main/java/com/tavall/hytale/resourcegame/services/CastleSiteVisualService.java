@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -23,7 +22,6 @@ import com.tavall.hytale.resourcegame.world.CastleSiteLayout;
 import com.tavall.hytale.resourcegame.world.CastleSiteLayoutService;
 import com.tavall.hytale.resourcegame.world.CastleSiteStructureService;
 import com.tavall.hytale.resourcegame.world.CastleSiteVisualRefs;
-import it.unimi.dsi.fastutil.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +43,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
     private final CastleSiteScenePlanner scenePlanner;
     private final CastleSiteLayoutService layoutService;
     private final CastleSiteStructureService structureService;
+    private final NpcVisualSpawner npcVisualSpawner;
     private final Map<UUID, CastleSiteVisualRefs> siteRefs = new ConcurrentHashMap<>();
 
     public CastleSiteVisualService(
@@ -54,7 +53,8 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
             CastleEconomyPlanner planner,
             CastleSiteScenePlanner scenePlanner,
             CastleSiteLayoutService layoutService,
-            CastleSiteStructureService structureService
+            CastleSiteStructureService structureService,
+            NpcVisualSpawner npcVisualSpawner
     ) {
         this.castleEntityRegistry = castleEntityRegistry;
         this.castleAssetConfig = castleAssetConfig;
@@ -63,6 +63,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
         this.scenePlanner = scenePlanner;
         this.layoutService = layoutService;
         this.structureService = structureService;
+        this.npcVisualSpawner = npcVisualSpawner;
     }
 
     @Override
@@ -108,12 +109,16 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                 LOGGER.warning(() -> "Unable to build castle site visuals because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
                 return;
             }
+            int totalStored = state.resources().food() + state.resources().wood() + state.resources().iron();
+            int citizenSceneCount = snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE) + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER);
+            int troopSceneCount = state.populationSummary().troopCount() + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE);
 
             Ref<EntityStore> stockpileAnchorRef = spawnNamed(
                     store,
                     roleIndex,
                     layout.stockpileAnchor(),
-                    scenePlanner.stockpileLabel(state)
+                    scenePlanner.stockpileLabel(state),
+                    scenePlanner.stockpileAnchorScale(totalStored)
             );
             Ref<EntityStore> citizenAnchorRef = spawnNamed(
                     store,
@@ -121,33 +126,54 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                     layout.citizenAnchor(),
                     "Citizen Yard: " + state.populationSummary().citizenCount()
                             + " | Idle " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE)
-                            + " | Builders " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER)
+                            + " | Builders " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER),
+                    scenePlanner.populationAnchorScale(state.populationSummary().citizenCount())
             );
             Ref<EntityStore> troopAnchorRef = spawnNamed(
                     store,
                     roleIndex,
                     layout.troopAnchor(),
                     "Troop Drill: " + state.populationSummary().troopCount()
-                            + " | Trainees " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE)
+                            + " | Trainees " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE),
+                    scenePlanner.populationAnchorScale(troopSceneCount)
             );
-            Ref<EntityStore> foodNodeRef = spawnNamed(store, roleIndex, layout.foodNodeAnchor(), nodeLabel("Food Stores", state.resources().food(), snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)));
-            Ref<EntityStore> woodNodeRef = spawnNamed(store, roleIndex, layout.woodNodeAnchor(), nodeLabel("Wood Camp", state.resources().wood(), snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)));
-            Ref<EntityStore> ironNodeRef = spawnNamed(store, roleIndex, layout.ironNodeAnchor(), nodeLabel("Iron Vein", state.resources().iron(), snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)));
+            Ref<EntityStore> foodNodeRef = spawnNamed(
+                    store,
+                    roleIndex,
+                    layout.foodNodeAnchor(),
+                    nodeLabel("Food Stores", state.resources().food(), snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)),
+                    scenePlanner.nodeAnchorScale(state.resources().food(), snapshot.workersFor(ResourceType.FOOD))
+            );
+            Ref<EntityStore> woodNodeRef = spawnNamed(
+                    store,
+                    roleIndex,
+                    layout.woodNodeAnchor(),
+                    nodeLabel("Wood Camp", state.resources().wood(), snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)),
+                    scenePlanner.nodeAnchorScale(state.resources().wood(), snapshot.workersFor(ResourceType.WOOD))
+            );
+            Ref<EntityStore> ironNodeRef = spawnNamed(
+                    store,
+                    roleIndex,
+                    layout.ironNodeAnchor(),
+                    nodeLabel("Iron Vein", state.resources().iron(), snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)),
+                    scenePlanner.nodeAnchorScale(state.resources().iron(), snapshot.workersFor(ResourceType.IRON))
+            );
 
             List<Ref<EntityStore>> stockpileRefs = spawnCrowd(
                     store,
                     roleIndex,
                     layout.stockpilePositions(),
-                    scenePlanner.visibleStorageCount(state.resources().food() + state.resources().wood() + state.resources().iron())
+                    scenePlanner.visibleStorageCount(totalStored),
+                    scenePlanner.crowdScale(scenePlanner.visibleStorageCount(totalStored))
             );
-            List<Ref<EntityStore>> citizenCrowdRefs = spawnCrowd(store, roleIndex, layout.citizenCrowdPositions(), scenePlanner.visibleWorkerCount(snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE) + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER)));
-            List<Ref<EntityStore>> troopCrowdRefs = spawnCrowd(store, roleIndex, layout.troopCrowdPositions(), scenePlanner.visibleWorkerCount(state.populationSummary().troopCount() + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE)));
-            List<Ref<EntityStore>> foodPileRefs = spawnCrowd(store, roleIndex, layout.foodNodePositions(), scenePlanner.visibleStorageCount(state.resources().food()));
-            List<Ref<EntityStore>> woodPileRefs = spawnCrowd(store, roleIndex, layout.woodNodePositions(), scenePlanner.visibleStorageCount(state.resources().wood()));
-            List<Ref<EntityStore>> ironPileRefs = spawnCrowd(store, roleIndex, layout.ironNodePositions(), scenePlanner.visibleStorageCount(state.resources().iron()));
-            List<Ref<EntityStore>> foodConvoyRefs = spawnCrowd(store, roleIndex, layout.foodConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)));
-            List<Ref<EntityStore>> woodConvoyRefs = spawnCrowd(store, roleIndex, layout.woodConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)));
-            List<Ref<EntityStore>> ironConvoyRefs = spawnCrowd(store, roleIndex, layout.ironConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)));
+            List<Ref<EntityStore>> citizenCrowdRefs = spawnCrowd(store, roleIndex, layout.citizenCrowdPositions(), scenePlanner.visibleWorkerCount(citizenSceneCount), scenePlanner.crowdScale(citizenSceneCount));
+            List<Ref<EntityStore>> troopCrowdRefs = spawnCrowd(store, roleIndex, layout.troopCrowdPositions(), scenePlanner.visibleWorkerCount(troopSceneCount), scenePlanner.crowdScale(troopSceneCount));
+            List<Ref<EntityStore>> foodPileRefs = spawnCrowd(store, roleIndex, layout.foodNodePositions(), scenePlanner.visibleStorageCount(state.resources().food()), scenePlanner.crowdScale(scenePlanner.visibleStorageCount(state.resources().food())));
+            List<Ref<EntityStore>> woodPileRefs = spawnCrowd(store, roleIndex, layout.woodNodePositions(), scenePlanner.visibleStorageCount(state.resources().wood()), scenePlanner.crowdScale(scenePlanner.visibleStorageCount(state.resources().wood())));
+            List<Ref<EntityStore>> ironPileRefs = spawnCrowd(store, roleIndex, layout.ironNodePositions(), scenePlanner.visibleStorageCount(state.resources().iron()), scenePlanner.crowdScale(scenePlanner.visibleStorageCount(state.resources().iron())));
+            List<Ref<EntityStore>> foodConvoyRefs = spawnCrowd(store, roleIndex, layout.foodConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)), scenePlanner.convoyScale(snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)));
+            List<Ref<EntityStore>> woodConvoyRefs = spawnCrowd(store, roleIndex, layout.woodConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)), scenePlanner.convoyScale(snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)));
+            List<Ref<EntityStore>> ironConvoyRefs = spawnCrowd(store, roleIndex, layout.ironConvoyPositions(), scenePlanner.visibleConvoyCount(snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)), scenePlanner.convoyScale(snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)));
 
             siteRefs.put(
                     playerId,
@@ -197,25 +223,12 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
         );
     }
 
-    private Ref<EntityStore> spawnNamed(Store<EntityStore> store, int roleIndex, Vector3d position, String label) {
-        Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, position, Vector3f.ZERO, null, null);
-        Ref<EntityStore> ref = pair.first();
-        if (ref != null && ref.isValid()) {
-            store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(label)));
-        }
-        return ref;
+    private Ref<EntityStore> spawnNamed(Store<EntityStore> store, int roleIndex, Vector3d position, String label, float scale) {
+        return npcVisualSpawner.spawnNamed(store, roleIndex, position, label, scale);
     }
 
-    private List<Ref<EntityStore>> spawnCrowd(Store<EntityStore> store, int roleIndex, List<Vector3d> positions, int visibleCount) {
-        List<Ref<EntityStore>> refs = new ArrayList<>();
-        for (int index = 0; index < visibleCount && index < positions.size(); index++) {
-            Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, positions.get(index), Vector3f.ZERO, null, null);
-            Ref<EntityStore> ref = pair.first();
-            if (ref != null && ref.isValid()) {
-                refs.add(ref);
-            }
-        }
-        return List.copyOf(refs);
+    private List<Ref<EntityStore>> spawnCrowd(Store<EntityStore> store, int roleIndex, List<Vector3d> positions, int visibleCount, float scale) {
+        return npcVisualSpawner.spawnGroup(store, roleIndex, positions, visibleCount, scale);
     }
 
     private String nodeLabel(String label, int stored, int workers, int gainPerTick) {

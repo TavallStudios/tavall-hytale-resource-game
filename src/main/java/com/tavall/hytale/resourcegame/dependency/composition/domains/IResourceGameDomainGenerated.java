@@ -5,7 +5,9 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionSe
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualPulseService;
@@ -34,12 +36,20 @@ public interface IResourceGameDomainGenerated {
         return DependencyLoaderAccess.findInstance(IResourceNodeInteractionService.class);
     }
 
+    default IPlacementInteractionService getPlacementInteractionService() {
+        return DependencyLoaderAccess.findInstance(IPlacementInteractionService.class);
+    }
+
     default IResourceNodeVisualPulseService getResourceNodeVisualPulseService() {
         return DependencyLoaderAccess.findInstance(IResourceNodeVisualPulseService.class);
     }
 
     default IDebugCommandService getDebugCommandService() {
         return DependencyLoaderAccess.findInstance(IDebugCommandService.class);
+    }
+
+    default IInteriorInstanceService getInteriorInstanceService() {
+        return DependencyLoaderAccess.findInstance(IInteriorInstanceService.class);
     }
 
     default IKingdomClockService getKingdomClockService() {

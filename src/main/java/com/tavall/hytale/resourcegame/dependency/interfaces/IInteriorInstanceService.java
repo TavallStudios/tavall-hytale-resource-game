@@ -10,4 +10,8 @@ public interface IInteriorInstanceService extends IDependencyInjectableInterface
     CompletableFuture<World> resolveInteriorWorld(UUID playerId);
 
     String worldNameFor(UUID playerId);
+
+    void releaseInteriorWorld(UUID playerId);
+
+    void pruneTransientWorlds();
 }

@@ -24,7 +24,7 @@ public final class CastleEntityRegistry {
         return castleRefs.get(playerId);
     }
 
-    public void remove(UUID playerId) {
-        castleRefs.remove(playerId);
+    public Ref<EntityStore> remove(UUID playerId) {
+        return castleRefs.remove(playerId);
     }
 }

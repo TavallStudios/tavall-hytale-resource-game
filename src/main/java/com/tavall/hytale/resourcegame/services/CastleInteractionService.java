@@ -44,6 +44,9 @@ public final class CastleInteractionService implements ICastleInteractionService
     }
 
     public void handleInteract(PlayerInteractEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         Player player = event.getPlayer();
         if (!isOwnedCastleTarget(player, event.getTargetRef())) {
             return;

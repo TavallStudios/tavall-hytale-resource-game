@@ -81,4 +81,51 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
         }
         applyTeleport.run();
     }
+
+    public void orientPlayer(Player player, Vector3d lookTarget) {
+        if (lookTarget == null) {
+            return;
+        }
+        Ref<EntityStore> ref = player.getPlayerRef().getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Runnable applyOrientation = () -> {
+            TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
+            if (transform == null || transform.getPosition() == null) {
+                return;
+            }
+            Vector3d currentPosition = transform.getPosition();
+            double dx = lookTarget.getX() - currentPosition.getX();
+            double dy = lookTarget.getY() - currentPosition.getY();
+            double dz = lookTarget.getZ() - currentPosition.getZ();
+            double horizontalDistance = Math.sqrt((dx * dx) + (dz * dz));
+            if (horizontalDistance <= 0.0001D && Math.abs(dy) <= 0.0001D) {
+                return;
+            }
+            float pitch = (float) Math.toDegrees(-Math.atan2(dy, Math.max(horizontalDistance, 0.0001D)));
+            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            float roll = transform.getRotation() == null ? 0.0F : transform.getRotation().getRoll();
+            Vector3f rotation = new Vector3f(pitch, yaw, roll);
+            transform.setRotation(rotation);
+            store.putComponent(ref, TransformComponent.getComponentType(), transform);
+
+            HeadRotation headRotation = store.getComponent(ref, HeadRotation.getComponentType());
+            if (headRotation == null) {
+                headRotation = new HeadRotation(rotation.clone());
+            } else {
+                headRotation.setRotation(rotation.clone());
+            }
+            store.putComponent(ref, HeadRotation.getComponentType(), headRotation);
+        };
+        if (store.getExternalData() instanceof EntityStore entityStore) {
+            World currentWorld = entityStore.getWorld();
+            if (currentWorld != null) {
+                currentWorld.execute(applyOrientation);
+                return;
+            }
+        }
+        applyOrientation.run();
+    }
 }
