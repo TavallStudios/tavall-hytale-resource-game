@@ -9,6 +9,39 @@ Group {
   Label { Text: "Total Citizens"; Style: (FontSize: 14, TextColor: #a7b0ba); }
   Label #CitizenCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
 
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Idle"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #IdleCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Gatherers"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #GathererCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Builders"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #BuilderCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Trainees"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #TraineeCount { Style: (FontSize: 20); }
+    }
+  }
+
   Label { Text: "Future: job assignment, productivity medians, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
   Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); } }
