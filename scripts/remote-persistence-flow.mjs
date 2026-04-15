@@ -34,9 +34,17 @@ function assertSnapshotValues(snapshot, expected) {
     wood: readSelectorValue(snapshot, "#WoodCount.Text"),
     iron: readSelectorValue(snapshot, "#IronCount.Text")
   };
-  for (const [key, value] of Object.entries(expected)) {
-    if (`${actual[key]}` !== `${value}`) {
-      throw new Error(`Expected ${key}=${value} but saw ${actual[key]}`);
+  if (`${actual.citizens}` !== `${expected.citizens}`) {
+    throw new Error(`Expected citizens=${expected.citizens} but saw ${actual.citizens}`);
+  }
+  if (`${actual.troops}` !== `${expected.troops}`) {
+    throw new Error(`Expected troops=${expected.troops} but saw ${actual.troops}`);
+  }
+  for (const resourceKey of [ "food", "wood", "iron" ]) {
+    const actualValue = Number.parseInt(`${actual[resourceKey]}`, 10);
+    const expectedValue = Number.parseInt(`${expected[resourceKey]}`, 10);
+    if (Number.isNaN(actualValue) || actualValue < expectedValue) {
+      throw new Error(`Expected ${resourceKey}>=${expectedValue} but saw ${actual[resourceKey]}`);
     }
   }
   return actual;

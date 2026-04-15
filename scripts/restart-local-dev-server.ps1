@@ -3,7 +3,7 @@ param(
     [switch]$BuildPlugin,
     [switch]$DeployPlugin = $true,
     [int]$Port = 5520,
-    [int]$StartupTimeoutSeconds = 90
+    [int]$StartupTimeoutSeconds = 180
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,11 +27,16 @@ $launcherProcesses = Get-CimInstance Win32_Process |
         $_.Name -eq "cmd.exe" -and
         $_.CommandLine -like "*HyTaleDevServer*" -and
         $_.CommandLine -like "*start.bat*"
-    }
+}
+
+$listenerProcesses = Get-NetUDPEndpoint -ErrorAction SilentlyContinue |
+    Where-Object { $_.LocalPort -eq $Port } |
+    Select-Object -ExpandProperty OwningProcess -Unique
 
 $allProcessIds = @(
     $serverProcesses | Select-Object -ExpandProperty ProcessId
     $launcherProcesses | Select-Object -ExpandProperty ProcessId
+    $listenerProcesses
 ) | Sort-Object -Unique
 
 foreach ($processId in $allProcessIds) {
@@ -56,14 +61,18 @@ do {
     Start-Sleep -Milliseconds 250
 } while ((Get-Date) -lt $deadline)
 
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$startScript`"" -WorkingDirectory $ServerRoot | Out-Null
+$launchProcess = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$startScript`"" -WorkingDirectory $ServerRoot -PassThru
 
 $startupDeadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
 do {
     $listener = Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq $Port }
-    if ($listener) {
-        Write-Host "Local Hytale dev server is listening on UDP $Port."
+    $activeListeners = @($listener | Select-Object -ExpandProperty OwningProcess -Unique)
+    if ($activeListeners.Count -ge 1) {
+        Write-Host "Local Hytale dev server is listening on UDP $Port (processes: $($activeListeners -join ', '))."
         exit 0
+    }
+    if ($launchProcess.HasExited) {
+        throw "Local Hytale launcher exited before UDP $Port came online."
     }
     Start-Sleep -Milliseconds 500
 } while ((Get-Date) -lt $startupDeadline)

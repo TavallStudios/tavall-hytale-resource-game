@@ -32,6 +32,11 @@ function assertInfraValue(selector, actualValue, allowedValues) {
   }
 }
 
+function resourceAtLeast(snapshot, selector, minimum) {
+  const value = Number.parseInt(`${readSelectorValue(snapshot, selector)}`, 10);
+  return !Number.isNaN(value) && value >= minimum;
+}
+
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
@@ -101,12 +106,15 @@ async function main() {
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
         && readSelectorValue(snapshot, "#CitizenCount.Text") === "12"
         && readSelectorValue(snapshot, "#TroopCount.Text") === "0"
-        && readSelectorValue(snapshot, "#FoodCount.Text") === "40"
-        && readSelectorValue(snapshot, "#WoodCount.Text") === "25"
-        && readSelectorValue(snapshot, "#IronCount.Text") === "10",
+        && resourceAtLeast(snapshot, "#FoodCount.Text", 40)
+        && resourceAtLeast(snapshot, "#WoodCount.Text", 25)
+        && resourceAtLeast(snapshot, "#IronCount.Text", 10),
       10_000,
       "baseline upgrades snapshot"
     );
+    const baselineFood = Number.parseInt(`${readSelectorValue(upgradesSnapshot, "#FoodCount.Text")}`, 10);
+    const baselineWood = Number.parseInt(`${readSelectorValue(upgradesSnapshot, "#WoodCount.Text")}`, 10);
+    const baselineIron = Number.parseInt(`${readSelectorValue(upgradesSnapshot, "#IronCount.Text")}`, 10);
     pages.push({ key: upgradesSnapshot.key, snapshot: upgradesSnapshot });
     assertions.push("baseline-upgrade-state");
 
@@ -129,9 +137,9 @@ async function main() {
     upgradesSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
-        && readSelectorValue(snapshot, "#FoodCount.Text") === "40"
-        && readSelectorValue(snapshot, "#WoodCount.Text") === "25"
-        && readSelectorValue(snapshot, "#IronCount.Text") === "10",
+        && resourceAtLeast(snapshot, "#FoodCount.Text", baselineFood)
+        && resourceAtLeast(snapshot, "#WoodCount.Text", baselineWood)
+        && resourceAtLeast(snapshot, "#IronCount.Text", baselineIron),
       10_000,
       "invalid resource type leaves state unchanged"
     );

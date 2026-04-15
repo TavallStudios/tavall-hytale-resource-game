@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.domain;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * JSON-friendly snapshot of population metadata.
@@ -11,19 +12,22 @@ public final class GameStateMetadata {
     private final AgingState agingState;
     private final Map<CitizenJobType, Integer> jobCounts;
     private final OnboardingProgress onboardingProgress;
+    private final List<ResourceNodeData> resourceNodes;
 
     public GameStateMetadata(
             CitizenMetaData citizenMetaData,
             TroopMetaData troopMetaData,
             AgingState agingState,
             Map<CitizenJobType, Integer> jobCounts,
-            OnboardingProgress onboardingProgress
+            OnboardingProgress onboardingProgress,
+            List<ResourceNodeData> resourceNodes
     ) {
         this.citizenMetaData = citizenMetaData;
         this.troopMetaData = troopMetaData;
         this.agingState = agingState;
         this.jobCounts = jobCounts == null ? Map.of() : Map.copyOf(jobCounts);
         this.onboardingProgress = onboardingProgress == null ? OnboardingProgress.defaults() : onboardingProgress;
+        this.resourceNodes = resourceNodes == null ? List.of() : List.copyOf(resourceNodes);
     }
 
     public CitizenMetaData citizenMetaData() {
@@ -46,17 +50,30 @@ public final class GameStateMetadata {
         return onboardingProgress;
     }
 
+    public List<ResourceNodeData> resourceNodes() {
+        return resourceNodes;
+    }
+
     public static GameStateMetadata fromPopulation(PopulationSummary populationSummary) {
-        return fromPopulation(populationSummary, OnboardingProgress.defaults());
+        return fromPopulation(populationSummary, OnboardingProgress.defaults(), List.of());
     }
 
     public static GameStateMetadata fromPopulation(PopulationSummary populationSummary, OnboardingProgress onboardingProgress) {
+        return fromPopulation(populationSummary, onboardingProgress, List.of());
+    }
+
+    public static GameStateMetadata fromPopulation(
+            PopulationSummary populationSummary,
+            OnboardingProgress onboardingProgress,
+            List<ResourceNodeData> resourceNodes
+    ) {
         return new GameStateMetadata(
                 populationSummary.citizenMetaData(),
                 populationSummary.troopMetaData(),
                 populationSummary.agingState(),
                 populationSummary.citizenMetaData().jobCounts(),
-                onboardingProgress
+                onboardingProgress,
+                resourceNodes
         );
     }
 }

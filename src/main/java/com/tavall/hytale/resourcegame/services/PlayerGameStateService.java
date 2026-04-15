@@ -15,6 +15,7 @@ import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PopulationSummary;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
+import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.TroopMetaData;
 import com.tavall.hytale.resourcegame.persistence.PlayerGameStateStore;
 import com.tavall.hytale.resourcegame.persistence.PopulationSummaryDefaults;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -157,8 +159,9 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
     }
 
     private PlayerGameState withMetadata(PlayerGameState state) throws JsonProcessingException {
-        OnboardingProgress progress = metadataOf(state, state.updatedAt() == null ? Instant.now() : state.updatedAt()).onboardingProgress();
-        GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), progress);
+        GameStateMetadata existingMetadata = metadataOf(state, state.updatedAt() == null ? Instant.now() : state.updatedAt());
+        OnboardingProgress progress = existingMetadata.onboardingProgress();
+        GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), progress, existingMetadata.resourceNodes());
         String json = objectMapper.writeValueAsString(metadata);
         return state.withMetadataJson(json, state.updatedAt() == null ? Instant.now() : state.updatedAt());
     }
@@ -174,7 +177,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         PopulationSummary summary = rehydratePopulation(state.populationSummary(), metadata, now);
         PlayerGameState hydrated = state.withPopulation(summary, state.updatedAt() == null ? now : state.updatedAt());
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return rewriteMetadata(hydrated, metadata.onboardingProgress(), now);
+            return rewriteMetadata(hydrated, metadata.onboardingProgress(), metadata.resourceNodes(), now);
         }
         return hydrated;
     }
@@ -200,7 +203,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
 
     private GameStateMetadata metadataOf(PlayerGameState state, Instant now) {
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
         }
         try {
             GameStateMetadata decoded = objectMapper.readValue(state.metadataJson(), GameStateMetadata.class);
@@ -212,17 +215,27 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                     decoded.troopMetaData(),
                     decoded.agingState() == null ? AgingState.defaults(now) : decoded.agingState(),
                     resolveJobCounts(decoded),
-                    onboarding
+                    onboarding,
+                    decoded.resourceNodes()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode game state metadata. Falling back to defaults. " + ex.getMessage());
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
         }
     }
 
     private PlayerGameState rewriteMetadata(PlayerGameState state, OnboardingProgress onboardingProgress, Instant now) {
+        return rewriteMetadata(state, onboardingProgress, metadataOf(state, now).resourceNodes(), now);
+    }
+
+    private PlayerGameState rewriteMetadata(
+            PlayerGameState state,
+            OnboardingProgress onboardingProgress,
+            List<ResourceNodeData> resourceNodes,
+            Instant now
+    ) {
         try {
-            GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), onboardingProgress);
+            GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), onboardingProgress, resourceNodes);
             String json = objectMapper.writeValueAsString(metadata);
             return state.withMetadataJson(json, now);
         } catch (JsonProcessingException ex) {

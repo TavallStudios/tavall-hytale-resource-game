@@ -7,6 +7,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityProm
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 
 /**
  * Generated-domain equivalent for repo-local DI accessors.
@@ -26,6 +27,10 @@ public interface IResourceGameDomainGenerated {
 
     default ICastleEconomySimulationService getCastleEconomySimulationService() {
         return DependencyLoaderAccess.findInstance(ICastleEconomySimulationService.class);
+    }
+
+    default IResourceNodeInteractionService getResourceNodeInteractionService() {
+        return DependencyLoaderAccess.findInstance(IResourceNodeInteractionService.class);
     }
 
     default IDebugCommandService getDebugCommandService() {

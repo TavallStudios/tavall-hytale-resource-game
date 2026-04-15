@@ -6,6 +6,8 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateServ
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PopulationSummary;
@@ -29,6 +31,8 @@ public final class PopulationService implements IPopulationService, IDependencyI
     private final ICastleSiteVisualService castleSiteVisualService;
     private final PopulationDisplayGateway displayService;
     private final PromotionCost promotionCost;
+    private final IResourceNodeService resourceNodeService;
+    private final IResourceNodeVisualService resourceNodeVisualService;
 
     public PopulationService(
             IPlayerSessionStore sessionStore,
@@ -36,7 +40,9 @@ public final class PopulationService implements IPopulationService, IDependencyI
             IResourceService resourceService,
             ICastleSiteVisualService castleSiteVisualService,
             PopulationDisplayGateway displayService,
-            PromotionCost promotionCost
+            PromotionCost promotionCost,
+            IResourceNodeService resourceNodeService,
+            IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
@@ -44,6 +50,8 @@ public final class PopulationService implements IPopulationService, IDependencyI
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.displayService = Objects.requireNonNull(displayService, "displayService");
         this.promotionCost = Objects.requireNonNull(promotionCost, "promotionCost");
+        this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
+        this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
     }
 
     public PlayerGameState addCitizens(UUID playerId, int amount) {
@@ -169,12 +177,16 @@ public final class PopulationService implements IPopulationService, IDependencyI
                 summary.troopMetaData(),
                 summary.agingState()
         );
-        PlayerGameState updated = session.gameState().withPopulation(updatedSummary, Instant.now());
+        Instant now = Instant.now();
+        PlayerGameState updated = session.gameState().withPopulation(updatedSummary, now);
+        updated = resourceNodeService.normalizeAssignments(updated, now);
         session.updateGameState(updated);
         displayService.updateDisplays(playerId, updatedSummary);
         castleSiteVisualService.refreshSite(playerId, updated);
+        resourceNodeVisualService.refreshNodes(playerId, updated);
         gameStateService.cacheState(playerId, updated);
-        AsyncTask.runAsync(() -> gameStateService.persistState(updated, Instant.now()));
+        PlayerGameState persistedState = updated;
+        AsyncTask.runAsync(() -> gameStateService.persistState(persistedState, now));
         return updated;
     }
 }

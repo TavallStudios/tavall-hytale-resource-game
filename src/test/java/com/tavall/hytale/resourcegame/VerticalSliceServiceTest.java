@@ -14,11 +14,13 @@ import com.tavall.hytale.resourcegame.services.PlayerProfileService;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
 import com.tavall.hytale.resourcegame.services.PlayerSessionStore;
 import com.tavall.hytale.resourcegame.services.PopulationService;
+import com.tavall.hytale.resourcegame.services.ResourceNodeService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerProfileStore;
 import com.tavall.hytale.resourcegame.support.RecordingPopulationDisplayGateway;
+import com.tavall.hytale.resourcegame.support.RecordingResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.support.TestAwait;
 import org.junit.jupiter.api.Test;
 import org.tavall.abstractcache.semantic.SemanticCache;
@@ -89,6 +91,8 @@ public final class VerticalSliceServiceTest {
 
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
+        RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
         RecordingPopulationDisplayGateway displayGateway = new RecordingPopulationDisplayGateway();
         PopulationService populationService = new PopulationService(
@@ -97,7 +101,9 @@ public final class VerticalSliceServiceTest {
                 resourceService,
                 castleSiteVisualService,
                 displayGateway,
-                PromotionCost.defaultCost()
+                PromotionCost.defaultCost(),
+                resourceNodeService,
+                resourceNodeVisualService
         );
 
         UUID playerId = UUID.randomUUID();
@@ -156,6 +162,8 @@ public final class VerticalSliceServiceTest {
 
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
+        RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
         PopulationService populationService = new PopulationService(
                 sessionStore,
@@ -163,7 +171,9 @@ public final class VerticalSliceServiceTest {
                 resourceService,
                 castleSiteVisualService,
                 new RecordingPopulationDisplayGateway(),
-                PromotionCost.defaultCost()
+                PromotionCost.defaultCost(),
+                resourceNodeService,
+                resourceNodeVisualService
         );
 
         UUID playerId = UUID.randomUUID();

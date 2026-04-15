@@ -33,6 +33,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getEventRegistry().registerGlobal(PlayerReadyEvent.class, getPlayerDataService()::handlePlayerReady);
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, getPlayerDataService()::handlePlayerDisconnect);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getCastleInteractionService()::handleInteract);
+        getEventRegistry().registerGlobal(PlayerInteractEvent.class, getResourceNodeInteractionService()::handleInteract);
         getCastleProximityPromptService().start();
         getCastleEconomySimulationService().start();
 

@@ -17,10 +17,13 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.InfrastructureHealthSnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
+import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
@@ -28,6 +31,7 @@ import com.tavall.hytale.resourcegame.ui.UiPageType;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +54,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private final IPlayerDataService playerDataService;
     private final IPlayerGameStateService gameStateService;
     private final IInfrastructureHealthService infrastructureHealthService;
+    private final IResourceNodeService resourceNodeService;
+    private final IResourceNodeVisualService resourceNodeVisualService;
 
     public KingdomCommand(
             String name,
@@ -62,7 +68,9 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             ICastlePromptLaneService castlePromptLaneService,
             IPlayerDataService playerDataService,
             IPlayerGameStateService gameStateService,
-            IInfrastructureHealthService infrastructureHealthService
+            IInfrastructureHealthService infrastructureHealthService,
+            IResourceNodeService resourceNodeService,
+            IResourceNodeVisualService resourceNodeVisualService
     ) {
         super(name, "Kingdom debug command");
         this.sessionStore = sessionStore;
@@ -75,6 +83,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         this.playerDataService = playerDataService;
         this.gameStateService = gameStateService;
         this.infrastructureHealthService = infrastructureHealthService;
+        this.resourceNodeService = resourceNodeService;
+        this.resourceNodeVisualService = resourceNodeVisualService;
         addAliases("kd");
         setPermissionGroup(GameMode.Adventure);
         setAllowsExtraArguments(true);
@@ -114,6 +124,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                         case "citizens" -> handleCitizens(context, tokens, player.getUuid());
                         case "troops" -> handleTroops(context, tokens, player.getUuid());
                         case "resources" -> handleResources(context, tokens, player.getUuid());
+                        case "nodes" -> handleNodes(context, player, tokens, session);
                         case "debug" -> sendHelp(context);
                         default -> sendHelp(context);
                     }
@@ -160,6 +171,9 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("Food: " + state.resources().food()).color("yellow"));
         context.sendMessage(Message.raw("Wood: " + state.resources().wood()).color("yellow"));
         context.sendMessage(Message.raw("Iron: " + state.resources().iron()).color("yellow"));
+        context.sendMessage(Message.raw("Nodes: " + resourceNodeService.listNodes(state).size()).color("yellow"));
+        context.sendMessage(Message.raw("Assigned troops: " + resourceNodeService.assignedTroops(state)).color("yellow"));
+        context.sendMessage(Message.raw("Reserve troops: " + resourceNodeService.availableTroops(state)).color("yellow"));
         context.sendMessage(Message.raw("Cache: " + healthSnapshot.cacheSummary()).color("yellow"));
         context.sendMessage(Message.raw("Persistence: " + healthSnapshot.persistenceSummary()).color("yellow"));
         context.sendMessage(Message.raw("Interior tutorial: " + tutorialStatus(gameStateService.isInteriorTutorialPending(state))).color("yellow"));
@@ -255,6 +269,161 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         }
     }
 
+    private void handleNodes(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 2) {
+            context.sendMessage(Message.raw("Usage: /kd nodes place|list|select|assign|add|recall|remove|clear").color("yellow"));
+            return;
+        }
+        String action = tokens.get(1).toLowerCase(Locale.ROOT);
+        switch (action) {
+            case "place" -> handleNodePlacement(context, player, tokens);
+            case "list" -> handleNodeList(context, session.gameState());
+            case "select" -> handleNodeSelect(context, player, tokens, session);
+            case "assign" -> handleNodeAssign(context, tokens, session, false);
+            case "add" -> handleNodeAssign(context, tokens, session, true);
+            case "recall" -> handleNodeRecall(context, tokens, session);
+            case "remove" -> handleNodeRemove(context, tokens, session);
+            case "clear" -> handleNodeClear(context, session);
+            default -> context.sendMessage(Message.raw("Unknown nodes action.").color("red"));
+        }
+    }
+
+    private void handleNodePlacement(CommandContext context, Player player, List<String> tokens) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd nodes place <food|wood|iron>").color("yellow"));
+            return;
+        }
+        ResourceType resourceType = parseResource(tokens.get(2));
+        if (resourceType == null) {
+            context.sendMessage(Message.raw("Unknown resource type.").color("red"));
+            return;
+        }
+        var position = player.getTransformComponent().getPosition();
+        PlayerGameState updatedState = resourceNodeService.placeNode(
+                player.getUuid(),
+                resourceType,
+                player.getWorld().getName(),
+                position,
+                java.time.Instant.now()
+        );
+        if (updatedState == null) {
+            context.sendMessage(Message.raw("Unable to place node.").color("red"));
+            return;
+        }
+        resourceNodeVisualService.refreshNodes(player.getUuid(), updatedState);
+        ResourceNodeData latestNode = resourceNodeService.listNodes(updatedState).getLast();
+        context.sendMessage(Message.raw("Placed " + resourceType + " node #" + resourceNodeService.listNodes(updatedState).size() + " " + latestNode.nodeId().toString().substring(0, 8)).color("green"));
+    }
+
+    private void handleNodeList(CommandContext context, PlayerGameState state) {
+        List<ResourceNodeData> nodes = resourceNodeService.listNodes(state);
+        if (nodes.isEmpty()) {
+            context.sendMessage(Message.raw("No placed nodes. Use /kd nodes place <type>.").color("yellow"));
+            return;
+        }
+        for (int index = 0; index < nodes.size(); index++) {
+            context.sendMessage(Message.raw(resourceNodeService.summaryLine(state, nodes.get(index), index + 1)).color("yellow"));
+        }
+    }
+
+    private void handleNodeSelect(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd nodes select <index|node_id_prefix>").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resourceNodeService.resolveNode(session.gameState(), tokens.get(2));
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node not found.").color("red"));
+            return;
+        }
+        uiNavigator.open(
+                UiPageType.RESOURCE_NODE_DETAIL,
+                player,
+                new UiNavigationContext(player.getUuid(), player.getDisplayName()).withSelectedNodeId(node.get().nodeId()),
+                session.gameState()
+        );
+    }
+
+    private void handleNodeAssign(CommandContext context, List<String> tokens, PlayerSession session, boolean deltaMode) {
+        if (tokens.size() < 4) {
+            context.sendMessage(Message.raw(deltaMode ? "Usage: /kd nodes add <index|node_id_prefix> <amount>" : "Usage: /kd nodes assign <index|node_id_prefix> <amount>").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resourceNodeService.resolveNode(session.gameState(), tokens.get(2));
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node not found.").color("red"));
+            return;
+        }
+        OptionalInt amount = parseAmount(tokens.get(3));
+        if (amount.isEmpty()) {
+            context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+            return;
+        }
+        PlayerGameState updatedState = deltaMode
+                ? resourceNodeService.addTroops(session.playerId(), node.get().nodeId(), amount.getAsInt(), java.time.Instant.now())
+                : resourceNodeService.assignTroops(session.playerId(), node.get().nodeId(), amount.getAsInt(), java.time.Instant.now());
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        sendNodeSummary(context, updatedState, node.get().nodeId());
+    }
+
+    private void handleNodeRecall(CommandContext context, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd nodes recall <index|node_id_prefix> [amount|all]").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resourceNodeService.resolveNode(session.gameState(), tokens.get(2));
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node not found.").color("red"));
+            return;
+        }
+        PlayerGameState updatedState;
+        if (tokens.size() >= 4 && "all".equalsIgnoreCase(tokens.get(3))) {
+            updatedState = resourceNodeService.assignTroops(session.playerId(), node.get().nodeId(), 0, java.time.Instant.now());
+        } else if (tokens.size() >= 4) {
+            OptionalInt amount = parseAmount(tokens.get(3));
+            if (amount.isEmpty()) {
+                context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+                return;
+            }
+            updatedState = resourceNodeService.addTroops(session.playerId(), node.get().nodeId(), -amount.getAsInt(), java.time.Instant.now());
+        } else {
+            updatedState = resourceNodeService.addTroops(session.playerId(), node.get().nodeId(), -1, java.time.Instant.now());
+        }
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        sendNodeSummary(context, updatedState, node.get().nodeId());
+    }
+
+    private void handleNodeRemove(CommandContext context, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd nodes remove <index|node_id_prefix>").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resourceNodeService.resolveNode(session.gameState(), tokens.get(2));
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node not found.").color("red"));
+            return;
+        }
+        PlayerGameState updatedState = resourceNodeService.removeNode(session.playerId(), node.get().nodeId(), java.time.Instant.now());
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        context.sendMessage(Message.raw("Removed node " + node.get().nodeId().toString().substring(0, 8) + ".").color("green"));
+    }
+
+    private void handleNodeClear(CommandContext context, PlayerSession session) {
+        PlayerGameState updatedState = resourceNodeService.clearNodes(session.playerId(), java.time.Instant.now());
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        context.sendMessage(Message.raw("Cleared all placed nodes.").color("green"));
+    }
+
+    private void sendNodeSummary(CommandContext context, PlayerGameState state, UUID nodeId) {
+        Optional<ResourceNodeData> node = resourceNodeService.findNode(state, nodeId);
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node updated.").color("green"));
+            return;
+        }
+        int index = resourceNodeService.listNodes(state).indexOf(node.get()) + 1;
+        context.sendMessage(Message.raw(resourceNodeService.summaryLine(state, node.get(), index)).color("green"));
+    }
+
     private void sendHelp(CommandContext context) {
         context.sendMessage(Message.raw("/kingdom, /kd help:").color("yellow"));
         context.sendMessage(Message.raw("/kd ui [ui_type]").color("yellow"));
@@ -264,6 +433,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd citizens add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd troops add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd resources add|set <type> <amount>").color("yellow"));
+        context.sendMessage(Message.raw("/kd nodes place|list|select|assign|add|recall|remove|clear").color("yellow"));
     }
 
     private Executor resolveCommandExecutor(Player player) {
