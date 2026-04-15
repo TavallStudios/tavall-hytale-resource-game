@@ -33,11 +33,13 @@ public final class CastleEconomySimulationServiceTest {
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService visualService = new RecordingCastleSiteVisualService();
         CastleEconomyPlanner planner = new CastleEconomyPlanner();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         CastleEconomySimulationService simulationService = new CastleEconomySimulationService(
                 sessionStore,
                 gameStateService,
                 visualService,
-                planner
+                planner,
+                resourceNodeService
         );
 
         UUID playerId = UUID.randomUUID();
