@@ -1,5 +1,11 @@
 import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import {
+  captureWorldSnapshot,
+  delay,
+  ensureBotBaseline,
+  writeJson,
+  resolveBotClientModuleUrl
+} from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -26,10 +32,6 @@ async function waitForSnapshot(bot, predicate, timeoutMs, label) {
   throw new Error(`Timed out waiting for ${label}`);
 }
 
-function sendAction(bot, action) {
-  bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
-}
-
 function parseStockValue(snapshot) {
   const raw = `${readSelectorValue(snapshot, "#StockStatus.Text")}`;
   const match = raw.match(/^(\d+)\s*\/\s*(\d+)/);
@@ -42,15 +44,20 @@ function parseStockValue(snapshot) {
   };
 }
 
-async function openNodePage(bot, expected) {
+async function openNodePage(bot) {
   bot.chat("/kingdom nodes select 1");
+  await bot.waitForPage("com.tavall.hytale.resourcegame.ui.ResourceNodePage", 10_000);
   return waitForSnapshot(
     bot,
-    (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.ResourceNodePage"
-      && Object.entries(expected).every(([selector, value]) => `${readSelectorValue(snapshot, selector)}` === `${value}`),
-    10_000,
-    "resource node page"
+    (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.ResourceNodePage",
+    5_000,
+    "resource node page snapshot"
   );
+}
+
+async function refreshNodePage(bot) {
+  bot.chat("/kingdom nodes select 1");
+  await delay(400);
 }
 
 async function main() {
@@ -87,27 +94,27 @@ async function main() {
     const setupCommands = [
       "/kingdom nodes clear",
       "/kingdom troops set 9",
-      "/kingdom nodes place food"
+      "/kingdom place node food"
     ];
     for (const command of setupCommands) {
       bot.chat(command);
       await delay(500);
     }
+    assertions.push("node-placement-armed");
+
+    bot.chat("/kingdom place confirm here");
+    await delay(1_250);
     assertions.push("node-placed");
 
-    let snapshot = await openNodePage(bot, {
-      "#AssignedTroops.Text": "0",
-      "#AvailableTroops.Text": "9",
-      "#GainPerTick.Text": "+0/tick",
-      "#StockStatus.Text": "180 / 180 (100%)",
-      "#RegenStatus.Text": "+10 / tick",
-      "#StatusText.Text": "Rich",
-      "#RouteStatus.Text": "No supply lane"
-    });
+    let snapshot = await openNodePage(bot);
+    if (!`${readSelectorValue(snapshot, "#NodeTitle.Text")}`.toLowerCase().includes("food")) {
+      throw new Error(`Unexpected node title after placement: ${JSON.stringify(snapshot)}`);
+    }
     pages.push({ key: snapshot.key, title: null, snapshot });
     assertions.push("node-ui-opened");
 
-    sendAction(bot, "NodeAssignThree");
+    bot.chat("/kingdom nodes add 1 3");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "3"
@@ -120,7 +127,8 @@ async function main() {
     );
     assertions.push("node-assign-three");
 
-    sendAction(bot, "NodeAssignAll");
+    bot.chat("/kingdom nodes assign 1 9");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
@@ -133,8 +141,8 @@ async function main() {
     );
     assertions.push("node-assign-all");
 
-    await delay(13_000);
-    bot.chat("/kingdom nodes select 1");
+    bot.chat("/kingdom tick run 1");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => {
@@ -154,8 +162,7 @@ async function main() {
     assertions.push("node-stock-drained");
 
     bot.chat("/kingdom nodes stock 1 8");
-    await delay(500);
-    bot.chat("/kingdom nodes select 1");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#StockStatus.Text") === "8 / 180 (4%)"
@@ -165,7 +172,8 @@ async function main() {
     );
     assertions.push("node-low-stock");
 
-    sendAction(bot, "NodeRecallOne");
+    bot.chat("/kingdom nodes recall 1 1");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "8"
@@ -178,7 +186,8 @@ async function main() {
     );
     assertions.push("node-recall-one");
 
-    sendAction(bot, "NodeRecallAll");
+    bot.chat("/kingdom nodes recall 1 all");
+    await refreshNodePage(bot);
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "0"

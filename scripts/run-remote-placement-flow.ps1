@@ -1,7 +1,7 @@
 param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
-    [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-visual-counter-flow.mjs",
+    [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-placement-flow.mjs",
     [string]$PluginJarPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/target/tavall-hytale-resource-game.jar",
     [string]$RemotePluginJarPath = "/srv/hytale-startup-patch-test/Server/mods/tavall-hytale-resource-game.jar",
     [string]$ServerRoot = "/srv/hytale-startup-patch-test",
@@ -9,8 +9,8 @@ param(
     [string]$AuthMode = "OFFLINE",
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5522,
-    [string]$Username = "VisualCounterBot",
-    [string]$StableUuid = "223e4567-e89b-12d3-a456-426614174000",
+    [string]$Username = "PlacementBot",
+    [string]$StableUuid = "723e4567-e89b-12d3-a456-426614174000",
     [string]$LogDir = ""
 )
 
@@ -26,18 +26,17 @@ if ([string]::IsNullOrWhiteSpace($LogDir)) {
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$baseName = "remote-visual-counter-flow-{0}" -f $timestamp
+$baseName = "remote-placement-flow-{0}" -f $timestamp
 $logPath = Join-Path $LogDir ($baseName + ".log")
 $summaryPath = Join-Path $LogDir ($baseName + ".json")
 $resultPath = Join-Path $LogDir ($baseName + "-scenario-result.json")
 $tracePath = Join-Path $LogDir ($baseName + "-transcript.json")
-$serverLogPathFile = Join-Path $LogDir ($baseName + "-server-log.txt")
 $remoteScriptPath = "/tmp/{0}.mjs" -f $baseName
 $remoteOutputDir = "/tmp/{0}" -f $baseName
 
 function Write-LogLine {
     param([string]$Message)
-    Write-SharedLogLine -Path $logPath -Message $Message
+    Add-Content -Path $logPath -Value $Message -Encoding utf8
     Write-Host $Message
 }
 
@@ -64,7 +63,7 @@ function Invoke-ProcessCapture {
                 continue
             }
             Get-Content -Path $path | ForEach-Object {
-                Write-SharedLogLine -Path $logPath -Message $_
+                Add-Content -Path $logPath -Value $_ -Encoding utf8
                 Write-Host $_
             }
         }
@@ -110,13 +109,13 @@ function Invoke-RemoteBash {
 
         foreach ($line in ($stdout -split "`r?`n")) {
             if ($line -ne "") {
-                Write-SharedLogLine -Path $logPath -Message $line
+                Add-Content -Path $logPath -Value $line -Encoding utf8
                 Write-Host $line
             }
         }
         foreach ($line in ($stderr -split "`r?`n")) {
             if ($line -ne "") {
-                Write-SharedLogLine -Path $logPath -Message $line
+                Add-Content -Path $logPath -Value $line -Encoding utf8
                 Write-Host $line
             }
         }
@@ -150,7 +149,7 @@ nohup ./start.sh --transport {2} --auth-mode {3} --allow-op --bind 0.0.0.0:{0} >
 }
 
 $startedAt = (Get-Date).ToString("o")
-Write-LogLine ("[{0}] Starting remote visual counter flow" -f $startedAt)
+Write-LogLine ("[{0}] Starting remote placement flow" -f $startedAt)
 Write-LogLine ("[{0}] SSH alias={1}" -f (Get-Date).ToString("o"), $SshAlias)
 Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHost, $Port)
 Write-LogLine ("[{0}] StableUuid={1}" -f (Get-Date).ToString("o"), $StableUuid)
@@ -165,7 +164,6 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $helperScriptPath,
     ("{0}:/tmp/bot-flow-helpers.mjs" -f $SshAlias)
 ) | Out-Null
-
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $PluginJarPath,
@@ -190,7 +188,7 @@ $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
     $remoteCommand
 ) -AllowFailure
 if ($exitCode -ne 0) {
-    throw "Remote visual counter scenario failed"
+    throw "Remote placement scenario failed"
 }
 
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
@@ -203,30 +201,6 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     ("{0}:{1}/transcript.json" -f $SshAlias, $remoteOutputDir),
     $tracePath
 ) | Out-Null
-
-$serverLogPathScript = @'
-set -e
-ls -1t {0}/Server/logs/*_server.log | head -n 1
-'@ -f $ServerRoot
-$serverLogPath = Invoke-RemoteBash -Script $serverLogPathScript
-Set-Content -Path $serverLogPathFile -Value $serverLogPath -Encoding utf8
-
-$displayEvidenceScript = @'
-set -e
-log_file=$(ls -1t {0}/Server/logs/*_server.log | head -n 1)
-grep -n '{1}\|Population displays ready\|Population displays updated' "$log_file" | tail -n 120
-'@ -f $ServerRoot, $StableUuid
-$displayEvidence = Invoke-RemoteBash -Script $displayEvidenceScript
-
-if ($displayEvidence -notmatch "Population displays ready for $StableUuid.*citizens=8 troops=2") {
-    throw "Initial interior population display evidence not found in server log."
-}
-if ($displayEvidence -notmatch "Population displays updated for $StableUuid\. citizens=21 troops=2") {
-    throw "Citizen display update evidence not found in server log."
-}
-if ($displayEvidence -notmatch "Population displays updated for $StableUuid\. citizens=21 troops=5") {
-    throw "Troop display update evidence not found in server log."
-}
 
 Minimize-TranscriptArtifact -Path $tracePath
 
@@ -242,10 +216,8 @@ $summary = [ordered]@{
     logPath = $logPath
     scenarioResultPath = $resultPath
     transcriptPath = $tracePath
-    serverLogPath = $serverLogPathFile
 }
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+$summary | ConvertTo-Json -Depth 5 | Set-Content -Path $summaryPath -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
-Write-LogLine ("[{0}] Visual counter flow passed" -f (Get-Date).ToString("o"))
-
+Write-LogLine ("[{0}] Placement flow passed" -f (Get-Date).ToString("o"))

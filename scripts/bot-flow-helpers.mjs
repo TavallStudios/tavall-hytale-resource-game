@@ -39,6 +39,60 @@ export async function writeJson(filePath, value) {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+export async function waitForServerMessage(bot, predicate, timeoutMs, label) {
+  return bot.waitForServerMessageMatching(predicate, timeoutMs, label);
+}
+
+export async function aimAtGround(bot, yaw = 0, pitch = 70, roll = 0, settleDelayMs = 500) {
+  bot.look(yaw, pitch, roll);
+  if (settleDelayMs > 0) {
+    await delay(settleDelayMs);
+  }
+}
+
+export async function focusTargetWithSweep(bot, options) {
+  const {
+    command = "/kingdom focus",
+    expectedText,
+    label = "focus target",
+    timeoutPerAttemptMs = 1_250,
+    settleDelayMs = 350,
+    attempts = [
+      { yaw: 0, pitch: 0, roll: 0 },
+      { yaw: 45, pitch: 0, roll: 0 },
+      { yaw: 90, pitch: 0, roll: 0 },
+      { yaw: 135, pitch: 0, roll: 0 },
+      { yaw: 180, pitch: 0, roll: 0 },
+      { yaw: -135, pitch: 0, roll: 0 },
+      { yaw: -90, pitch: 0, roll: 0 },
+      { yaw: -45, pitch: 0, roll: 0 },
+      { yaw: 0, pitch: -12, roll: 0 },
+      { yaw: 180, pitch: -12, roll: 0 },
+      { yaw: 90, pitch: -12, roll: 0 },
+      { yaw: -90, pitch: -12, roll: 0 }
+    ]
+  } = options;
+
+  const normalizedExpected = expectedText.toLowerCase();
+  for (const attempt of attempts) {
+    bot.look(attempt.yaw, attempt.pitch, attempt.roll ?? 0);
+    await delay(settleDelayMs);
+    bot.chat(command);
+    try {
+      await waitForServerMessage(
+        bot,
+        (message) => message.toLowerCase().includes(normalizedExpected),
+        timeoutPerAttemptMs,
+        label
+      );
+      return attempt;
+    } catch {
+    }
+  }
+
+  throw new Error(`Unable to focus ${label}`);
+}
+
 export function createTraceSession(bot, outputDir) {
   const mode = (process.env.RESOURCE_GAME_BOT_TRACE ?? "compact").toLowerCase();
   const enabled = mode === "full" || mode === "trace" || mode === "debug";
@@ -75,7 +129,7 @@ export async function waitForPageOrNull(bot, pageKey, timeoutMs) {
 
 export function captureWorldSnapshot(bot, nearbyRadius = 12) {
   if (typeof bot.getWorldSnapshot === "function") {
-    return captureWorldSnapshot(bot, nearbyRadius);
+    return bot.getWorldSnapshot(nearbyRadius);
   }
 
   const self = typeof bot.getSelfEntity === "function" ? bot.getSelfEntity() : null;

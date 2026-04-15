@@ -120,7 +120,7 @@ async function main() {
       nearbyRadius: 12
     });
     baselineSnapshot = baseline.snapshot;
-    await delay(3_000);
+    await delay(750);
 
     if (mode === "seed") {
       const commands = [

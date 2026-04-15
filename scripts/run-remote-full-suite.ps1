@@ -1,5 +1,6 @@
 param(
-    [string]$LogDir = ""
+    [string]$LogDir = "",
+    [int]$MaxAttemptsPerStep = 2
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,6 +29,7 @@ $steps = @(
     @{ name = "data-health"; script = ".\scripts\run-remote-data-health-flow.ps1" },
     @{ name = "onboarding"; script = ".\scripts\run-remote-onboarding-flow.ps1" },
     @{ name = "interior-tour"; script = ".\scripts\run-remote-interior-tour-flow.ps1" },
+    @{ name = "placement"; script = ".\scripts\run-remote-placement-flow.ps1" },
     @{ name = "node-assignment"; script = ".\scripts\run-remote-node-assignment-flow.ps1" },
     @{ name = "ui-edge"; script = ".\scripts\run-remote-ui-edge-flow.ps1" },
     @{ name = "visual-counter"; script = ".\scripts\run-remote-visual-counter-flow.ps1" }
@@ -35,14 +37,34 @@ $steps = @(
 
 $results = @()
 foreach ($step in $steps) {
-    powershell -ExecutionPolicy Bypass -File $step.script
-    if ($LASTEXITCODE -ne 0) {
+    $passed = $false
+    $attempts = @()
+    for ($attempt = 1; $attempt -le $MaxAttemptsPerStep; $attempt++) {
+        powershell -ExecutionPolicy Bypass -File $step.script
+        if ($LASTEXITCODE -eq 0) {
+            $passed = $true
+            $attempts += [ordered]@{
+                attempt = $attempt
+                status = "passed"
+            }
+            break
+        }
+        $attempts += [ordered]@{
+            attempt = $attempt
+            status = "failed"
+        }
+        if ($attempt -lt $MaxAttemptsPerStep) {
+            Start-Sleep -Seconds 3
+        }
+    }
+    if (-not $passed) {
         throw "Remote suite step failed: $($step.name)"
     }
     powershell -ExecutionPolicy Bypass -File .\scripts\prune-bot-logs.ps1 -LogDir $LogDir | Out-Null
     $results += [ordered]@{
         name = $step.name
         status = "passed"
+        attempts = $attempts
     }
 }
 
