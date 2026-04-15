@@ -18,7 +18,6 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualS
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
-import com.tavall.hytale.resourcegame.world.VectorMath;
 import com.tavall.hytale.resourcegame.world.ResourceNodeStructureService;
 import com.tavall.hytale.resourcegame.world.ResourceNodeVisualRefs;
 import it.unimi.dsi.fastutil.Pair;
@@ -30,6 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.time.Instant;
 
 /**
  * Builds readable world-space visuals for placed gather nodes.
@@ -42,16 +42,19 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
     private final PopulationDisplayConfig displayConfig;
     private final IResourceNodeService resourceNodeService;
     private final ResourceNodeStructureService structureService;
+    private final ResourceNodeRoutePlanner routePlanner;
     private final Map<UUID, Map<UUID, ResourceNodeVisualRefs>> nodeRefs = new ConcurrentHashMap<>();
 
     public ResourceNodeVisualService(
             PopulationDisplayConfig displayConfig,
             IResourceNodeService resourceNodeService,
-            ResourceNodeStructureService structureService
+            ResourceNodeStructureService structureService,
+            ResourceNodeRoutePlanner routePlanner
     ) {
         this.displayConfig = displayConfig;
         this.resourceNodeService = resourceNodeService;
         this.structureService = structureService;
+        this.routePlanner = routePlanner;
     }
 
     @Override
@@ -116,12 +119,13 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                     LOGGER.warning(() -> "Unable to build resource node visuals because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
                     return;
                 }
-                structureService.ensureNodeSite(world, new Vector3d(node.x(), node.y(), node.z()));
+                Instant refreshTime = Instant.now();
                 ResourceNodeSummary summary = resourceNodeService.summary(state, node);
+                structureService.ensureNodeSite(world, node, summary);
                 Ref<EntityStore> anchorRef = spawnNamed(store, roleIndex, new Vector3d(node.x(), node.y(), node.z()), anchorLabel(node, summary));
                 List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops());
                 Ref<EntityStore> routeAnchorRef = spawnRouteAnchor(store, roleIndex, state, node, summary);
-                List<Ref<EntityStore>> routeRefs = spawnRouteMarkers(store, roleIndex, state, node, summary.visibleRouteCount());
+                List<Ref<EntityStore>> routeRefs = spawnRouteMarkers(store, roleIndex, state, summary, refreshTime);
                 rebuiltRefs.put(node.nodeId(), new ResourceNodeVisualRefs(anchorRef, routeAnchorRef, workerRefs, routeRefs));
             });
         }
@@ -163,12 +167,12 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         }
         Vector3d castlePosition = new Vector3d(state.castleLocation().x(), state.castleLocation().y() + 1.0, state.castleLocation().z());
         Vector3d nodePosition = new Vector3d(node.x(), node.y(), node.z());
-        Vector3d midpoint = interpolate(castlePosition, nodePosition, 0.5);
+        Vector3d midpoint = midpoint(castlePosition, nodePosition);
         return spawnNamed(
                 store,
                 roleIndex,
                 midpoint,
-                "Supply Lane | Convoys " + summary.visibleRouteCount() + " | Stock " + summary.stockPercent() + "%"
+                "Supply Lane | Convoys " + summary.visibleRouteCount() + " | " + summary.stockStatus()
         );
     }
 
@@ -176,19 +180,15 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
             Store<EntityStore> store,
             int roleIndex,
             PlayerGameState state,
-            ResourceNodeData node,
-            int routeCount
+            ResourceNodeSummary summary,
+            Instant now
     ) {
-        if (state.castleLocation() == null || routeCount <= 0) {
+        if (state.castleLocation() == null || summary.visibleRouteCount() <= 0) {
             return List.of();
         }
-        Vector3d castlePosition = new Vector3d(state.castleLocation().x(), state.castleLocation().y() + 1.0, state.castleLocation().z());
-        Vector3d nodePosition = new Vector3d(node.x(), node.y(), node.z());
-        int visibleCount = Math.min(MAX_ROUTE_MARKERS, routeCount);
         List<Ref<EntityStore>> refs = new ArrayList<>();
-        for (int index = 0; index < visibleCount; index++) {
-            double progress = (index + 1.0) / (visibleCount + 1.0);
-            Vector3d routePosition = interpolate(castlePosition, nodePosition, progress);
+        List<Vector3d> positions = routePlanner.routePositions(state.castleLocation(), summary, now, MAX_ROUTE_MARKERS);
+        for (Vector3d routePosition : positions) {
             Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, routePosition, Vector3f.ZERO, null, null);
             Ref<EntityStore> ref = pair.first();
             if (ref != null && ref.isValid()) {
@@ -212,26 +212,20 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         );
     }
 
+    private Vector3d midpoint(Vector3d start, Vector3d end) {
+        return new Vector3d(
+                (start.getX() + end.getX()) / 2.0,
+                (start.getY() + end.getY()) / 2.0,
+                (start.getZ() + end.getZ()) / 2.0
+        );
+    }
+
     private String anchorLabel(ResourceNodeData node, ResourceNodeSummary summary) {
         return node.resourceType()
                 + " Node | Sent " + summary.assignedTroops()
                 + " | Stock " + summary.currentStock() + "/" + summary.maxStock()
                 + " (" + summary.stockPercent() + "%)"
+                + " " + summary.stockStatus()
                 + " | +" + summary.gainPerTick() + "/tick";
-    }
-
-    private Vector3d interpolate(Vector3d start, Vector3d end, double progress) {
-        Vector3d direction = new Vector3d(end.getX() - start.getX(), end.getY() - start.getY(), end.getZ() - start.getZ());
-        Vector3d normalizedDirection = VectorMath.normalize(direction);
-        double distance = Math.sqrt(
-                direction.getX() * direction.getX()
-                        + direction.getY() * direction.getY()
-                        + direction.getZ() * direction.getZ()
-        );
-        return new Vector3d(
-                start.getX() + normalizedDirection.getX() * distance * progress,
-                start.getY() + normalizedDirection.getY() * distance * progress,
-                start.getZ() + normalizedDirection.getZ() * distance * progress
-        );
     }
 }

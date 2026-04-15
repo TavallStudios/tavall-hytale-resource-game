@@ -32,4 +32,9 @@ public final class VectorMath {
         }
         return new Vector3d(value.getX() / length, value.getY() / length, value.getZ() / length);
     }
+
+    public static Vector3d perpendicularFlat(Vector3d value) {
+        Vector3d flattened = new Vector3d(-value.getZ(), 0, value.getX());
+        return normalize(flattened);
+    }
 }

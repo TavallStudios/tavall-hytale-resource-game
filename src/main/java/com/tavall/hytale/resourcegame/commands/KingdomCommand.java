@@ -271,7 +271,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
 
     private void handleNodes(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd nodes place|list|select|assign|add|recall|remove|clear").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd nodes place|list|select|assign|add|stock|recall|remove|clear").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
@@ -281,6 +281,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             case "select" -> handleNodeSelect(context, player, tokens, session);
             case "assign" -> handleNodeAssign(context, tokens, session, false);
             case "add" -> handleNodeAssign(context, tokens, session, true);
+            case "stock" -> handleNodeStock(context, tokens, session);
             case "recall" -> handleNodeRecall(context, tokens, session);
             case "remove" -> handleNodeRemove(context, tokens, session);
             case "clear" -> handleNodeClear(context, session);
@@ -393,6 +394,26 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         sendNodeSummary(context, updatedState, node.get().nodeId());
     }
 
+    private void handleNodeStock(CommandContext context, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 4) {
+            context.sendMessage(Message.raw("Usage: /kd nodes stock <index|node_id_prefix> <amount>").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resourceNodeService.resolveNode(session.gameState(), tokens.get(2));
+        if (node.isEmpty()) {
+            context.sendMessage(Message.raw("Node not found.").color("red"));
+            return;
+        }
+        OptionalInt amount = parseAmount(tokens.get(3));
+        if (amount.isEmpty()) {
+            context.sendMessage(Message.raw("Amount must be a whole number.").color("red"));
+            return;
+        }
+        PlayerGameState updatedState = resourceNodeService.setStock(session.playerId(), node.get().nodeId(), amount.getAsInt(), java.time.Instant.now());
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        sendNodeSummary(context, updatedState, node.get().nodeId());
+    }
+
     private void handleNodeRemove(CommandContext context, List<String> tokens, PlayerSession session) {
         if (tokens.size() < 3) {
             context.sendMessage(Message.raw("Usage: /kd nodes remove <index|node_id_prefix>").color("yellow"));
@@ -433,7 +454,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd citizens add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd troops add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd resources add|set <type> <amount>").color("yellow"));
-        context.sendMessage(Message.raw("/kd nodes place|list|select|assign|add|recall|remove|clear").color("yellow"));
+        context.sendMessage(Message.raw("/kd nodes place|list|select|assign|add|stock|recall|remove|clear").color("yellow"));
     }
 
     private Executor resolveCommandExecutor(Player player) {
