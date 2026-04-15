@@ -12,11 +12,20 @@ import java.util.Objects;
  */
 public final class ResourceNodeVisualRefs {
     private final Ref<EntityStore> anchorRef;
+    private final Ref<EntityStore> routeAnchorRef;
     private final List<Ref<EntityStore>> workerRefs;
+    private final List<Ref<EntityStore>> routeRefs;
 
-    public ResourceNodeVisualRefs(Ref<EntityStore> anchorRef, List<Ref<EntityStore>> workerRefs) {
+    public ResourceNodeVisualRefs(
+            Ref<EntityStore> anchorRef,
+            Ref<EntityStore> routeAnchorRef,
+            List<Ref<EntityStore>> workerRefs,
+            List<Ref<EntityStore>> routeRefs
+    ) {
         this.anchorRef = anchorRef;
+        this.routeAnchorRef = routeAnchorRef;
         this.workerRefs = List.copyOf(workerRefs);
+        this.routeRefs = List.copyOf(routeRefs);
     }
 
     public boolean matches(Ref<EntityStore> targetRef) {
@@ -26,7 +35,10 @@ public final class ResourceNodeVisualRefs {
         if (Objects.equals(anchorRef, targetRef)) {
             return true;
         }
-        return workerRefs.stream().anyMatch(targetRef::equals);
+        if (Objects.equals(routeAnchorRef, targetRef)) {
+            return true;
+        }
+        return workerRefs.stream().anyMatch(targetRef::equals) || routeRefs.stream().anyMatch(targetRef::equals);
     }
 
     public List<Ref<EntityStore>> allRefs() {
@@ -34,7 +46,11 @@ public final class ResourceNodeVisualRefs {
         if (anchorRef != null) {
             refs.add(anchorRef);
         }
+        if (routeAnchorRef != null) {
+            refs.add(routeAnchorRef);
+        }
         refs.addAll(workerRefs);
+        refs.addAll(routeRefs);
         return List.copyOf(refs);
     }
 }

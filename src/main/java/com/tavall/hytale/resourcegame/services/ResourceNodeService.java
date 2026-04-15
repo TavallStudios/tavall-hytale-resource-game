@@ -31,6 +31,7 @@ import java.util.logging.Logger;
  */
 public final class ResourceNodeService implements IResourceNodeService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(ResourceNodeService.class.getName());
+    private static final int DEFAULT_ROUTE_DIVISOR = 3;
 
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
@@ -49,6 +50,7 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     @Override
     public List<ResourceNodeData> listNodes(PlayerGameState state) {
         return metadataOf(state, resolveNow(state)).resourceNodes().stream()
+                .map(this::normalizeNode)
                 .sorted(Comparator.comparing(ResourceNodeData::placedAt).thenComparing(ResourceNodeData::nodeId))
                 .toList();
     }
@@ -82,7 +84,28 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
 
     @Override
     public ResourceNodeSummary summary(PlayerGameState state, ResourceNodeData node) {
-        return new ResourceNodeSummary(node, availableTroops(state), node.assignedTroops(), node.assignedTroops() * yieldPerTroop(node.resourceType()));
+        ResourceNodeData normalizedNode = normalizeNode(node);
+        int gainPerTick = Math.min(
+                normalizedNode.currentStock(),
+                normalizedNode.assignedTroops() * yieldPerTroop(normalizedNode.resourceType())
+        );
+        int stockPercent = normalizedNode.maxStock() == 0
+                ? 0
+                : (int) Math.round((normalizedNode.currentStock() * 100.0) / normalizedNode.maxStock());
+        int routeCount = normalizedNode.assignedTroops() == 0
+                ? 0
+                : Math.max(1, (int) Math.ceil(normalizedNode.assignedTroops() / (double) DEFAULT_ROUTE_DIVISOR));
+        return new ResourceNodeSummary(
+                normalizedNode,
+                availableTroops(state),
+                normalizedNode.assignedTroops(),
+                gainPerTick,
+                normalizedNode.currentStock(),
+                normalizedNode.maxStock(),
+                normalizedNode.regenerationPerTick(),
+                stockPercent,
+                routeCount
+        );
     }
 
     @Override
@@ -102,7 +125,20 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
             return null;
         }
         List<ResourceNodeData> nodes = new ArrayList<>(listNodes(session.gameState()));
-        nodes.add(new ResourceNodeData(UUID.randomUUID(), resourceType, worldName, position.getX(), position.getY(), position.getZ(), 0, now));
+        NodeStockProfile stockProfile = stockProfile(resourceType);
+        nodes.add(new ResourceNodeData(
+                UUID.randomUUID(),
+                resourceType,
+                worldName,
+                position.getX(),
+                position.getY(),
+                position.getZ(),
+                0,
+                stockProfile.maxStock(),
+                stockProfile.maxStock(),
+                stockProfile.regenerationPerTick(),
+                now
+        ));
         return persistNodeState(session, nodes, now);
     }
 
@@ -167,15 +203,26 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
         int food = resources.food();
         int wood = resources.wood();
         int iron = resources.iron();
+        List<ResourceNodeData> updatedNodes = new ArrayList<>();
         for (ResourceNodeData node : listNodes(normalizedState)) {
-            int gain = node.assignedTroops() * yieldPerTroop(node.resourceType());
+            int potentialGain = node.assignedTroops() * yieldPerTroop(node.resourceType());
+            int actualGain = Math.min(node.currentStock(), potentialGain);
             switch (node.resourceType()) {
-                case FOOD -> food += gain;
-                case WOOD -> wood += gain;
-                case IRON -> iron += gain;
+                case FOOD -> food += actualGain;
+                case WOOD -> wood += actualGain;
+                case IRON -> iron += actualGain;
             }
+            int replenishedStock = Math.min(
+                    node.maxStock(),
+                    Math.max(0, node.currentStock() - actualGain) + node.regenerationPerTick()
+            );
+            updatedNodes.add(node.withCurrentStock(replenishedStock));
         }
-        return normalizedState.withResources(new ResourceInventory(food, wood, iron), now);
+        return rewriteNodes(
+                normalizedState.withResources(new ResourceInventory(food, wood, iron), now),
+                updatedNodes,
+                now
+        );
     }
 
     public String summaryLine(PlayerGameState state, ResourceNodeData node, int index) {
@@ -185,6 +232,9 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 + " " + (int) node.x() + "," + (int) node.y() + "," + (int) node.z()
                 + " | assigned " + summary.assignedTroops()
                 + " | reserve " + summary.availableTroops()
+                + " | stock " + summary.currentStock() + "/" + summary.maxStock()
+                + " (" + summary.stockPercent() + "%)"
+                + " | regen " + summary.regenerationPerTick()
                 + " | +" + summary.gainPerTick() + "/tick";
     }
 
@@ -264,6 +314,24 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
             case FOOD -> 4;
             case WOOD -> 3;
             case IRON -> 2;
+        };
+    }
+
+    private ResourceNodeData normalizeNode(ResourceNodeData node) {
+        NodeStockProfile stockProfile = stockProfile(node.resourceType());
+        int maxStock = node.maxStock() <= 0 ? stockProfile.maxStock() : node.maxStock();
+        int regenerationPerTick = node.regenerationPerTick() <= 0 ? stockProfile.regenerationPerTick() : node.regenerationPerTick();
+        int currentStock = node.currentStock() <= 0 && node.maxStock() <= 0
+                ? maxStock
+                : Math.min(maxStock, Math.max(0, node.currentStock()));
+        return node.withStockProfile(currentStock, maxStock, regenerationPerTick);
+    }
+
+    private NodeStockProfile stockProfile(ResourceType resourceType) {
+        return switch (resourceType) {
+            case FOOD -> new NodeStockProfile(180, 10);
+            case WOOD -> new NodeStockProfile(150, 7);
+            case IRON -> new NodeStockProfile(120, 5);
         };
     }
 

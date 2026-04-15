@@ -17,6 +17,9 @@ public final class ResourceNodeData {
     private final double y;
     private final double z;
     private final int assignedTroops;
+    private final int currentStock;
+    private final int maxStock;
+    private final int regenerationPerTick;
     private final Instant placedAt;
 
     public ResourceNodeData(
@@ -27,6 +30,9 @@ public final class ResourceNodeData {
             double y,
             double z,
             int assignedTroops,
+            int currentStock,
+            int maxStock,
+            int regenerationPerTick,
             Instant placedAt
     ) {
         this.nodeId = Objects.requireNonNull(nodeId, "nodeId");
@@ -36,6 +42,9 @@ public final class ResourceNodeData {
         this.y = y;
         this.z = z;
         this.assignedTroops = Math.max(0, assignedTroops);
+        this.maxStock = Math.max(0, maxStock);
+        this.currentStock = Math.max(0, Math.min(currentStock, this.maxStock));
+        this.regenerationPerTick = Math.max(0, regenerationPerTick);
         this.placedAt = Objects.requireNonNull(placedAt, "placedAt");
     }
 
@@ -67,6 +76,18 @@ public final class ResourceNodeData {
         return assignedTroops;
     }
 
+    public int currentStock() {
+        return currentStock;
+    }
+
+    public int maxStock() {
+        return maxStock;
+    }
+
+    public int regenerationPerTick() {
+        return regenerationPerTick;
+    }
+
     public Instant placedAt() {
         return placedAt;
     }
@@ -76,6 +97,14 @@ public final class ResourceNodeData {
     }
 
     public ResourceNodeData withAssignedTroops(int assignedTroops) {
-        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, placedAt);
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
+    }
+
+    public ResourceNodeData withCurrentStock(int currentStock) {
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
+    }
+
+    public ResourceNodeData withStockProfile(int currentStock, int maxStock, int regenerationPerTick) {
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
     }
 }
