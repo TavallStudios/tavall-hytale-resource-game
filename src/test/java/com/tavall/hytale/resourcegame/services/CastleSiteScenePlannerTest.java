@@ -30,6 +30,14 @@ public final class CastleSiteScenePlannerTest {
         assertEquals(0, planner.visibleConvoyCount(2, 0));
         assertEquals(1, planner.visibleConvoyCount(2, 2));
         assertEquals(4, planner.visibleConvoyCount(9, 12));
+        assertEquals(1.1F, planner.stockpileAnchorScale(0));
+        assertEquals(2.4F, planner.stockpileAnchorScale(800));
+        assertEquals(1.0F, planner.populationAnchorScale(0));
+        assertEquals(2.1F, planner.populationAnchorScale(32));
+        assertEquals(0.95F, planner.nodeAnchorScale(0, 0));
+        assertEquals(2.0F, planner.nodeAnchorScale(400, 16));
+        assertEquals(0.65F, planner.crowdScale(0));
+        assertEquals(1.2F, planner.convoyScale(12, 14));
     }
 
     @Test
