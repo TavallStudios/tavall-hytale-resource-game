@@ -11,15 +11,25 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
+import com.tavall.hytale.resourcegame.resources.ResourceType;
+import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 
 /**
  * Resource inventory page.
  */
 public final class CastleResourcesPage extends BaseUiPage {
     private static final String PAGE_DOCUMENT = "Pages/castle-resources.ui";
+    private final CastleEconomyPlanner economyPlanner;
 
-    public CastleResourcesPage(Player player, UiNavigationContext context, PlayerGameState state, IUiActionService actionService) {
+    public CastleResourcesPage(
+            Player player,
+            UiNavigationContext context,
+            PlayerGameState state,
+            IUiActionService actionService,
+            CastleEconomyPlanner economyPlanner
+    ) {
         super(player, context, state, actionService);
+        this.economyPlanner = economyPlanner;
     }
 
     @Override
@@ -28,6 +38,9 @@ public final class CastleResourcesPage extends BaseUiPage {
         uiCommandBuilder.set("#FoodCount.Text", String.valueOf(state().resources().food()));
         uiCommandBuilder.set("#WoodCount.Text", String.valueOf(state().resources().wood()));
         uiCommandBuilder.set("#IronCount.Text", String.valueOf(state().resources().iron()));
+        uiCommandBuilder.set("#FoodNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.FOOD));
+        uiCommandBuilder.set("#WoodNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.WOOD));
+        uiCommandBuilder.set("#IronNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.IRON));
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 

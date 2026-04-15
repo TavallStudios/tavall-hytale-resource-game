@@ -15,7 +15,9 @@ import com.tavall.hytale.resourcegame.config.CastleAssetConfig;
 import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
+import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
+import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
 import com.tavall.hytale.resourcegame.world.CastleSiteLayout;
 import com.tavall.hytale.resourcegame.world.CastleSiteLayoutService;
@@ -41,6 +43,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
     private final CastleEntityRegistry castleEntityRegistry;
     private final CastleAssetConfig castleAssetConfig;
     private final PopulationDisplayConfig displayConfig;
+    private final CastleEconomyPlanner planner;
     private final CastleSiteLayoutService layoutService;
     private final CastleSiteStructureService structureService;
     private final Map<UUID, CastleSiteVisualRefs> siteRefs = new ConcurrentHashMap<>();
@@ -49,12 +52,14 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
             CastleEntityRegistry castleEntityRegistry,
             CastleAssetConfig castleAssetConfig,
             PopulationDisplayConfig displayConfig,
+            CastleEconomyPlanner planner,
             CastleSiteLayoutService layoutService,
             CastleSiteStructureService structureService
     ) {
         this.castleEntityRegistry = castleEntityRegistry;
         this.castleAssetConfig = castleAssetConfig;
         this.displayConfig = displayConfig;
+        this.planner = planner;
         this.layoutService = layoutService;
         this.structureService = structureService;
     }
@@ -93,6 +98,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
         world.execute(() -> {
             clearSite(playerId);
             CastleSiteLayout layout = layoutService.createLayout(state.castleLocation());
+            CastleEconomySnapshot snapshot = planner.snapshot(state);
             structureService.ensureSite(world, layout);
             syncCastleLabel(playerId, state);
             Store<EntityStore> store = world.getEntityStore().getStore();
@@ -102,17 +108,30 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                 return;
             }
 
-            Ref<EntityStore> citizenAnchorRef = spawnNamed(store, roleIndex, layout.citizenAnchor(), "Citizen Yard: " + state.populationSummary().citizenCount());
-            Ref<EntityStore> troopAnchorRef = spawnNamed(store, roleIndex, layout.troopAnchor(), "Troop Drill: " + state.populationSummary().troopCount());
-            Ref<EntityStore> foodNodeRef = spawnNamed(store, roleIndex, layout.foodNodeAnchor(), "Food Stores: " + state.resources().food());
-            Ref<EntityStore> woodNodeRef = spawnNamed(store, roleIndex, layout.woodNodeAnchor(), "Wood Camp: " + state.resources().wood());
-            Ref<EntityStore> ironNodeRef = spawnNamed(store, roleIndex, layout.ironNodeAnchor(), "Iron Vein: " + state.resources().iron());
+            Ref<EntityStore> citizenAnchorRef = spawnNamed(
+                    store,
+                    roleIndex,
+                    layout.citizenAnchor(),
+                    "Citizen Yard: " + state.populationSummary().citizenCount()
+                            + " | Idle " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE)
+                            + " | Builders " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER)
+            );
+            Ref<EntityStore> troopAnchorRef = spawnNamed(
+                    store,
+                    roleIndex,
+                    layout.troopAnchor(),
+                    "Troop Drill: " + state.populationSummary().troopCount()
+                            + " | Trainees " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE)
+            );
+            Ref<EntityStore> foodNodeRef = spawnNamed(store, roleIndex, layout.foodNodeAnchor(), nodeLabel("Food Stores", state.resources().food(), snapshot.workersFor(ResourceType.FOOD), snapshot.gainFor(ResourceType.FOOD)));
+            Ref<EntityStore> woodNodeRef = spawnNamed(store, roleIndex, layout.woodNodeAnchor(), nodeLabel("Wood Camp", state.resources().wood(), snapshot.workersFor(ResourceType.WOOD), snapshot.gainFor(ResourceType.WOOD)));
+            Ref<EntityStore> ironNodeRef = spawnNamed(store, roleIndex, layout.ironNodeAnchor(), nodeLabel("Iron Vein", state.resources().iron(), snapshot.workersFor(ResourceType.IRON), snapshot.gainFor(ResourceType.IRON)));
 
-            List<Ref<EntityStore>> citizenCrowdRefs = spawnCrowd(store, roleIndex, layout.citizenCrowdPositions(), visiblePopulationCount(state.populationSummary().citizenCount()));
-            List<Ref<EntityStore>> troopCrowdRefs = spawnCrowd(store, roleIndex, layout.troopCrowdPositions(), visiblePopulationCount(state.populationSummary().troopCount()));
-            List<Ref<EntityStore>> foodPileRefs = spawnCrowd(store, roleIndex, layout.foodNodePositions(), visibleResourceCount(state.resources().food()));
-            List<Ref<EntityStore>> woodPileRefs = spawnCrowd(store, roleIndex, layout.woodNodePositions(), visibleResourceCount(state.resources().wood()));
-            List<Ref<EntityStore>> ironPileRefs = spawnCrowd(store, roleIndex, layout.ironNodePositions(), visibleResourceCount(state.resources().iron()));
+            List<Ref<EntityStore>> citizenCrowdRefs = spawnCrowd(store, roleIndex, layout.citizenCrowdPositions(), visiblePopulationCount(snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE) + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER)));
+            List<Ref<EntityStore>> troopCrowdRefs = spawnCrowd(store, roleIndex, layout.troopCrowdPositions(), visiblePopulationCount(state.populationSummary().troopCount() + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE)));
+            List<Ref<EntityStore>> foodPileRefs = spawnCrowd(store, roleIndex, layout.foodNodePositions(), visiblePopulationCount(snapshot.workersFor(ResourceType.FOOD)));
+            List<Ref<EntityStore>> woodPileRefs = spawnCrowd(store, roleIndex, layout.woodNodePositions(), visiblePopulationCount(snapshot.workersFor(ResourceType.WOOD)));
+            List<Ref<EntityStore>> ironPileRefs = spawnCrowd(store, roleIndex, layout.ironNodePositions(), visiblePopulationCount(snapshot.workersFor(ResourceType.IRON)));
 
             siteRefs.put(
                     playerId,
@@ -190,5 +209,9 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
             return 0;
         }
         return Math.min(MAX_RESOURCE_MARKERS, Math.max(1, (int) Math.ceil(amount / 30.0)));
+    }
+
+    private String nodeLabel(String label, int stored, int workers, int gainPerTick) {
+        return label + ": " + stored + " | Workers " + workers + " | +" + gainPerTick + "/tick";
     }
 }
