@@ -15,13 +15,19 @@ public final class CastleSiteStructureService {
 
     public void ensureSite(World world, CastleSiteLayout layout) {
         paintPad(world, layout.origin(), 2);
+        paintPad(world, layout.stockpileAnchor(), 2);
         paintPad(world, layout.citizenAnchor(), 1);
         paintPad(world, layout.troopAnchor(), 1);
         paintPad(world, layout.foodNodeAnchor(), 1);
         paintPad(world, layout.woodNodeAnchor(), 1);
         paintPad(world, layout.ironNodeAnchor(), 1);
+        paintLane(world, layout.origin(), layout.stockpileAnchor());
+        paintLane(world, layout.stockpileAnchor(), layout.foodNodeAnchor());
+        paintLane(world, layout.stockpileAnchor(), layout.woodNodeAnchor());
+        paintLane(world, layout.stockpileAnchor(), layout.ironNodeAnchor());
         clearAnchorColumns(world, List.of(
                 layout.origin(),
+                layout.stockpileAnchor(),
                 layout.citizenAnchor(),
                 layout.troopAnchor(),
                 layout.foodNodeAnchor(),
@@ -41,6 +47,26 @@ public final class CastleSiteStructureService {
                 clearBlock(world, originX + dx, originY + 2, originZ + dz);
                 clearBlock(world, originX + dx, originY + 3, originZ + dz);
             }
+        }
+    }
+
+    private void paintLane(World world, Vector3d start, Vector3d end) {
+        int startX = floorToInt(start.getX());
+        int startZ = floorToInt(start.getZ());
+        int endX = floorToInt(end.getX());
+        int endZ = floorToInt(end.getZ());
+        int y = floorToInt(Math.min(start.getY(), end.getY())) - 1;
+        int steps = Math.max(Math.abs(endX - startX), Math.abs(endZ - startZ));
+        if (steps <= 0) {
+            return;
+        }
+        for (int step = 0; step <= steps; step++) {
+            double progress = step / (double) steps;
+            int x = floorToInt(startX + ((endX - startX) * progress));
+            int z = floorToInt(startZ + ((endZ - startZ) * progress));
+            setBlock(world, x, y, z, FLOOR_BLOCK);
+            clearBlock(world, x, y + 1, z);
+            clearBlock(world, x, y + 2, z);
         }
     }
 
