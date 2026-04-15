@@ -2,6 +2,7 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,5 +23,9 @@ public final class PlayerSessionStore implements IPlayerSessionStore, IDependenc
 
     public void remove(UUID playerId) {
         sessions.remove(playerId);
+    }
+
+    public Collection<PlayerSession> snapshot() {
+        return java.util.List.copyOf(sessions.values());
     }
 }

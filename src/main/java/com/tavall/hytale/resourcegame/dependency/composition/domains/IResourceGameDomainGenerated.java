@@ -2,6 +2,7 @@ package com.tavall.hytale.resourcegame.dependency.composition.domains;
 
 import com.tavall.hytale.resourcegame.dependency.DependencyLoaderAccess;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
@@ -21,6 +22,10 @@ public interface IResourceGameDomainGenerated {
 
     default ICastleProximityPromptService getCastleProximityPromptService() {
         return DependencyLoaderAccess.findInstance(ICastleProximityPromptService.class);
+    }
+
+    default ICastleEconomySimulationService getCastleEconomySimulationService() {
+        return DependencyLoaderAccess.findInstance(ICastleEconomySimulationService.class);
     }
 
     default IDebugCommandService getDebugCommandService() {

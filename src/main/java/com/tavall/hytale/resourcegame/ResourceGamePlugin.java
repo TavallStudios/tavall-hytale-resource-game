@@ -34,6 +34,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, getPlayerDataService()::handlePlayerDisconnect);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getCastleInteractionService()::handleInteract);
         getCastleProximityPromptService().start();
+        getCastleEconomySimulationService().start();
 
         List<AbstractAsyncCommand> commands = getDebugCommandService().commands();
         for (AbstractAsyncCommand command : commands) {
@@ -45,6 +46,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
     @Override
     protected void shutdown() {
         getCastleProximityPromptService().shutdown();
+        getCastleEconomySimulationService().shutdown();
         AsyncTask.shutdown();
     }
 }
