@@ -37,6 +37,8 @@ public interface IResourceNodeService extends IDependencyInjectableInterface {
 
     PlayerGameState addTroops(UUID playerId, UUID nodeId, int troopDelta, Instant now);
 
+    PlayerGameState setStock(UUID playerId, UUID nodeId, int currentStock, Instant now);
+
     PlayerGameState normalizeAssignments(PlayerGameState state, Instant now);
 
     PlayerGameState applyTick(PlayerGameState state, Instant now);

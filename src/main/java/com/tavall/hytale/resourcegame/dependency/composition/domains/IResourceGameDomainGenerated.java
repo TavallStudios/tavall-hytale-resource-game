@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualPulseService;
 
 /**
  * Generated-domain equivalent for repo-local DI accessors.
@@ -31,6 +32,10 @@ public interface IResourceGameDomainGenerated {
 
     default IResourceNodeInteractionService getResourceNodeInteractionService() {
         return DependencyLoaderAccess.findInstance(IResourceNodeInteractionService.class);
+    }
+
+    default IResourceNodeVisualPulseService getResourceNodeVisualPulseService() {
+        return DependencyLoaderAccess.findInstance(IResourceNodeVisualPulseService.class);
     }
 
     default IDebugCommandService getDebugCommandService() {

@@ -101,6 +101,7 @@ async function main() {
       "#GainPerTick.Text": "+0/tick",
       "#StockStatus.Text": "180 / 180 (100%)",
       "#RegenStatus.Text": "+10 / tick",
+      "#StatusText.Text": "Rich",
       "#RouteStatus.Text": "No supply lane"
     });
     pages.push({ key: snapshot.key, title: null, snapshot });
@@ -112,6 +113,7 @@ async function main() {
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "3"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "6"
         && readSelectorValue(candidate, "#GainPerTick.Text") === "+12/tick"
+        && readSelectorValue(candidate, "#StatusText.Text") === "Rich"
         && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 1 convoy markers",
       5_000,
       "assign three update"
@@ -124,6 +126,7 @@ async function main() {
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "0"
         && readSelectorValue(candidate, "#GainPerTick.Text") === "+36/tick"
+        && readSelectorValue(candidate, "#StatusText.Text") === "Rich"
         && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
       5_000,
       "assign all update"
@@ -142,19 +145,33 @@ async function main() {
         return readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
           && stock != null
           && stock.current < 180
-          && stock.max === 180;
+          && stock.max === 180
+          && readSelectorValue(candidate, "#StatusText.Text") === "Rich";
       },
       10_000,
       "node stock drain update"
     );
     assertions.push("node-stock-drained");
 
+    bot.chat("/kingdom nodes stock 1 8");
+    await delay(500);
+    bot.chat("/kingdom nodes select 1");
+    snapshot = await waitForSnapshot(
+      bot,
+      (candidate) => readSelectorValue(candidate, "#StockStatus.Text") === "8 / 180 (4%)"
+        && readSelectorValue(candidate, "#StatusText.Text") === "Low",
+      10_000,
+      "node low stock update"
+    );
+    assertions.push("node-low-stock");
+
     sendAction(bot, "NodeRecallOne");
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "8"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "1"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+32/tick"
+        && readSelectorValue(candidate, "#GainPerTick.Text") === "+8/tick"
+        && readSelectorValue(candidate, "#StatusText.Text") === "Low"
         && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
       5_000,
       "recall one update"
@@ -167,6 +184,7 @@ async function main() {
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "0"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "9"
         && readSelectorValue(candidate, "#GainPerTick.Text") === "+0/tick"
+        && readSelectorValue(candidate, "#StatusText.Text") === "Low"
         && readSelectorValue(candidate, "#RouteStatus.Text") === "No supply lane",
       5_000,
       "recall all update"

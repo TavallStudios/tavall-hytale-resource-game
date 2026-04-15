@@ -31,6 +31,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportServi
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualPulseService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
@@ -71,7 +72,9 @@ import com.tavall.hytale.resourcegame.services.PopulationDisplayGateway;
 import com.tavall.hytale.resourcegame.services.PopulationDisplayService;
 import com.tavall.hytale.resourcegame.services.PopulationService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeInteractionService;
+import com.tavall.hytale.resourcegame.services.ResourceNodeRoutePlanner;
 import com.tavall.hytale.resourcegame.services.ResourceNodeService;
+import com.tavall.hytale.resourcegame.services.ResourceNodeVisualPulseService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.ui.CastleCitizensPage;
@@ -149,11 +152,14 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
         CastleEconomyPlanner economyPlanner = new CastleEconomyPlanner();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeRoutePlanner resourceNodeRoutePlanner = new ResourceNodeRoutePlanner();
         ResourceNodeVisualService resourceNodeVisualService = new ResourceNodeVisualService(
                 populationDisplayConfig,
                 resourceNodeService,
-                new ResourceNodeStructureService()
+                new ResourceNodeStructureService(),
+                resourceNodeRoutePlanner
         );
+        ResourceNodeVisualPulseService resourceNodeVisualPulseService = new ResourceNodeVisualPulseService(sessionStore, resourceNodeVisualService);
         CastleSiteVisualService castleSiteVisualService = new CastleSiteVisualService(
                 castleEntityRegistry,
                 castleAssetConfig,
@@ -257,6 +263,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(ICastleSiteVisualService.class, castleSiteVisualService);
         registerSingleton(IResourceNodeService.class, resourceNodeService);
         registerSingleton(IResourceNodeVisualService.class, resourceNodeVisualService);
+        registerSingleton(IResourceNodeVisualPulseService.class, resourceNodeVisualPulseService);
         registerSingleton(ICastleSpawnService.class, castleSpawnService);
         registerSingleton(PopulationDisplayGateway.class, populationDisplayService);
         registerSingleton(IPlayerTeleportService.class, playerTeleportService);

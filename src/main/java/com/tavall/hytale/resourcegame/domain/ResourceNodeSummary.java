@@ -15,6 +15,7 @@ public final class ResourceNodeSummary {
     private final int regenerationPerTick;
     private final int stockPercent;
     private final int visibleRouteCount;
+    private final String stockStatus;
 
     public ResourceNodeSummary(
             ResourceNodeData node,
@@ -25,7 +26,8 @@ public final class ResourceNodeSummary {
             int maxStock,
             int regenerationPerTick,
             int stockPercent,
-            int visibleRouteCount
+            int visibleRouteCount,
+            String stockStatus
     ) {
         this.node = Objects.requireNonNull(node, "node");
         this.availableTroops = Math.max(0, availableTroops);
@@ -36,6 +38,7 @@ public final class ResourceNodeSummary {
         this.regenerationPerTick = Math.max(0, regenerationPerTick);
         this.stockPercent = Math.max(0, stockPercent);
         this.visibleRouteCount = Math.max(0, visibleRouteCount);
+        this.stockStatus = Objects.requireNonNull(stockStatus, "stockStatus");
     }
 
     public ResourceNodeData node() {
@@ -72,5 +75,9 @@ public final class ResourceNodeSummary {
 
     public int visibleRouteCount() {
         return visibleRouteCount;
+    }
+
+    public String stockStatus() {
+        return stockStatus;
     }
 }

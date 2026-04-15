@@ -61,7 +61,14 @@ Group {
     }
 
     Group {
-      Anchor: (Width: 280);
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Status"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #StatusText { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 220);
       LayoutMode: Top;
       Label { Text: "Supply Lane"; Style: (FontSize: 14, TextColor: #9eb0bf); }
       Label #RouteStatus { Style: (FontSize: 18); }

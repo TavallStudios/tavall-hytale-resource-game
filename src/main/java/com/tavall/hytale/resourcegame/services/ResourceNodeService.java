@@ -104,7 +104,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 normalizedNode.maxStock(),
                 normalizedNode.regenerationPerTick(),
                 stockPercent,
-                routeCount
+                routeCount,
+                stockStatus(stockPercent)
         );
     }
 
@@ -174,6 +175,24 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     }
 
     @Override
+    public PlayerGameState setStock(UUID playerId, UUID nodeId, int currentStock, Instant now) {
+        PlayerSession session = sessionStore.get(playerId);
+        if (session == null || nodeId == null) {
+            return null;
+        }
+        List<ResourceNodeData> nodes = new ArrayList<>(listNodes(session.gameState()));
+        for (int index = 0; index < nodes.size(); index++) {
+            ResourceNodeData node = nodes.get(index);
+            if (!node.nodeId().equals(nodeId)) {
+                continue;
+            }
+            nodes.set(index, node.withCurrentStock(currentStock));
+            return persistNodeState(session, nodes, now);
+        }
+        return session.gameState();
+    }
+
+    @Override
     public PlayerGameState normalizeAssignments(PlayerGameState state, Instant now) {
         List<ResourceNodeData> nodes = listNodes(state);
         if (nodes.isEmpty()) {
@@ -234,6 +253,7 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 + " | reserve " + summary.availableTroops()
                 + " | stock " + summary.currentStock() + "/" + summary.maxStock()
                 + " (" + summary.stockPercent() + "%)"
+                + " " + summary.stockStatus()
                 + " | regen " + summary.regenerationPerTick()
                 + " | +" + summary.gainPerTick() + "/tick";
     }
@@ -333,6 +353,19 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
             case WOOD -> new NodeStockProfile(150, 7);
             case IRON -> new NodeStockProfile(120, 5);
         };
+    }
+
+    private String stockStatus(int stockPercent) {
+        if (stockPercent <= 0) {
+            return "Exhausted";
+        }
+        if (stockPercent < 25) {
+            return "Low";
+        }
+        if (stockPercent < 70) {
+            return "Stable";
+        }
+        return "Rich";
     }
 
     private String shortId(UUID nodeId) {

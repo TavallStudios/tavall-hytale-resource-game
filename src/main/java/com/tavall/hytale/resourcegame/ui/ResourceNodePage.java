@@ -48,6 +48,7 @@ public final class ResourceNodePage extends BaseUiPage {
             uiCommandBuilder.set("#GainPerTick.Text", "+0/tick");
             uiCommandBuilder.set("#StockStatus.Text", "0 / 0 (0%)");
             uiCommandBuilder.set("#RegenStatus.Text", "+0 / tick");
+            uiCommandBuilder.set("#StatusText.Text", "Exhausted");
             uiCommandBuilder.set("#RouteStatus.Text", "No supply lane");
             uiCommandBuilder.set("#FeedbackStatus.Text", "No node selected.");
         } else {
@@ -60,6 +61,7 @@ public final class ResourceNodePage extends BaseUiPage {
             uiCommandBuilder.set("#GainPerTick.Text", "+" + summary.gainPerTick() + "/tick");
             uiCommandBuilder.set("#StockStatus.Text", summary.currentStock() + " / " + summary.maxStock() + " (" + summary.stockPercent() + "%)");
             uiCommandBuilder.set("#RegenStatus.Text", "+" + summary.regenerationPerTick() + " / tick");
+            uiCommandBuilder.set("#StatusText.Text", summary.stockStatus());
             uiCommandBuilder.set("#RouteStatus.Text", summary.visibleRouteCount() <= 0 ? "No supply lane" : "Supply lane active: " + summary.visibleRouteCount() + " convoy markers");
             uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Send troops here to pull in extra " + node.resourceType().name().toLowerCase() + "." : context().feedbackMessage());
         }
