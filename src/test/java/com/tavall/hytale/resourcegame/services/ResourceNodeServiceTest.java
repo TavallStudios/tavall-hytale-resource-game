@@ -43,7 +43,10 @@ public final class ResourceNodeServiceTest {
         PlayerGameState afterAssign = resourceNodeService.assignTroops(playerId, node.nodeId(), 9, now.plusSeconds(1));
 
         assertEquals(1, resourceNodeService.listNodes(afterAssign).size());
-        assertEquals(6, resourceNodeService.findNode(afterAssign, node.nodeId()).orElseThrow().assignedTroops());
+        ResourceNodeData assignedNode = resourceNodeService.findNode(afterAssign, node.nodeId()).orElseThrow();
+        assertEquals(6, assignedNode.assignedTroops());
+        assertEquals(180, assignedNode.maxStock());
+        assertEquals(180, assignedNode.currentStock());
         assertEquals(0, resourceNodeService.availableTroops(afterAssign));
     }
 
@@ -71,7 +74,40 @@ public final class ResourceNodeServiceTest {
         PlayerGameState assignedState = resourceNodeService.assignTroops(playerId, node.nodeId(), 3, now.plusSeconds(1));
         PlayerGameState ticked = resourceNodeService.applyTick(assignedState, now.plusSeconds(12));
 
+        ResourceNodeData tickedNode = resourceNodeService.findNode(ticked, node.nodeId()).orElseThrow();
         assertEquals(assignedState.resources().iron() + 6, ticked.resources().iron());
+        assertEquals(119, tickedNode.currentStock());
         assertTrue(ticked.metadataJson().contains(node.nodeId().toString()));
+    }
+
+    @Test
+    void depletedNodesRegenerateWhenNotFullyHarvested() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("node-regen"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "node-regen"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-15T08:10:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(22L, playerId, new CastleLocationData("default", 0.0, 72.0, 0.0), now);
+        PlayerGameState troopState = initialState.withPopulation(initialState.populationSummary().withTroopCount(9), now);
+        sessionStore.put(new PlayerSession(playerId, new PlayerProfile(22L, playerId, "NodeRegenBot", "UTC", "hash", now, now, now), troopState));
+
+        PlayerGameState withNode = resourceNodeService.placeNode(playerId, ResourceType.FOOD, "default", new Vector3d(11.0, 72.0, 11.0), now);
+        ResourceNodeData node = resourceNodeService.listNodes(withNode).getFirst();
+        PlayerGameState drainedState = resourceNodeService.assignTroops(playerId, node.nodeId(), 9, now.plusSeconds(1));
+        PlayerGameState afterFirstTick = resourceNodeService.applyTick(drainedState, now.plusSeconds(12));
+        PlayerGameState afterSecondTick = resourceNodeService.applyTick(afterFirstTick.withPopulation(afterFirstTick.populationSummary().withTroopCount(0), now.plusSeconds(13)), now.plusSeconds(24));
+
+        ResourceNodeData afterFirstNode = resourceNodeService.findNode(afterFirstTick, node.nodeId()).orElseThrow();
+        ResourceNodeData afterSecondNode = resourceNodeService.findNode(afterSecondTick, node.nodeId()).orElseThrow();
+        assertTrue(afterFirstNode.currentStock() < afterFirstNode.maxStock());
+        assertTrue(afterSecondNode.currentStock() > afterFirstNode.currentStock());
     }
 }
