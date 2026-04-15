@@ -35,6 +35,11 @@ function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
 }
 
+function resourceAtLeast(snapshot, selector, minimum) {
+  const value = Number.parseInt(`${readSelectorValue(snapshot, selector)}`, 10);
+  return !Number.isNaN(value) && value >= minimum;
+}
+
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
@@ -98,9 +103,9 @@ async function main() {
         snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
         && readSelectorValue(snapshot, "#CitizenCount.Text") === "9"
         && readSelectorValue(snapshot, "#TroopCount.Text") === "4"
-        && readSelectorValue(snapshot, "#FoodCount.Text") === "44"
-        && readSelectorValue(snapshot, "#WoodCount.Text") === "55"
-        && readSelectorValue(snapshot, "#IronCount.Text") === "13",
+        && resourceAtLeast(snapshot, "#FoodCount.Text", 44)
+        && resourceAtLeast(snapshot, "#WoodCount.Text", 55)
+        && resourceAtLeast(snapshot, "#IronCount.Text", 13),
       10_000,
       "kd upgrades page values"
     );

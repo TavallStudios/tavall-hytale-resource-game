@@ -28,6 +28,7 @@ $steps = @(
     @{ name = "data-health"; script = ".\scripts\run-remote-data-health-flow.ps1" },
     @{ name = "onboarding"; script = ".\scripts\run-remote-onboarding-flow.ps1" },
     @{ name = "interior-tour"; script = ".\scripts\run-remote-interior-tour-flow.ps1" },
+    @{ name = "node-assignment"; script = ".\scripts\run-remote-node-assignment-flow.ps1" },
     @{ name = "ui-edge"; script = ".\scripts\run-remote-ui-edge-flow.ps1" },
     @{ name = "visual-counter"; script = ".\scripts\run-remote-visual-counter-flow.ps1" }
 )
