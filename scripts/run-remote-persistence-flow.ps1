@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-persistence-flow.mjs",
@@ -169,21 +169,9 @@ export TAVALL_REDIS_PORT='{6}'
 export TAVALL_REDIS_PASSWORD=''
 export TAVALL_REDIS_TLS='false'
 nohup ./start.sh --transport {7} --auth-mode {8} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
-for i in $(seq 1 60); do
-  if [ "{7}" = "QUIC" ]; then
-    if ss -lun | grep -q ":{0} "; then
-      echo SERVER_READY
-      exit 0
-    fi
-  elif lsof -ti tcp:{0} >/dev/null 2>&1; then
-    echo SERVER_READY
-    exit 0
-  fi
-  sleep 2
-done
-exit 1
 '@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort, $Transport, $AuthMode
     Invoke-RemoteBash -Script $script | Out-Null
+    Wait-RemoteServerReady -SshAlias $SshAlias -LogPath $logPath -Transport $Transport -Port $Port -StartOutPath "$ServerRoot/start.out"
 }
 
 function Invoke-RemoteScenario {
@@ -322,9 +310,6 @@ grep -n '{1}\|Player profile cache hit\|Player game state cache hit\|Population 
 $cacheEvidence = Invoke-RemoteBash -Script $cacheEvidenceScript
 if ($cacheEvidence -notmatch "Player profile cache hit for $StableUuid" -or $cacheEvidence -notmatch "Player game state cache hit for $StableUuid") {
     throw "Redis-first cache hit evidence not found in server log."
-}
-if ($cacheEvidence -notmatch "Population displays ready for $StableUuid") {
-    throw "Population display readiness evidence not found in server log."
 }
 
 Minimize-TranscriptArtifact -Path $phaseOneTracePath

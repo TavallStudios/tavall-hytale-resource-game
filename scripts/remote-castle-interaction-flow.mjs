@@ -1,5 +1,5 @@
-﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import path from "node:path";
+import { captureWorldSnapshot, delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson } from "./bot-flow-helpers.mjs";
 
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
@@ -30,31 +30,15 @@ async function main() {
     });
     await delay(2_000);
 
-    const lookAttempts = [
-      [0, 0, 0],
-      [15, 0, 0],
-      [-15, 0, 0],
-      [180, 0, 0],
-      [90, 0, 0],
-      [-90, 0, 0],
-      [0, 0, 0],
-    ];
-    let castlePage = null;
-    for (const [yaw, pitch, roll] of lookAttempts) {
-      bot.look(yaw, pitch, roll);
-      await delay(1_250);
-      castlePage = bot.ui.currentPage?.key === "com.tavall.hytale.resourcegame.ui.CastleMainPage"
-        ? bot.ui.currentPage
-        : null;
-      if (castlePage) {
-        break;
-      }
+    if (bot.ui.currentPage != null) {
+      throw new Error(`Expected no passive castle UI on join, but saw ${bot.ui.currentPage.key}`);
     }
-    if (!castlePage) {
-      castlePage = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleMainPage", 8_000);
-    }
+    assertions.push("castle-ui-not-auto-opened");
+
+    bot.chat("/kingdom castle open");
+    const castlePage = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleMainPage", 8_000);
     pages.push({ key: castlePage.key, title: castlePage.title ?? null, snapshot: bot.snapshotPage() });
-    assertions.push("castle-ui-opened-from-look");
+    assertions.push("castle-ui-opened-by-command");
 
     const result = {
       name: "castle-interaction-flow",
@@ -96,4 +80,3 @@ async function main() {
 }
 
 await main();
-

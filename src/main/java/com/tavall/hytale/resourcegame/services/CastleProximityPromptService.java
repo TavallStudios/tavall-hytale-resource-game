@@ -9,6 +9,9 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
+
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,17 +19,22 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Opens the castle UI once when a player moves into a valid near-and-looking focus state.
+ * Tracks near-and-looking castle focus without auto-opening UI.
  */
 public final class CastleProximityPromptService implements ICastleProximityPromptService, IDependencyInjectableConcrete {
     private static final long SCAN_INTERVAL_MILLIS = 250L;
 
     private final ICastleInteractionService castleInteractionService;
+    private final IPlacementModeService placementModeService;
     private final Set<UUID> focusedPlayers = ConcurrentHashMap.newKeySet();
     private ScheduledFuture<?> scanTask;
 
-    public CastleProximityPromptService(ICastleInteractionService castleInteractionService) {
-        this.castleInteractionService = castleInteractionService;
+    public CastleProximityPromptService(
+            ICastleInteractionService castleInteractionService,
+            IPlacementModeService placementModeService
+    ) {
+        this.castleInteractionService = Objects.requireNonNull(castleInteractionService, "castleInteractionService");
+        this.placementModeService = Objects.requireNonNull(placementModeService, "placementModeService");
     }
 
     public void start() {
@@ -72,13 +80,15 @@ public final class CastleProximityPromptService implements ICastleProximityPromp
             return;
         }
         UUID playerId = player.getUuid();
+        if (placementModeService.shouldSuppressPrompts(playerId, java.time.Instant.now())) {
+            focusedPlayers.remove(playerId);
+            return;
+        }
         boolean focused = castleInteractionService.isPlayerFocusingOwnedCastle(player);
         if (!focused) {
             focusedPlayers.remove(playerId);
             return;
         }
-        if (focusedPlayers.add(playerId)) {
-            castleInteractionService.openCastleUi(player);
-        }
+        focusedPlayers.add(playerId);
     }
 }

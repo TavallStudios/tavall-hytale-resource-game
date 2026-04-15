@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-data-health-flow.mjs",
@@ -147,21 +147,9 @@ cd {1}
 unset TAVALL_POSTGRES_URL TAVALL_POSTGRES_USER TAVALL_POSTGRES_PASSWORD
 unset TAVALL_REDIS_HOST TAVALL_REDIS_PORT TAVALL_REDIS_PASSWORD TAVALL_REDIS_TLS
 nohup ./start.sh --transport {2} --auth-mode {3} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
-for i in $(seq 1 60); do
-  if [ "{2}" = "QUIC" ]; then
-    if ss -lun | grep -q ":{0} "; then
-      echo SERVER_READY
-      exit 0
-    fi
-  elif lsof -ti tcp:{0} >/dev/null 2>&1; then
-    echo SERVER_READY
-    exit 0
-  fi
-  sleep 2
-done
-exit 1
 '@ -f $Port, $ServerRoot, $Transport, $AuthMode
     Invoke-RemoteBash -Script $script | Out-Null
+    Wait-RemoteServerReady -SshAlias $SshAlias -LogPath $logPath -Transport $Transport -Port $Port -StartOutPath "$ServerRoot/start.out"
 }
 
 $startedAt = (Get-Date).ToString("o")

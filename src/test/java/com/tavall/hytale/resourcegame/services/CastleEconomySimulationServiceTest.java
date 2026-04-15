@@ -11,6 +11,7 @@ import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
 import com.tavall.hytale.resourcegame.support.RecordingResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.support.RecordingUiNavigator;
 import com.tavall.hytale.resourcegame.support.TestAwait;
 import com.hypixel.hytale.math.vector.Vector3d;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ public final class CastleEconomySimulationServiceTest {
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService visualService = new RecordingCastleSiteVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
+        RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
         CastleEconomyPlanner planner = new CastleEconomyPlanner();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         CastleEconomySimulationService simulationService = new CastleEconomySimulationService(
@@ -44,7 +46,8 @@ public final class CastleEconomySimulationServiceTest {
                 visualService,
                 planner,
                 resourceNodeService,
-                resourceNodeVisualService
+                resourceNodeVisualService,
+                uiNavigator
         );
 
         UUID playerId = UUID.randomUUID();
@@ -79,6 +82,7 @@ public final class CastleEconomySimulationServiceTest {
         assertEquals(updated.populationSummary().citizenCount(), planner.snapshot(updated).jobCounts().values().stream().mapToInt(Integer::intValue).sum());
         assertEquals(updated.populationSummary().citizenCount(), visualService.lastState(playerId).populationSummary().citizenCount());
         assertEquals(updated.resources().food(), resourceNodeVisualService.lastState(playerId).resources().food());
+        assertEquals(updated.resources().food(), uiNavigator.lastState(playerId).resources().food());
 
         TestAwait.until(
                 () -> gameStateStore.snapshot(91L)

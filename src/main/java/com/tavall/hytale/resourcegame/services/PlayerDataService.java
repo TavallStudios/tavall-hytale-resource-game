@@ -8,12 +8,14 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IIpHashService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerProfileService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
@@ -36,26 +38,32 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
     private final IPlayerGameStateService gameStateService;
     private final IPlayerSessionStore sessionStore;
     private final ICastleSpawnService castleSpawnService;
+    private final IInteriorInstanceService interiorInstanceService;
     private final IIpHashService ipHashService;
     private final IKingdomClockService clockService;
     private final IResourceNodeVisualService resourceNodeVisualService;
+    private final IUiNavigator uiNavigator;
 
     public PlayerDataService(
             IPlayerProfileService profileService,
             IPlayerGameStateService gameStateService,
             IPlayerSessionStore sessionStore,
             ICastleSpawnService castleSpawnService,
+            IInteriorInstanceService interiorInstanceService,
             IIpHashService ipHashService,
             IKingdomClockService clockService,
-            IResourceNodeVisualService resourceNodeVisualService
+            IResourceNodeVisualService resourceNodeVisualService,
+            IUiNavigator uiNavigator
     ) {
         this.profileService = Objects.requireNonNull(profileService, "profileService");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.castleSpawnService = Objects.requireNonNull(castleSpawnService, "castleSpawnService");
+        this.interiorInstanceService = Objects.requireNonNull(interiorInstanceService, "interiorInstanceService");
         this.ipHashService = Objects.requireNonNull(ipHashService, "ipHashService");
         this.clockService = Objects.requireNonNull(clockService, "clockService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
+        this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
     public void handlePlayerReady(PlayerReadyEvent event) {
@@ -76,6 +84,8 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
             gameStateService.persistState(state, now);
         });
         sessionStore.remove(playerId);
+        interiorInstanceService.releaseInteriorWorld(playerId);
+        uiNavigator.clearTrackedPage(playerId);
     }
 
     public CompletableFuture<PlayerSession> ensureSession(Player player) {
@@ -116,7 +126,7 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
         return new CastleLocationData(
                 player.getWorld().getName(),
                 spawnPosition.getX(),
-                spawnPosition.getY(),
+                spawnPosition.getY() + 1.0D,
                 spawnPosition.getZ() + INITIAL_CASTLE_Z_OFFSET
         );
     }

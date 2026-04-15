@@ -151,6 +151,11 @@ public final class InteriorWorldService implements IInteriorWorldService, IDepen
                     EXIT_UI_DELAY_MILLIS,
                     TimeUnit.MILLISECONDS
             );
+            HytaleServer.SCHEDULED_EXECUTOR.schedule(
+                    () -> interiorInstanceService.releaseInteriorWorld(playerId),
+                    EXIT_UI_DELAY_MILLIS,
+                    TimeUnit.MILLISECONDS
+            );
         });
         gameStateService.cacheState(playerId, updated);
         AsyncTask.runAsync(() -> gameStateService.persistState(updated, Instant.now()));

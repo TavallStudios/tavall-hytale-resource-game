@@ -1,5 +1,7 @@
 package com.tavall.hytale.resourcegame.domain;
 
+import com.hypixel.hytale.math.vector.Vector3d;
+
 import java.util.Objects;
 
 /**
@@ -32,5 +34,17 @@ public final class CastleLocationData {
 
     public double z() {
         return z;
+    }
+
+    public Vector3d toVector() {
+        return new Vector3d(x, y, z);
+    }
+
+    public Vector3d supportBlockVector() {
+        return new Vector3d(x, Math.floor(y) - 1.0D, z);
+    }
+
+    public Vector3d standingBaseVector() {
+        return new Vector3d(x, Math.floor(y), z);
     }
 }

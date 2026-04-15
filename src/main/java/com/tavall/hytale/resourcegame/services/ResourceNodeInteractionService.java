@@ -34,6 +34,9 @@ public final class ResourceNodeInteractionService implements IResourceNodeIntera
 
     @Override
     public void handleInteract(PlayerInteractEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         Player player = event.getPlayer();
         UUID playerId = player.getUuid();
         PlayerSession session = sessionStore.get(playerId);

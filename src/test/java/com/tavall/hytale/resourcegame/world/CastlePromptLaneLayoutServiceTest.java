@@ -13,7 +13,7 @@ public final class CastlePromptLaneLayoutServiceTest {
         CastlePromptLaneLayout layout = service.createLayout(new CastleLocationData("overworld", 18.5, 72.9, 33.5));
 
         assertEquals(18.5, layout.origin().getX());
-        assertEquals(72.0, layout.origin().getY());
+        assertEquals(71.0, layout.origin().getY());
         assertEquals(29.5, layout.origin().getZ());
 
         assertEquals(18.5, layout.alignmentPoint().getX());

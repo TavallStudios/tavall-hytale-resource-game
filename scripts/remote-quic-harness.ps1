@@ -134,6 +134,54 @@ exit 1
     }
 }
 
+function Wait-RemoteServerReady {
+    param(
+        [string]$SshAlias,
+        [string]$LogPath,
+        [string]$Transport,
+        [int]$Port,
+        [string]$StartOutPath,
+        [string]$BootMarker = "Hytale Server Booted!",
+        [int]$MaxAttempts = 90,
+        [int]$SleepSeconds = 2
+    )
+
+    $script = @'
+set -e
+for i in $(seq 1 {0}); do
+  socket_ready=0
+  if [ "{1}" = "QUIC" ]; then
+    if ss -lun | grep -q ":{2} "; then
+      socket_ready=1
+    fi
+  elif lsof -ti tcp:{2} >/dev/null 2>&1; then
+    socket_ready=1
+  fi
+
+  boot_ready=0
+  if [ -f "{3}" ] && grep -q "{4}" "{3}"; then
+    boot_ready=1
+  fi
+
+  if [ "$socket_ready" -eq 1 ] && [ "$boot_ready" -eq 1 ]; then
+    echo SERVER_READY
+    exit 0
+  fi
+  sleep {5}
+done
+
+if [ -f "{3}" ]; then
+  tail -n 120 "{3}" || true
+fi
+exit 1
+'@ -f $MaxAttempts, $Transport, $Port, $StartOutPath, $BootMarker, $SleepSeconds
+
+    $result = Invoke-RemoteLoggedBash -SshAlias $SshAlias -Script $script -LogPath $LogPath -AllowFailure
+    if ($result -notmatch "SERVER_READY") {
+        throw "Remote server did not report full boot readiness."
+    }
+}
+
 function Minimize-TranscriptArtifact {
     param([string]$Path)
 

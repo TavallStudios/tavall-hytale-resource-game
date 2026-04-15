@@ -1,12 +1,15 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.NPCPlugin;
@@ -51,17 +54,53 @@ public final class CastleSpawnService implements ICastleSpawnService, IDependenc
         UUID playerId = player.getUuid();
         Ref<EntityStore> existingRef = registry.get(playerId);
         if (existingRef == null || !existingRef.isValid()) {
-            World world = player.getWorld();
-            Store<EntityStore> store = world.getEntityStore().getStore();
-            Vector3d position = new Vector3d(locationData.x(), locationData.y(), locationData.z());
-            Ref<EntityStore> castleRef = spawnCastle(store, position);
-            if (castleRef != null) {
-                registry.register(playerId, castleRef);
-            }
+            World world = resolveWorld(locationData, player.getWorld());
+            spawnCastleForPlayer(playerId, world, locationData);
         }
         PlayerSession session = sessionStore.get(playerId);
         if (session != null) {
             castleSiteVisualService.ensureSite(playerId, session.gameState());
+        }
+    }
+
+    @Override
+    public void replaceCastle(UUID playerId, CastleLocationData locationData) {
+        if (playerId == null || locationData == null) {
+            return;
+        }
+        World world = resolveWorld(locationData, null);
+        if (world == null) {
+            return;
+        }
+        world.execute(() -> {
+            removeCastle(playerId);
+            spawnCastleForPlayer(playerId, world, locationData);
+        });
+    }
+
+    private void spawnCastleForPlayer(UUID playerId, World world, CastleLocationData locationData) {
+        if (world == null || locationData == null) {
+            return;
+        }
+        Store<EntityStore> store = world.getEntityStore().getStore();
+        Ref<EntityStore> castleRef = spawnCastle(store, locationData.toVector());
+        if (castleRef != null) {
+            registry.register(playerId, castleRef);
+        }
+    }
+
+    private World resolveWorld(CastleLocationData locationData, World fallbackWorld) {
+        if (locationData == null) {
+            return fallbackWorld;
+        }
+        World world = Universe.get().getWorld(locationData.worldName());
+        return world == null ? fallbackWorld : world;
+    }
+
+    private void removeCastle(UUID playerId) {
+        Ref<EntityStore> existingRef = registry.remove(playerId);
+        if (existingRef != null && existingRef.isValid()) {
+            existingRef.getStore().removeEntity(existingRef, RemoveReason.REMOVE);
         }
     }
 
@@ -75,6 +114,7 @@ public final class CastleSpawnService implements ICastleSpawnService, IDependenc
         Ref<EntityStore> ref = pair.first();
         if (ref != null && ref.isValid()) {
             store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(assetConfig.displayName())));
+            store.putComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(2.35F));
         }
         return ref;
     }

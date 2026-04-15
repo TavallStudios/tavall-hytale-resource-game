@@ -104,4 +104,35 @@ public final class PlayerGameStateMetadataTest {
         assertEquals(state.populationSummary().citizenCount(), afterUpgrade.populationSummary().citizenCount());
         assertEquals(state.populationSummary().troopCount(), afterUpgrade.populationSummary().troopCount());
     }
+
+    @Test
+    void resetOnboardingProgressRestoresTutorialFlagsWithoutDroppingPopulationState() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        PlayerGameStateService service = new PlayerGameStateService(
+                new InMemoryPlayerGameStateStore(),
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("metadata-reset"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "metadata-reset"),
+                mapperProvider.mapper()
+        );
+
+        Instant now = Instant.parse("2026-04-15T20:10:00Z");
+        PlayerGameState state = service.loadOrCreate(
+                55L,
+                UUID.randomUUID(),
+                new CastleLocationData("overworld", 5.0, 66.0, 5.0),
+                now
+        );
+        PlayerGameState completed = service.markUpgradeTutorialSeen(
+                service.markInteriorTourSeen(service.markInteriorTutorialSeen(state, now.plusSeconds(1)), now.plusSeconds(2)),
+                now.plusSeconds(3)
+        );
+
+        PlayerGameState reset = service.resetOnboardingProgress(completed, now.plusSeconds(4));
+
+        assertTrue(service.isInteriorTutorialPending(reset));
+        assertTrue(service.isInteriorTourPending(reset));
+        assertTrue(service.isUpgradeTutorialPending(reset));
+        assertEquals(completed.populationSummary().citizenCount(), reset.populationSummary().citizenCount());
+        assertEquals(completed.populationSummary().troopCount(), reset.populationSummary().troopCount());
+    }
 }

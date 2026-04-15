@@ -28,4 +28,6 @@ public interface IPlayerGameStateService extends IDependencyInjectableInterface 
     PlayerGameState markInteriorTourSeen(PlayerGameState state, Instant now);
 
     PlayerGameState markUpgradeTutorialSeen(PlayerGameState state, Instant now);
+
+    PlayerGameState resetOnboardingProgress(PlayerGameState state, Instant now);
 }

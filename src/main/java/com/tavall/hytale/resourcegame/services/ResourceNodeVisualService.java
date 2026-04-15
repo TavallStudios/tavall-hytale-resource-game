@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -20,7 +19,6 @@ import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
 import com.tavall.hytale.resourcegame.world.ResourceNodeStructureService;
 import com.tavall.hytale.resourcegame.world.ResourceNodeVisualRefs;
-import it.unimi.dsi.fastutil.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,18 +41,21 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
     private final IResourceNodeService resourceNodeService;
     private final ResourceNodeStructureService structureService;
     private final ResourceNodeRoutePlanner routePlanner;
+    private final NpcVisualSpawner npcVisualSpawner;
     private final Map<UUID, Map<UUID, ResourceNodeVisualRefs>> nodeRefs = new ConcurrentHashMap<>();
 
     public ResourceNodeVisualService(
             PopulationDisplayConfig displayConfig,
             IResourceNodeService resourceNodeService,
             ResourceNodeStructureService structureService,
-            ResourceNodeRoutePlanner routePlanner
+            ResourceNodeRoutePlanner routePlanner,
+            NpcVisualSpawner npcVisualSpawner
     ) {
         this.displayConfig = displayConfig;
         this.resourceNodeService = resourceNodeService;
         this.structureService = structureService;
         this.routePlanner = routePlanner;
+        this.npcVisualSpawner = npcVisualSpawner;
     }
 
     @Override
@@ -122,8 +123,8 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                 Instant refreshTime = Instant.now();
                 ResourceNodeSummary summary = resourceNodeService.summary(state, node);
                 structureService.ensureNodeSite(world, node, summary);
-                Ref<EntityStore> anchorRef = spawnNamed(store, roleIndex, new Vector3d(node.x(), node.y(), node.z()), anchorLabel(node, summary));
-                List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops());
+                Ref<EntityStore> anchorRef = spawnNamed(store, roleIndex, new Vector3d(node.x(), node.y(), node.z()), anchorLabel(node, summary), anchorScale(summary));
+                List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops(), workerScale(summary));
                 Ref<EntityStore> routeAnchorRef = spawnRouteAnchor(store, roleIndex, state, node, summary);
                 List<Ref<EntityStore>> routeRefs = spawnRouteMarkers(store, roleIndex, state, summary, refreshTime);
                 rebuiltRefs.put(node.nodeId(), new ResourceNodeVisualRefs(anchorRef, routeAnchorRef, workerRefs, routeRefs));
@@ -132,27 +133,14 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         nodeRefs.put(playerId, rebuiltRefs);
     }
 
-    private Ref<EntityStore> spawnNamed(Store<EntityStore> store, int roleIndex, Vector3d position, String label) {
-        Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, position, Vector3f.ZERO, null, null);
-        Ref<EntityStore> ref = pair.first();
-        if (ref != null && ref.isValid()) {
-            store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(label)));
-        }
-        return ref;
+    private Ref<EntityStore> spawnNamed(Store<EntityStore> store, int roleIndex, Vector3d position, String label, float scale) {
+        return npcVisualSpawner.spawnNamed(store, roleIndex, position, label, scale);
     }
 
-    private List<Ref<EntityStore>> spawnWorkers(Store<EntityStore> store, int roleIndex, ResourceNodeData node, int assignedTroops) {
+    private List<Ref<EntityStore>> spawnWorkers(Store<EntityStore> store, int roleIndex, ResourceNodeData node, int assignedTroops, float scale) {
         List<Vector3d> positions = workerPositions(node);
         int visibleCount = Math.min(MAX_WORKER_MARKERS, Math.max(0, (int) Math.ceil(assignedTroops / 2.0)));
-        List<Ref<EntityStore>> refs = new ArrayList<>();
-        for (int index = 0; index < visibleCount && index < positions.size(); index++) {
-            Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, positions.get(index), Vector3f.ZERO, null, null);
-            Ref<EntityStore> ref = pair.first();
-            if (ref != null && ref.isValid()) {
-                refs.add(ref);
-            }
-        }
-        return List.copyOf(refs);
+        return npcVisualSpawner.spawnGroup(store, roleIndex, positions, visibleCount, scale);
     }
 
     private Ref<EntityStore> spawnRouteAnchor(
@@ -172,7 +160,8 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                 store,
                 roleIndex,
                 midpoint,
-                "Supply Lane | Convoys " + summary.visibleRouteCount() + " | " + summary.stockStatus()
+                "Supply Lane | Convoys " + summary.visibleRouteCount() + " | " + summary.stockStatus(),
+                routeScale(summary)
         );
     }
 
@@ -186,16 +175,8 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         if (state.castleLocation() == null || summary.visibleRouteCount() <= 0) {
             return List.of();
         }
-        List<Ref<EntityStore>> refs = new ArrayList<>();
         List<Vector3d> positions = routePlanner.routePositions(state.castleLocation(), summary, now, MAX_ROUTE_MARKERS);
-        for (Vector3d routePosition : positions) {
-            Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, routePosition, Vector3f.ZERO, null, null);
-            Ref<EntityStore> ref = pair.first();
-            if (ref != null && ref.isValid()) {
-                refs.add(ref);
-            }
-        }
-        return List.copyOf(refs);
+        return npcVisualSpawner.spawnGroup(store, roleIndex, positions, positions.size(), routeScale(summary));
     }
 
     private List<Vector3d> workerPositions(ResourceNodeData node) {
@@ -227,5 +208,21 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                 + " (" + summary.stockPercent() + "%)"
                 + " " + summary.stockStatus()
                 + " | +" + summary.gainPerTick() + "/tick";
+    }
+
+    private float anchorScale(ResourceNodeSummary summary) {
+        return clampScale(0.95F + (summary.stockPercent() / 100.0F) + (summary.assignedTroops() / 10.0F), 0.95F, 2.15F);
+    }
+
+    private float workerScale(ResourceNodeSummary summary) {
+        return clampScale(0.6F + (summary.assignedTroops() / 12.0F), 0.6F, 1.35F);
+    }
+
+    private float routeScale(ResourceNodeSummary summary) {
+        return clampScale(0.5F + (summary.visibleRouteCount() / 4.0F), 0.5F, 1.15F);
+    }
+
+    private float clampScale(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
