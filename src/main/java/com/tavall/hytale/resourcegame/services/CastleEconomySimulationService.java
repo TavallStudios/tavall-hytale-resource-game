@@ -7,6 +7,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -33,6 +34,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
     private final ICastleSiteVisualService castleSiteVisualService;
     private final CastleEconomyPlanner planner;
     private final IResourceNodeService resourceNodeService;
+    private final IResourceNodeVisualService resourceNodeVisualService;
     private ScheduledFuture<?> tickTask;
 
     public CastleEconomySimulationService(
@@ -40,13 +42,15 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
             IPlayerGameStateService gameStateService,
             ICastleSiteVisualService castleSiteVisualService,
             CastleEconomyPlanner planner,
-            IResourceNodeService resourceNodeService
+            IResourceNodeService resourceNodeService,
+            IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.planner = Objects.requireNonNull(planner, "planner");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
+        this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
     }
 
     @Override
@@ -96,6 +100,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
         session.updateGameState(updatedState);
         gameStateService.cacheState(session.playerId(), updatedState);
         castleSiteVisualService.refreshSite(session.playerId(), updatedState);
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
         PlayerGameState persistedState = updatedState;
         AsyncTask.runAsync(() -> gameStateService.persistState(persistedState, now));
         LOGGER.fine(() -> "Economy tick applied for " + session.playerId());

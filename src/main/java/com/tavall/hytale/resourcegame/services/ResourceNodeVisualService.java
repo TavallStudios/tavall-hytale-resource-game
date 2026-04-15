@@ -18,6 +18,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualS
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
+import com.tavall.hytale.resourcegame.world.VectorMath;
 import com.tavall.hytale.resourcegame.world.ResourceNodeStructureService;
 import com.tavall.hytale.resourcegame.world.ResourceNodeVisualRefs;
 import it.unimi.dsi.fastutil.Pair;
@@ -36,6 +37,7 @@ import java.util.logging.Logger;
 public final class ResourceNodeVisualService implements IResourceNodeVisualService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(ResourceNodeVisualService.class.getName());
     private static final int MAX_WORKER_MARKERS = 6;
+    private static final int MAX_ROUTE_MARKERS = 4;
 
     private final PopulationDisplayConfig displayConfig;
     private final IResourceNodeService resourceNodeService;
@@ -118,7 +120,9 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                 ResourceNodeSummary summary = resourceNodeService.summary(state, node);
                 Ref<EntityStore> anchorRef = spawnNamed(store, roleIndex, new Vector3d(node.x(), node.y(), node.z()), anchorLabel(node, summary));
                 List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops());
-                rebuiltRefs.put(node.nodeId(), new ResourceNodeVisualRefs(anchorRef, workerRefs));
+                Ref<EntityStore> routeAnchorRef = spawnRouteAnchor(store, roleIndex, state, node, summary);
+                List<Ref<EntityStore>> routeRefs = spawnRouteMarkers(store, roleIndex, state, node, summary.visibleRouteCount());
+                rebuiltRefs.put(node.nodeId(), new ResourceNodeVisualRefs(anchorRef, routeAnchorRef, workerRefs, routeRefs));
             });
         }
         nodeRefs.put(playerId, rebuiltRefs);
@@ -147,6 +151,53 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         return List.copyOf(refs);
     }
 
+    private Ref<EntityStore> spawnRouteAnchor(
+            Store<EntityStore> store,
+            int roleIndex,
+            PlayerGameState state,
+            ResourceNodeData node,
+            ResourceNodeSummary summary
+    ) {
+        if (state.castleLocation() == null || summary.visibleRouteCount() <= 0) {
+            return null;
+        }
+        Vector3d castlePosition = new Vector3d(state.castleLocation().x(), state.castleLocation().y() + 1.0, state.castleLocation().z());
+        Vector3d nodePosition = new Vector3d(node.x(), node.y(), node.z());
+        Vector3d midpoint = interpolate(castlePosition, nodePosition, 0.5);
+        return spawnNamed(
+                store,
+                roleIndex,
+                midpoint,
+                "Supply Lane | Convoys " + summary.visibleRouteCount() + " | Stock " + summary.stockPercent() + "%"
+        );
+    }
+
+    private List<Ref<EntityStore>> spawnRouteMarkers(
+            Store<EntityStore> store,
+            int roleIndex,
+            PlayerGameState state,
+            ResourceNodeData node,
+            int routeCount
+    ) {
+        if (state.castleLocation() == null || routeCount <= 0) {
+            return List.of();
+        }
+        Vector3d castlePosition = new Vector3d(state.castleLocation().x(), state.castleLocation().y() + 1.0, state.castleLocation().z());
+        Vector3d nodePosition = new Vector3d(node.x(), node.y(), node.z());
+        int visibleCount = Math.min(MAX_ROUTE_MARKERS, routeCount);
+        List<Ref<EntityStore>> refs = new ArrayList<>();
+        for (int index = 0; index < visibleCount; index++) {
+            double progress = (index + 1.0) / (visibleCount + 1.0);
+            Vector3d routePosition = interpolate(castlePosition, nodePosition, progress);
+            Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, routePosition, Vector3f.ZERO, null, null);
+            Ref<EntityStore> ref = pair.first();
+            if (ref != null && ref.isValid()) {
+                refs.add(ref);
+            }
+        }
+        return List.copyOf(refs);
+    }
+
     private List<Vector3d> workerPositions(ResourceNodeData node) {
         double x = node.x();
         double y = node.y();
@@ -162,6 +213,25 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
     }
 
     private String anchorLabel(ResourceNodeData node, ResourceNodeSummary summary) {
-        return node.resourceType() + " Node | Sent " + summary.assignedTroops() + " | Reserve " + summary.availableTroops() + " | +" + summary.gainPerTick() + "/tick";
+        return node.resourceType()
+                + " Node | Sent " + summary.assignedTroops()
+                + " | Stock " + summary.currentStock() + "/" + summary.maxStock()
+                + " (" + summary.stockPercent() + "%)"
+                + " | +" + summary.gainPerTick() + "/tick";
+    }
+
+    private Vector3d interpolate(Vector3d start, Vector3d end, double progress) {
+        Vector3d direction = new Vector3d(end.getX() - start.getX(), end.getY() - start.getY(), end.getZ() - start.getZ());
+        Vector3d normalizedDirection = VectorMath.normalize(direction);
+        double distance = Math.sqrt(
+                direction.getX() * direction.getX()
+                        + direction.getY() * direction.getY()
+                        + direction.getZ() * direction.getZ()
+        );
+        return new Vector3d(
+                start.getX() + normalizedDirection.getX() * distance * progress,
+                start.getY() + normalizedDirection.getY() * distance * progress,
+                start.getZ() + normalizedDirection.getZ() * distance * progress
+        );
     }
 }

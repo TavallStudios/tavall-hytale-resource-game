@@ -42,6 +42,32 @@ Group {
     }
   }
 
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 18);
+
+    Group {
+      Anchor: (Width: 240);
+      LayoutMode: Top;
+      Label { Text: "Node Stock"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #StockStatus { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Regeneration"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #RegenStatus { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 280);
+      LayoutMode: Top;
+      Label { Text: "Supply Lane"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #RouteStatus { Style: (FontSize: 18); }
+    }
+  }
+
   Label #FeedbackStatus {
     Text: "Select how many troops to send.";
     Style: (FontSize: 14, TextColor: #cfd8e1);

@@ -7,9 +7,12 @@ import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
+import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
+import com.tavall.hytale.resourcegame.support.RecordingResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.support.TestAwait;
+import com.hypixel.hytale.math.vector.Vector3d;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -32,6 +35,7 @@ public final class CastleEconomySimulationServiceTest {
         );
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService visualService = new RecordingCastleSiteVisualService();
+        RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
         CastleEconomyPlanner planner = new CastleEconomyPlanner();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         CastleEconomySimulationService simulationService = new CastleEconomySimulationService(
@@ -39,7 +43,8 @@ public final class CastleEconomySimulationServiceTest {
                 gameStateService,
                 visualService,
                 planner,
-                resourceNodeService
+                resourceNodeService,
+                resourceNodeVisualService
         );
 
         UUID playerId = UUID.randomUUID();
@@ -55,6 +60,14 @@ public final class CastleEconomySimulationServiceTest {
                 new PlayerProfile(91L, playerId, "EconomyBot", "UTC", "hash", start, start, start),
                 initialState
         ));
+        PlayerGameState withNode = resourceNodeService.placeNode(
+                playerId,
+                ResourceType.FOOD,
+                "overworld",
+                new Vector3d(initialState.castleLocation().x() + 8.0, initialState.castleLocation().y(), initialState.castleLocation().z() + 8.0),
+                start
+        );
+        sessionStore.get(playerId).updateGameState(withNode);
 
         simulationService.runTick(start.plusSeconds(12));
 
@@ -65,6 +78,7 @@ public final class CastleEconomySimulationServiceTest {
         assertTrue(updated.populationSummary().citizenMetaData().jobCounts().containsKey(CitizenJobType.GATHERER));
         assertEquals(updated.populationSummary().citizenCount(), planner.snapshot(updated).jobCounts().values().stream().mapToInt(Integer::intValue).sum());
         assertEquals(updated.populationSummary().citizenCount(), visualService.lastState(playerId).populationSummary().citizenCount());
+        assertEquals(updated.resources().food(), resourceNodeVisualService.lastState(playerId).resources().food());
 
         TestAwait.until(
                 () -> gameStateStore.snapshot(91L)

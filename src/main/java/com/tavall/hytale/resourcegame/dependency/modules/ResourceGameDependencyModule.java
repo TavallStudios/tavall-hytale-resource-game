@@ -192,7 +192,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 gameStateService,
                 castleSiteVisualService,
                 economyPlanner,
-                resourceNodeService
+                resourceNodeService,
+                resourceNodeVisualService
         );
         InteriorWorldService interiorWorldService = new InteriorWorldService(
                 sessionStore,
