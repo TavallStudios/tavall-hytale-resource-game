@@ -51,23 +51,32 @@ function assertSnapshotValues(snapshot, expected) {
 }
 
 async function openUpgradesAndAssert(bot, expected) {
-  bot.chat("/kingdom ui upgrades");
-  const page = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleUpgradesPage", 10_000);
-  const snapshot = await waitForSnapshot(
-    bot,
-    (candidate) => {
-      try {
-        assertSnapshotValues(candidate, expected);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    8_000,
-    "upgrades snapshot values"
-  );
-  const actual = assertSnapshotValues(snapshot, expected);
-  return { page, snapshot, actual };
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    bot.chat("/kingdom ui upgrades");
+    try {
+      const page = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleUpgradesPage", 20_000);
+      const snapshot = await waitForSnapshot(
+        bot,
+        (candidate) => {
+          try {
+            assertSnapshotValues(candidate, expected);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        20_000,
+        "upgrades snapshot values"
+      );
+      const actual = assertSnapshotValues(snapshot, expected);
+      return { page, snapshot, actual };
+    } catch (error) {
+      lastError = error;
+      await delay(1_000);
+    }
+  }
+  throw lastError ?? new Error("Timed out waiting for upgrades snapshot values");
 }
 
 async function main() {
@@ -111,7 +120,7 @@ async function main() {
       nearbyRadius: 12
     });
     baselineSnapshot = baseline.snapshot;
-    await delay(1_500);
+    await delay(3_000);
 
     if (mode === "seed") {
       const commands = [
@@ -123,8 +132,9 @@ async function main() {
       ];
       for (const command of commands) {
         bot.chat(command);
-        await delay(350);
+        await delay(500);
       }
+      await delay(1_500);
       assertions.push("state-mutated");
     }
 

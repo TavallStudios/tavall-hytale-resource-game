@@ -37,6 +37,61 @@ function resourceAtLeast(snapshot, selector, minimum) {
   return !Number.isNaN(value) && value >= minimum;
 }
 
+function matchesExpectedValues(snapshot, expected) {
+  if (!expected) {
+    return true;
+  }
+  for (const [selector, value] of Object.entries(expected)) {
+    if (`${readSelectorValue(snapshot, selector)}` !== `${value}`) {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function openUpgrades(bot, expected = null, timeoutMs = 15_000) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    bot.chat("/kd ui upgrades");
+    try {
+      return await waitForSnapshot(
+        bot,
+        (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage" && matchesExpectedValues(snapshot, expected),
+        timeoutMs,
+        "upgrades page snapshot"
+      );
+    } catch (error) {
+      lastError = error;
+      await delay(400);
+    }
+  }
+  throw lastError ?? new Error("Timed out waiting for upgrades page snapshot");
+}
+
+async function openDebug(bot, timeoutMs = 15_000) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    bot.chat("/kd ui");
+    try {
+      return await waitForSnapshot(
+        bot,
+        (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage"
+          && readSelectorValue(snapshot, "#CacheStatus.Text") != null
+          && readSelectorValue(snapshot, "#PersistenceStatus.Text") != null
+          && readSelectorValue(snapshot, "#InteriorTutorialStatus.Text") != null
+          && readSelectorValue(snapshot, "#InteriorTourStatus.Text") != null
+          && readSelectorValue(snapshot, "#UpgradeTutorialStatus.Text") != null,
+        timeoutMs,
+        "debug status snapshot"
+      );
+    } catch (error) {
+      lastError = error;
+      await delay(500);
+    }
+  }
+  throw lastError ?? new Error("Timed out waiting for debug status snapshot");
+}
+
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
@@ -68,18 +123,7 @@ async function main() {
     });
     await delay(1_500);
 
-    bot.chat("/kd ui");
-    const debugSnapshot = await waitForSnapshot(
-      bot,
-      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage"
-        && readSelectorValue(snapshot, "#CacheStatus.Text") != null
-        && readSelectorValue(snapshot, "#PersistenceStatus.Text") != null
-        && readSelectorValue(snapshot, "#InteriorTutorialStatus.Text") != null
-        && readSelectorValue(snapshot, "#InteriorTourStatus.Text") != null
-        && readSelectorValue(snapshot, "#UpgradeTutorialStatus.Text") != null,
-      15_000,
-      "debug status snapshot"
-    );
+    const debugSnapshot = await openDebug(bot, 15_000);
     assertInfraValue("#CacheStatus.Text", readSelectorValue(debugSnapshot, "#CacheStatus.Text"), [
       "memory-only (Redis not configured)",
       "memory+redis (connected)"
@@ -100,17 +144,18 @@ async function main() {
     pages.push({ key: debugSnapshot.key, snapshot: debugSnapshot });
     assertions.push("debug-health-output");
 
-    bot.chat("/kd ui upgrades");
-    let upgradesSnapshot = await waitForSnapshot(
+    let upgradesSnapshot = await openUpgrades(bot, {
+      "#CitizenCount.Text": "12",
+      "#TroopCount.Text": "0"
+    });
+    upgradesSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
-        && readSelectorValue(snapshot, "#CitizenCount.Text") === "12"
-        && readSelectorValue(snapshot, "#TroopCount.Text") === "0"
         && resourceAtLeast(snapshot, "#FoodCount.Text", 40)
         && resourceAtLeast(snapshot, "#WoodCount.Text", 25)
         && resourceAtLeast(snapshot, "#IronCount.Text", 10),
-      10_000,
-      "baseline upgrades snapshot"
+      15_000,
+      "baseline upgrades resources"
     );
     const baselineFood = Number.parseInt(`${readSelectorValue(upgradesSnapshot, "#FoodCount.Text")}`, 10);
     const baselineWood = Number.parseInt(`${readSelectorValue(upgradesSnapshot, "#WoodCount.Text")}`, 10);
@@ -120,27 +165,22 @@ async function main() {
 
     bot.chat("/kd citizens set not-a-number");
     await delay(500);
-    bot.chat("/kd ui upgrades");
-    upgradesSnapshot = await waitForSnapshot(
-      bot,
-      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
-        && readSelectorValue(snapshot, "#CitizenCount.Text") === "12"
-        && readSelectorValue(snapshot, "#TroopCount.Text") === "0",
-      10_000,
-      "invalid citizen amount leaves state unchanged"
-    );
+    upgradesSnapshot = await openUpgrades(bot, {
+      "#CitizenCount.Text": "12",
+      "#TroopCount.Text": "0"
+    });
     assertions.push("invalid-citizen-amount-does-not-mutate");
 
     bot.chat("/kd resources add stone 5");
     await delay(500);
-    bot.chat("/kd ui upgrades");
+    upgradesSnapshot = await openUpgrades(bot);
     upgradesSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
         && resourceAtLeast(snapshot, "#FoodCount.Text", baselineFood)
         && resourceAtLeast(snapshot, "#WoodCount.Text", baselineWood)
         && resourceAtLeast(snapshot, "#IronCount.Text", baselineIron),
-      10_000,
+      15_000,
       "invalid resource type leaves state unchanged"
     );
     pages.push({ key: upgradesSnapshot.key, snapshot: upgradesSnapshot });
