@@ -54,6 +54,7 @@ import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 import com.tavall.hytale.resourcegame.services.CastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.services.CastlePromptLaneService;
 import com.tavall.hytale.resourcegame.services.CastleProximityPromptService;
+import com.tavall.hytale.resourcegame.services.CastleSiteScenePlanner;
 import com.tavall.hytale.resourcegame.services.CastleSiteVisualService;
 import com.tavall.hytale.resourcegame.services.CastleSpawnService;
 import com.tavall.hytale.resourcegame.services.DebugCommandService;
@@ -151,6 +152,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         PopulationDisplayConfig populationDisplayConfig = PopulationDisplayConfig.defaults();
         InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
         CastleEconomyPlanner economyPlanner = new CastleEconomyPlanner();
+        CastleSiteScenePlanner castleSiteScenePlanner = new CastleSiteScenePlanner();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         ResourceNodeRoutePlanner resourceNodeRoutePlanner = new ResourceNodeRoutePlanner();
         ResourceNodeVisualService resourceNodeVisualService = new ResourceNodeVisualService(
@@ -165,6 +167,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 castleAssetConfig,
                 populationDisplayConfig,
                 economyPlanner,
+                castleSiteScenePlanner,
                 new CastleSiteLayoutService(),
                 new CastleSiteStructureService()
         );
