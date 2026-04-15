@@ -6,6 +6,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimula
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
 import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -31,18 +32,21 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
     private final IPlayerGameStateService gameStateService;
     private final ICastleSiteVisualService castleSiteVisualService;
     private final CastleEconomyPlanner planner;
+    private final IResourceNodeService resourceNodeService;
     private ScheduledFuture<?> tickTask;
 
     public CastleEconomySimulationService(
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
             ICastleSiteVisualService castleSiteVisualService,
-            CastleEconomyPlanner planner
+            CastleEconomyPlanner planner,
+            IResourceNodeService resourceNodeService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.planner = Objects.requireNonNull(planner, "planner");
+        this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
     }
 
     @Override
@@ -88,10 +92,12 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
                 .withWood(state.resources().wood() + snapshot.gainFor(ResourceType.WOOD))
                 .withIron(state.resources().iron() + snapshot.gainFor(ResourceType.IRON));
         PlayerGameState updatedState = state.withPopulation(updatedSummary, now).withResources(updatedResources, now);
+        updatedState = resourceNodeService.applyTick(updatedState, now);
         session.updateGameState(updatedState);
         gameStateService.cacheState(session.playerId(), updatedState);
         castleSiteVisualService.refreshSite(session.playerId(), updatedState);
-        AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, now));
+        PlayerGameState persistedState = updatedState;
+        AsyncTask.runAsync(() -> gameStateService.persistState(persistedState, now));
         LOGGER.fine(() -> "Economy tick applied for " + session.playerId());
     }
 }

@@ -6,15 +6,19 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldServic
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
+import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -26,19 +30,25 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
     private final IPopulationService populationService;
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
+    private final IResourceNodeService resourceNodeService;
+    private final IResourceNodeVisualService resourceNodeVisualService;
 
     public UiActionService(
             IUiNavigator uiNavigator,
             IInteriorWorldService interiorWorldService,
             IPopulationService populationService,
             IPlayerSessionStore sessionStore,
-            IPlayerGameStateService gameStateService
+            IPlayerGameStateService gameStateService,
+            IResourceNodeService resourceNodeService,
+            IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.interiorWorldService = Objects.requireNonNull(interiorWorldService, "interiorWorldService");
         this.populationService = Objects.requireNonNull(populationService, "populationService");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
+        this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
+        this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
     }
 
     public void handle(Player player, UiNavigationContext context, UiActionEventData eventData) {
@@ -70,7 +80,10 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             return;
         }
         if (UiActions.OPEN_RESOURCES.equals(action) && state != null) {
-            uiNavigator.open(UiPageType.CASTLE_RESOURCES, player, context, state);
+            UiNavigationContext targetContext = context.selectedNodeId() == null
+                    ? context
+                    : context.clearFeedback().withSelectedNodeId(null);
+            uiNavigator.open(UiPageType.CASTLE_RESOURCES, player, targetContext, state);
             return;
         }
         if (UiActions.OPEN_UPGRADES.equals(action) && state != null) {
@@ -113,6 +126,10 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
                         : populationService.demoteActionState(updatedSession.gameState()).message();
                 uiNavigator.open(UiPageType.CASTLE_UPGRADES, player, context.withFeedback(feedback), updatedSession.gameState());
             }
+            return;
+        }
+        if (context.selectedNodeId() != null) {
+            handleNodeAction(player, context, action, playerId, context.selectedNodeId());
         }
     }
 
@@ -150,5 +167,57 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             AsyncTask.runAsync(() -> gameStateService.persistState(updated, now));
         }
         return updated;
+    }
+
+    private void handleNodeAction(Player player, UiNavigationContext context, String action, UUID playerId, UUID nodeId) {
+        PlayerSession session = sessionStore.get(playerId);
+        if (session == null) {
+            return;
+        }
+        Optional<ResourceNodeData> nodeOptional = resourceNodeService.findNode(session.gameState(), nodeId);
+        if (nodeOptional.isEmpty()) {
+            uiNavigator.open(UiPageType.CASTLE_RESOURCES, player, context.withFeedback("Node no longer exists.").withSelectedNodeId(null), session.gameState());
+            return;
+        }
+
+        Instant now = Instant.now();
+        PlayerGameState updatedState = switch (action) {
+            case UiActions.NODE_ASSIGN_ONE -> resourceNodeService.addTroops(playerId, nodeId, 1, now);
+            case UiActions.NODE_ASSIGN_THREE -> resourceNodeService.addTroops(playerId, nodeId, 3, now);
+            case UiActions.NODE_ASSIGN_FIVE -> resourceNodeService.addTroops(playerId, nodeId, 5, now);
+            case UiActions.NODE_ASSIGN_ALL -> resourceNodeService.assignTroops(
+                    playerId,
+                    nodeId,
+                    nodeOptional.get().assignedTroops() + resourceNodeService.availableTroops(session.gameState()),
+                    now
+            );
+            case UiActions.NODE_RECALL_ONE -> resourceNodeService.addTroops(playerId, nodeId, -1, now);
+            case UiActions.NODE_RECALL_ALL -> resourceNodeService.assignTroops(playerId, nodeId, 0, now);
+            default -> null;
+        };
+        if (updatedState == null) {
+            return;
+        }
+        resourceNodeVisualService.refreshNodes(playerId, updatedState);
+        String feedback = describeNodeFeedback(action, updatedState, nodeId);
+        uiNavigator.open(
+                UiPageType.RESOURCE_NODE_DETAIL,
+                player,
+                context.withFeedback(feedback).withSelectedNodeId(nodeId),
+                updatedState
+        );
+    }
+
+    private String describeNodeFeedback(String action, PlayerGameState updatedState, UUID nodeId) {
+        Optional<ResourceNodeData> updatedNode = resourceNodeService.findNode(updatedState, nodeId);
+        if (updatedNode.isEmpty()) {
+            return "Node updated.";
+        }
+        String verb = switch (action) {
+            case UiActions.NODE_ASSIGN_ONE, UiActions.NODE_ASSIGN_THREE, UiActions.NODE_ASSIGN_FIVE, UiActions.NODE_ASSIGN_ALL -> "Troops sent.";
+            case UiActions.NODE_RECALL_ONE, UiActions.NODE_RECALL_ALL -> "Troops recalled.";
+            default -> "Node updated.";
+        };
+        return verb + " Assigned now: " + updatedNode.get().assignedTroops() + ".";
     }
 }

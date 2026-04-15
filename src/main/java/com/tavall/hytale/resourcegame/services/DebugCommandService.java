@@ -11,6 +11,8 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.commands.KingdomCommand;
@@ -31,6 +33,8 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
     private final IPlayerDataService playerDataService;
     private final IPlayerGameStateService gameStateService;
     private final IInfrastructureHealthService infrastructureHealthService;
+    private final IResourceNodeService resourceNodeService;
+    private final IResourceNodeVisualService resourceNodeVisualService;
 
     public DebugCommandService(
             IPlayerSessionStore sessionStore,
@@ -42,7 +46,9 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
             ICastlePromptLaneService castlePromptLaneService,
             IPlayerDataService playerDataService,
             IPlayerGameStateService gameStateService,
-            IInfrastructureHealthService infrastructureHealthService
+            IInfrastructureHealthService infrastructureHealthService,
+            IResourceNodeService resourceNodeService,
+            IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
@@ -54,6 +60,8 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
         this.playerDataService = Objects.requireNonNull(playerDataService, "playerDataService");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.infrastructureHealthService = Objects.requireNonNull(infrastructureHealthService, "infrastructureHealthService");
+        this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
+        this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
     }
 
     public List<AbstractAsyncCommand> commands() {
@@ -68,7 +76,9 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
                 castlePromptLaneService,
                 playerDataService,
                 gameStateService,
-                infrastructureHealthService
+                infrastructureHealthService,
+                resourceNodeService,
+                resourceNodeVisualService
         );
         return List.of(kingdom);
     }
