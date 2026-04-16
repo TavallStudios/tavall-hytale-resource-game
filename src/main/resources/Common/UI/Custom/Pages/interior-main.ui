@@ -11,8 +11,9 @@ Group {
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
-    TextButton #ExitInteriorButton { Text: "Exit Interior"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); }
+    TextButton #ExitInteriorButton { Text: "Exit Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #BuildingsButton { Text: "Buildings"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); }
   }
 
   Label { Text: "Future: build stations, upgrade rooms, worker routes, and richer interior decor."; Style: (FontSize: 14, TextColor: #a7b0ba); }

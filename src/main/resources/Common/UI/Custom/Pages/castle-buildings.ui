@@ -1,0 +1,23 @@
+Group {
+  Anchor: (Width: 900, Height: 640);
+  Background: (Color: #0d1319(0.9));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Castle Buildings"; Style: (FontSize: 24, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 8); }
+  Label { Text: "Surface buildings feed the economy. Interior buildings accelerate upgrades and military prep."; Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 16); }
+
+  Label { Text: "Surface Yard"; Style: (FontSize: 18, RenderBold: true); Anchor: (Bottom: 8); }
+  Label #FarmsteadStatus { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 6); }
+  Label #LumberMillStatus { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 6); }
+  Label #IronWorksStatus { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 16); }
+
+  Label { Text: "Interior Wing"; Style: (FontSize: 18, RenderBold: true); Anchor: (Bottom: 8); }
+  Label #BarracksStatus { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 6); }
+  Label #WorkshopStatus { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 16); }
+
+  Label { Text: "Interaction: place with /kd buildings place <type>, then look at the finished or in-progress structure and interact with it to open the detail page."; Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 16); }
+  Label #FooterStatus { Style: (FontSize: 15, RenderBold: true); Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+}

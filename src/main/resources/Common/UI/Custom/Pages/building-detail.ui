@@ -1,0 +1,41 @@
+Group {
+  Anchor: (Width: 860, Height: 560);
+  Background: (Color: #10161d(0.92));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label #BuildingTitle { Text: "Building"; Style: (FontSize: 24, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 6); }
+  Label #AreaText { Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 4); }
+  Label #LocationText { Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 16); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Level"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #LevelText { Style: (FontSize: 22); }
+    }
+
+    Group {
+      Anchor: (Width: 320);
+      LayoutMode: Top;
+      Label { Text: "Status"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #StatusText { Style: (FontSize: 18); }
+    }
+  }
+
+  Label #EffectText { Style: (FontSize: 15, TextColor: #cfd8e1); Anchor: (Bottom: 12); }
+  Label #NextUpgradeText { Style: (FontSize: 15, TextColor: #cfd8e1); Anchor: (Bottom: 16); }
+  Label #FeedbackStatus { Style: (FontSize: 15, RenderBold: true); Anchor: (Bottom: 20); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+    TextButton #StartUpgradeButton { Text: "Start Upgrade"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #OverviewButton { Text: "Building Overview"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); }
+  }
+}
