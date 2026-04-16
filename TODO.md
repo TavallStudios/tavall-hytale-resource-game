@@ -30,3 +30,4 @@
 - Add migrations for future population metadata and per-citizen tables.
 - Add Redis/Postgres health checks and reconnection handling.
 - Add metrics around cache hit rates and save latency.
+- Upgrade the Hytale bot harness to authenticate and hydrate shipped asset packs the same way as the real client before relying on it for local UI coverage.

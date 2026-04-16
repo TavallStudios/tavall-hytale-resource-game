@@ -15,6 +15,7 @@ Persist core player identity and gameplay state through in-memory session state,
 - `PlayerGameStateService`
 - `PlayerDataService`
 - `PostgresConnectionProvider`
+- `PostgresSchemaBootstrap`
 - `PlayerProfileRepository`
 - `PlayerGameStateRepository`
 - `SemanticCacheFactory`
@@ -30,6 +31,8 @@ Persist core player identity and gameplay state through in-memory session state,
 - Cache lookups occur before repository reads.
 - Async persistence is used for post-mutation durability.
 - Rehydration reconstructs population metadata and onboarding state from JSON.
+- Reachable Postgres runtimes self-apply the packaged schema before the JDBC stores are activated.
+- When Redis/Postgres are configured locally through SSH tunnels, the repo restart scripts verify those tunnel endpoints before boot.
 
 ## Links to other systems
 - Every gameplay system depends on this layer for authoritative state.

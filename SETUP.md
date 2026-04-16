@@ -21,6 +21,19 @@ Apply files in schema/postgres in order:
 1. 001_player_profile.sql
 2. 002_player_game_state.sql
 
+The plugin now packages those schema files and applies them automatically at runtime when Postgres is reachable.
+
+## Local Dev Server
+- `powershell -ExecutionPolicy Bypass -File .\scripts\prepare-local-db-runtime.ps1`
+  - reads `C:\Users\TJ\Documents\HyTaleDevServer\local-db-env.cmd`
+  - auto-starts the existing SSH tunnel launchers in `Documents\.ssh` when the configured Redis/Postgres localhost ports are down
+  - verifies the local tunnel endpoints before server start
+- `powershell -ExecutionPolicy Bypass -File .\scripts\restart-local-dev-server.ps1 -BuildPlugin -RequireLiveDatabases`
+  - rebuilds the plugin
+  - deploys only the plugin jar to `mods`
+  - keeps the existing auth mode intact
+  - requires Redis/Postgres to be reachable before restart
+
 ## Testing
 - The remote Hytale server should run with `--transport QUIC` for real-client parity.
 - The bot harness connects via QUIC using a stdio bridge that is spawned by the client (no TCP bridge).
