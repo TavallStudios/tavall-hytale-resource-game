@@ -2,6 +2,7 @@ param(
     [string]$ServerRoot = "C:\Users\TJ\Documents\HyTaleDevServer",
     [switch]$BuildPlugin,
     [switch]$DeployPlugin = $true,
+    [switch]$RequireLiveDatabases,
     [int]$Port = 5520,
     [int]$StartupTimeoutSeconds = 180
 )
@@ -12,6 +13,18 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $startScript = Join-Path $ServerRoot "start.bat"
 if (-not (Test-Path $startScript)) {
     throw "start.bat not found at $startScript"
+}
+
+$prepareDbScript = Join-Path $PSScriptRoot "prepare-local-db-runtime.ps1"
+if (Test-Path $prepareDbScript) {
+    try {
+        & $prepareDbScript -ServerRoot $ServerRoot -RequireLiveDatabases:$RequireLiveDatabases | Out-Host
+    } catch {
+        if ($RequireLiveDatabases) {
+            throw
+        }
+        Write-Warning ("Local database runtime is not fully reachable. The plugin will fall back to in-memory persistence if needed. {0}" -f $_.Exception.Message)
+    }
 }
 
 if ($DeployPlugin) {
