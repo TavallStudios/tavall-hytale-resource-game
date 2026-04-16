@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
@@ -8,6 +9,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PopulationSummary;
@@ -31,8 +33,10 @@ public final class PopulationService implements IPopulationService, IDependencyI
     private final ICastleSiteVisualService castleSiteVisualService;
     private final PopulationDisplayGateway displayService;
     private final PromotionCost promotionCost;
+    private final ICastleBuildingService buildingService;
     private final IResourceNodeService resourceNodeService;
     private final IResourceNodeVisualService resourceNodeVisualService;
+    private final IUiNavigator uiNavigator;
 
     public PopulationService(
             IPlayerSessionStore sessionStore,
@@ -41,8 +45,10 @@ public final class PopulationService implements IPopulationService, IDependencyI
             ICastleSiteVisualService castleSiteVisualService,
             PopulationDisplayGateway displayService,
             PromotionCost promotionCost,
+            ICastleBuildingService buildingService,
             IResourceNodeService resourceNodeService,
-            IResourceNodeVisualService resourceNodeVisualService
+            IResourceNodeVisualService resourceNodeVisualService,
+            IUiNavigator uiNavigator
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
@@ -50,8 +56,10 @@ public final class PopulationService implements IPopulationService, IDependencyI
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.displayService = Objects.requireNonNull(displayService, "displayService");
         this.promotionCost = Objects.requireNonNull(promotionCost, "promotionCost");
+        this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
+        this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
     public PlayerGameState addCitizens(UUID playerId, int amount) {
@@ -90,14 +98,15 @@ public final class PopulationService implements IPopulationService, IDependencyI
             return false;
         }
         ResourceInventory resources = session.gameState().resources();
-        if (resources.food() < promotionCost.foodCost()
-                || resources.wood() < promotionCost.woodCost()
-                || resources.iron() < promotionCost.ironCost()) {
+        PromotionCost adjustedCost = buildingService.adjustedPromotionCost(session.gameState(), promotionCost);
+        if (resources.food() < adjustedCost.foodCost()
+                || resources.wood() < adjustedCost.woodCost()
+                || resources.iron() < adjustedCost.ironCost()) {
             return false;
         }
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.FOOD, resources.food() - promotionCost.foodCost());
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.WOOD, resources.wood() - promotionCost.woodCost());
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.IRON, resources.iron() - promotionCost.ironCost());
+        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.FOOD, resources.food() - adjustedCost.foodCost());
+        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.WOOD, resources.wood() - adjustedCost.woodCost());
+        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.IRON, resources.iron() - adjustedCost.ironCost());
         updatePopulation(playerId, -1, 1);
         return true;
     }
@@ -117,18 +126,19 @@ public final class PopulationService implements IPopulationService, IDependencyI
 
     public UpgradeActionState promoteActionState(PlayerGameState state) {
         PopulationSummary summary = state.populationSummary();
+        PromotionCost adjustedCost = buildingService.adjustedPromotionCost(state, promotionCost);
         if (summary.citizenCount() <= 0) {
             return new UpgradeActionState(false, "Blocked: need at least 1 citizen.");
         }
         ResourceInventory resources = state.resources();
-        if (resources.food() < promotionCost.foodCost()) {
-            return new UpgradeActionState(false, "Blocked: need " + promotionCost.foodCost() + " Food.");
+        if (resources.food() < adjustedCost.foodCost()) {
+            return new UpgradeActionState(false, "Blocked: need " + adjustedCost.foodCost() + " Food.");
         }
-        if (resources.wood() < promotionCost.woodCost()) {
-            return new UpgradeActionState(false, "Blocked: need " + promotionCost.woodCost() + " Wood.");
+        if (resources.wood() < adjustedCost.woodCost()) {
+            return new UpgradeActionState(false, "Blocked: need " + adjustedCost.woodCost() + " Wood.");
         }
-        if (resources.iron() < promotionCost.ironCost()) {
-            return new UpgradeActionState(false, "Blocked: need " + promotionCost.ironCost() + " Iron.");
+        if (resources.iron() < adjustedCost.ironCost()) {
+            return new UpgradeActionState(false, "Blocked: need " + adjustedCost.ironCost() + " Iron.");
         }
         return new UpgradeActionState(true, "Ready: promote 1 citizen into 1 troop.");
     }
@@ -140,11 +150,13 @@ public final class PopulationService implements IPopulationService, IDependencyI
         return new UpgradeActionState(true, "Ready: return 1 troop to the citizen pool.");
     }
 
-    public String promotionCostSummary() {
+    public String promotionCostSummary(PlayerGameState state) {
+        PromotionCost adjustedCost = buildingService.adjustedPromotionCost(state, promotionCost);
+        // UI pages call this with live state-specific values elsewhere when they need exact discounts.
         return "Cost per promotion: "
-                + promotionCost.foodCost() + " Food, "
-                + promotionCost.woodCost() + " Wood, "
-                + promotionCost.ironCost() + " Iron.";
+                + adjustedCost.foodCost() + " Food, "
+                + adjustedCost.woodCost() + " Wood, "
+                + adjustedCost.ironCost() + " Iron.";
     }
 
     public PlayerGameState updateAging(UUID playerId, Instant now) {
@@ -184,6 +196,7 @@ public final class PopulationService implements IPopulationService, IDependencyI
         displayService.updateDisplays(playerId, updatedSummary);
         castleSiteVisualService.refreshSite(playerId, updated);
         resourceNodeVisualService.refreshNodes(playerId, updated);
+        uiNavigator.refreshTrackedPage(playerId, updated);
         gameStateService.cacheState(playerId, updated);
         PlayerGameState persistedState = updated;
         AsyncTask.runAsync(() -> gameStateService.persistState(persistedState, now));

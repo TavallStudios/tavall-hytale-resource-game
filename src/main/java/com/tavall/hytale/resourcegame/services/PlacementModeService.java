@@ -8,12 +8,16 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.util.TargetUtil;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePlacementService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementPreviewService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.domain.BuildingMutationResult;
+import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.PlacementModeType;
 import com.tavall.hytale.resourcegame.domain.PlacementRequest;
@@ -40,6 +44,8 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
 
     private final IPlayerSessionStore sessionStore;
     private final IPlacementPreviewService previewService;
+    private final ICastleBuildingService buildingService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final ICastlePlacementService castlePlacementService;
     private final IResourceNodeService resourceNodeService;
     private final IResourceNodeVisualService resourceNodeVisualService;
@@ -49,12 +55,16 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
     public PlacementModeService(
             IPlayerSessionStore sessionStore,
             IPlacementPreviewService previewService,
+            ICastleBuildingService buildingService,
+            ICastleBuildingVisualService buildingVisualService,
             ICastlePlacementService castlePlacementService,
             IResourceNodeService resourceNodeService,
             IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.previewService = Objects.requireNonNull(previewService, "previewService");
+        this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
+        this.buildingVisualService = Objects.requireNonNull(buildingVisualService, "buildingVisualService");
         this.castlePlacementService = Objects.requireNonNull(castlePlacementService, "castlePlacementService");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
@@ -64,6 +74,7 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
     public PlacementRequest armCastlePlacement(Player player) {
         PlacementRequest request = new PlacementRequest(
                 PlacementModeType.CASTLE,
+                null,
                 null,
                 player.getWorld().getName(),
                 Instant.now()
@@ -78,8 +89,29 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         PlacementRequest request = new PlacementRequest(
                 PlacementModeType.RESOURCE_NODE,
                 resourceType,
+                null,
                 player.getWorld().getName(),
                 Instant.now()
+        );
+        activeRequests.put(player.getUuid(), request);
+        refreshPreview(player);
+        return request;
+    }
+
+    @Override
+    public PlacementRequest armBuildingPlacement(Player player, BuildingType buildingType) {
+        return armBuildingPlacement(player, buildingType, null);
+    }
+
+    @Override
+    public PlacementRequest armBuildingPlacement(Player player, BuildingType buildingType, Vector3i stagedTargetBlock) {
+        PlacementRequest request = new PlacementRequest(
+                PlacementModeType.BUILDING,
+                null,
+                buildingType,
+                player.getWorld().getName(),
+                Instant.now(),
+                stagedTargetBlock
         );
         activeRequests.put(player.getUuid(), request);
         refreshPreview(player);
@@ -113,7 +145,7 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         if (request == null) {
             return PlacementResult.failure("No active placement.");
         }
-        Vector3i targetBlock = resolveTargetBlock(player);
+        Vector3i targetBlock = request.stagedTargetBlock() == null ? resolveTargetBlock(player) : request.stagedTargetBlock();
         if (targetBlock == null) {
             previewService.clearPreview(player.getUuid());
             return PlacementResult.failure("Look at a solid block within 12 blocks to preview placement.");
@@ -133,8 +165,26 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         }
         Instant now = Instant.now();
         PlayerGameState updatedState;
+        String successMessage;
         if (request.modeType() == PlacementModeType.CASTLE) {
             updatedState = castlePlacementService.placeCastle(player.getUuid(), toLocation(player, targetBlock), now);
+            successMessage = successMessage(request, updatedState);
+        } else if (request.modeType() == PlacementModeType.BUILDING) {
+            BuildingMutationResult mutationResult = buildingService.placeBuilding(
+                    player.getUuid(),
+                    request.buildingType(),
+                    player.getWorld().getName(),
+                    toPosition(targetBlock),
+                    now
+            );
+            updatedState = mutationResult.state();
+            if (!mutationResult.changed()) {
+                return PlacementResult.failure(mutationResult.message());
+            }
+            if (updatedState != null) {
+                buildingVisualService.refreshBuildings(player.getUuid(), updatedState);
+            }
+            successMessage = mutationResult.message();
         } else {
             updatedState = resourceNodeService.placeNode(
                     player.getUuid(),
@@ -146,6 +196,7 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
             if (updatedState != null) {
                 resourceNodeVisualService.refreshNodes(player.getUuid(), updatedState);
             }
+            successMessage = successMessage(request, updatedState);
         }
         if (updatedState == null) {
             return PlacementResult.failure("Placement failed.");
@@ -153,7 +204,7 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         previewService.clearPreview(player.getUuid());
         activeRequests.remove(player.getUuid());
         recentPlacementActivity.put(player.getUuid(), now);
-        return PlacementResult.success(successMessage(request, updatedState), updatedState);
+        return PlacementResult.success(successMessage, updatedState);
     }
 
     @Override
@@ -162,7 +213,7 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         if (request == null) {
             return PlacementResult.failure("No active placement.");
         }
-        Vector3i targetBlock = resolveTargetBlock(player);
+        Vector3i targetBlock = request.stagedTargetBlock() == null ? resolveTargetBlock(player) : request.stagedTargetBlock();
         if (targetBlock == null) {
             return PlacementResult.failure("Look at a solid block within 12 blocks before confirming placement.");
         }
@@ -207,6 +258,11 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
         if (request.modeType() == PlacementModeType.CASTLE) {
             CastleLocationData location = updatedState.castleLocation();
             return "Castle placed at " + (int) location.x() + ", " + (int) location.y() + ", " + (int) location.z() + ".";
+        }
+        if (request.modeType() == PlacementModeType.BUILDING) {
+            return request.buildingType() == null
+                    ? "Building construction started."
+                    : request.buildingType().displayName() + " construction started.";
         }
         List<ResourceNodeData> nodes = resourceNodeService.listNodes(updatedState);
         ResourceNodeData latestNode = nodes.isEmpty() ? null : nodes.getLast();

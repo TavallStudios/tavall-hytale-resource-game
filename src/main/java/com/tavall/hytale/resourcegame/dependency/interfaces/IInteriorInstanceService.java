@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 public interface IInteriorInstanceService extends IDependencyInjectableInterface {
     CompletableFuture<World> resolveInteriorWorld(UUID playerId);
 
+    CompletableFuture<World> warmInteriorWorld();
+
     String worldNameFor(UUID playerId);
 
     void releaseInteriorWorld(UUID playerId);

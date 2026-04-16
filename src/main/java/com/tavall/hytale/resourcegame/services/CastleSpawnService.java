@@ -106,7 +106,7 @@ public final class CastleSpawnService implements ICastleSpawnService, IDependenc
 
     private Ref<EntityStore> spawnCastle(Store<EntityStore> store, Vector3d position) {
         NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = npcPlugin.getIndex(assetConfig.npcRoleName());
+        int roleIndex = new NpcRoleResolver().resolveRoleIndex(assetConfig.npcRoleName());
         if (roleIndex < 0) {
             return null;
         }

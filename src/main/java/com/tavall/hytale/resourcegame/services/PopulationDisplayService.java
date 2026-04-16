@@ -71,7 +71,7 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
 
     private Ref<EntityStore> spawnAnchor(Store<EntityStore> store, Vector3d position, String label, int count) {
         NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = npcPlugin.getIndex(displayConfig.npcRoleName());
+        int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
         if (roleIndex < 0) {
             return null;
         }

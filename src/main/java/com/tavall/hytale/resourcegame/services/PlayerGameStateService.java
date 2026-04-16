@@ -10,6 +10,7 @@ import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
+import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
 import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -55,8 +56,13 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
     }
 
     public Optional<PlayerGameState> readCached(UUID playerId) {
-        Optional<ICacheValue<PlayerGameState>> cached = cache.get(CacheKeyFactory.playerGameStateKey(playerId.toString()), codec);
-        return cached.map(ICacheValue::getValue);
+        try {
+            Optional<ICacheValue<PlayerGameState>> cached = cache.get(CacheKeyFactory.playerGameStateKey(playerId.toString()), codec);
+            return cached.map(ICacheValue::getValue);
+        } catch (Exception ex) {
+            LOGGER.warning(() -> "Player game-state cache read failed for " + playerId + ". Falling back to persistence. " + ex.getMessage());
+            return Optional.empty();
+        }
     }
 
     public PlayerGameState loadOrCreate(long profileId, UUID playerId, CastleLocationData spawnLocation, Instant now) {
@@ -79,7 +85,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             }
             state = refreshAging(hydrateMetadata(state, now), now);
             PlayerGameState persisted = persistState(state, now);
-            cache.put(CacheKeyFactory.playerGameStateKey(playerId.toString()), persisted, STATE_TTL, codec);
+            cacheState(playerId, persisted);
             return persisted;
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to load player game state", ex);
@@ -96,7 +102,11 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
     }
 
     public void cacheState(UUID playerId, PlayerGameState state) {
-        cache.put(CacheKeyFactory.playerGameStateKey(playerId.toString()), state, STATE_TTL, codec);
+        try {
+            cache.put(CacheKeyFactory.playerGameStateKey(playerId.toString()), state, STATE_TTL, codec);
+        } catch (Exception ex) {
+            LOGGER.warning(() -> "Player game-state cache write failed for " + playerId + ". " + ex.getMessage());
+        }
     }
 
     public boolean isInteriorTutorialPending(PlayerGameState state) {
@@ -166,7 +176,12 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
     private PlayerGameState withMetadata(PlayerGameState state) throws JsonProcessingException {
         GameStateMetadata existingMetadata = metadataOf(state, state.updatedAt() == null ? Instant.now() : state.updatedAt());
         OnboardingProgress progress = existingMetadata.onboardingProgress();
-        GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), progress, existingMetadata.resourceNodes());
+        GameStateMetadata metadata = GameStateMetadata.fromPopulation(
+                state.populationSummary(),
+                progress,
+                existingMetadata.resourceNodes(),
+                existingMetadata.castleBuildings()
+        );
         String json = objectMapper.writeValueAsString(metadata);
         return state.withMetadataJson(json, state.updatedAt() == null ? Instant.now() : state.updatedAt());
     }
@@ -182,7 +197,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         PopulationSummary summary = rehydratePopulation(state.populationSummary(), metadata, now);
         PlayerGameState hydrated = state.withPopulation(summary, state.updatedAt() == null ? now : state.updatedAt());
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return rewriteMetadata(hydrated, metadata.onboardingProgress(), metadata.resourceNodes(), now);
+            return rewriteMetadata(hydrated, metadata.onboardingProgress(), metadata.resourceNodes(), metadata.castleBuildings(), now);
         }
         return hydrated;
     }
@@ -208,7 +223,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
 
     private GameStateMetadata metadataOf(PlayerGameState state, Instant now) {
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
         }
         try {
             GameStateMetadata decoded = objectMapper.readValue(state.metadataJson(), GameStateMetadata.class);
@@ -221,26 +236,34 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                     decoded.agingState() == null ? AgingState.defaults(now) : decoded.agingState(),
                     resolveJobCounts(decoded),
                     onboarding,
-                    decoded.resourceNodes()
+                    decoded.resourceNodes(),
+                    decoded.castleBuildings()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode game state metadata. Falling back to defaults. " + ex.getMessage());
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
         }
     }
 
     private PlayerGameState rewriteMetadata(PlayerGameState state, OnboardingProgress onboardingProgress, Instant now) {
-        return rewriteMetadata(state, onboardingProgress, metadataOf(state, now).resourceNodes(), now);
+        GameStateMetadata metadata = metadataOf(state, now);
+        return rewriteMetadata(state, onboardingProgress, metadata.resourceNodes(), metadata.castleBuildings(), now);
     }
 
     private PlayerGameState rewriteMetadata(
             PlayerGameState state,
             OnboardingProgress onboardingProgress,
             List<ResourceNodeData> resourceNodes,
+            List<CastleBuildingData> castleBuildings,
             Instant now
     ) {
         try {
-            GameStateMetadata metadata = GameStateMetadata.fromPopulation(state.populationSummary(), onboardingProgress, resourceNodes);
+            GameStateMetadata metadata = GameStateMetadata.fromPopulation(
+                    state.populationSummary(),
+                    onboardingProgress,
+                    resourceNodes,
+                    castleBuildings
+            );
             String json = objectMapper.writeValueAsString(metadata);
             return state.withMetadataJson(json, now);
         } catch (JsonProcessingException ex) {

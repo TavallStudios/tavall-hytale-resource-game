@@ -104,7 +104,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
             structureService.ensureSite(world, layout);
             syncCastleLabel(playerId, state);
             Store<EntityStore> store = world.getEntityStore().getStore();
-            int roleIndex = NPCPlugin.get().getIndex(displayConfig.npcRoleName());
+            int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
             if (roleIndex < 0) {
                 LOGGER.warning(() -> "Unable to build castle site visuals because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
                 return;

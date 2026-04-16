@@ -5,6 +5,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
@@ -22,15 +23,18 @@ public final class ResourceService implements IResourceService, IDependencyInjec
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
     private final ICastleSiteVisualService castleSiteVisualService;
+    private final IUiNavigator uiNavigator;
 
     public ResourceService(
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
-            ICastleSiteVisualService castleSiteVisualService
+            ICastleSiteVisualService castleSiteVisualService,
+            IUiNavigator uiNavigator
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
+        this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
     public PlayerGameState addResource(UUID playerId, ResourceType type, int amount) {
@@ -68,6 +72,7 @@ public final class ResourceService implements IResourceService, IDependencyInjec
         PlayerGameState updatedState = session.gameState().withResources(updated, Instant.now());
         session.updateGameState(updatedState);
         castleSiteVisualService.refreshSite(playerId, updatedState);
+        uiNavigator.refreshTrackedPage(playerId, updatedState);
         gameStateService.cacheState(playerId, updatedState);
         AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, Instant.now()));
         return updatedState;

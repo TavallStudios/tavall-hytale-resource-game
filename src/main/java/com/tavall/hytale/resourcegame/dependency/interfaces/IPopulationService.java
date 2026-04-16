@@ -24,7 +24,7 @@ public interface IPopulationService extends IDependencyInjectableInterface {
 
     UpgradeActionState demoteActionState(PlayerGameState state);
 
-    String promotionCostSummary();
+    String promotionCostSummary(PlayerGameState state);
 
     PlayerGameState updateAging(UUID playerId, Instant now);
 }

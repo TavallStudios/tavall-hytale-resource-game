@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePlacementService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
@@ -23,6 +24,7 @@ public final class CastlePlacementService implements ICastlePlacementService, ID
     private final IPlayerGameStateService gameStateService;
     private final ICastleSpawnService castleSpawnService;
     private final ICastleSiteVisualService castleSiteVisualService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final IResourceNodeVisualService resourceNodeVisualService;
 
     public CastlePlacementService(
@@ -30,12 +32,14 @@ public final class CastlePlacementService implements ICastlePlacementService, ID
             IPlayerGameStateService gameStateService,
             ICastleSpawnService castleSpawnService,
             ICastleSiteVisualService castleSiteVisualService,
+            ICastleBuildingVisualService buildingVisualService,
             IResourceNodeVisualService resourceNodeVisualService
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.castleSpawnService = Objects.requireNonNull(castleSpawnService, "castleSpawnService");
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
+        this.buildingVisualService = Objects.requireNonNull(buildingVisualService, "buildingVisualService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
     }
 
@@ -54,6 +58,7 @@ public final class CastlePlacementService implements ICastlePlacementService, ID
         gameStateService.cacheState(playerId, updatedState);
         castleSpawnService.replaceCastle(playerId, castleLocation);
         castleSiteVisualService.refreshSite(playerId, updatedState);
+        buildingVisualService.refreshBuildings(playerId, updatedState);
         resourceNodeVisualService.refreshNodes(playerId, updatedState);
         AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, now));
         return updatedState;

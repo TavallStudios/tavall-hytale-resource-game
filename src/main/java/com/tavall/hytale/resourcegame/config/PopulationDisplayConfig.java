@@ -27,6 +27,6 @@ public final class PopulationDisplayConfig {
     }
 
     public static PopulationDisplayConfig defaults() {
-        return new PopulationDisplayConfig("human", "Citizens", "Troops");
+        return new PopulationDisplayConfig("Goblin_Miner", "Citizens", "Troops");
     }
 }

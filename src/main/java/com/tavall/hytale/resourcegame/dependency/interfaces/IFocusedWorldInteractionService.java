@@ -12,5 +12,7 @@ public interface IFocusedWorldInteractionService extends IDependencyInjectableIn
 
     Optional<UUID> focusedNodeId(Player player);
 
+    Optional<UUID> focusedBuildingId(Player player);
+
     Optional<FocusedWorldTarget> interact(Player player);
 }

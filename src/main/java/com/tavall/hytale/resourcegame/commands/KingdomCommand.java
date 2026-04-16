@@ -10,6 +10,8 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
@@ -29,6 +31,7 @@ import com.tavall.hytale.resourcegame.domain.InfrastructureHealthSnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
+import com.tavall.hytale.resourcegame.services.CastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
@@ -59,10 +62,13 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private final IPlayerDataService playerDataService;
     private final IPlayerGameStateService gameStateService;
     private final IInfrastructureHealthService infrastructureHealthService;
+    private final ICastleBuildingService buildingService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final IResourceNodeVisualService resourceNodeVisualService;
     private final ICastleSiteVisualService castleSiteVisualService;
     private final ICastleEconomySimulationService castleEconomySimulationService;
     private final IPlayerTeleportService playerTeleportService;
+    private final KingdomBuildingCommandSupport buildingCommandSupport;
     private final KingdomNodeCommandSupport nodeCommandSupport;
     private final KingdomPlacementCommandSupport placementCommandSupport;
     private final KingdomInteractionCommandSupport interactionCommandSupport;
@@ -79,12 +85,15 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             IPlayerDataService playerDataService,
             IPlayerGameStateService gameStateService,
             IInfrastructureHealthService infrastructureHealthService,
+            ICastleBuildingService buildingService,
+            ICastleBuildingVisualService buildingVisualService,
             IResourceNodeService resourceNodeService,
             IResourceNodeVisualService resourceNodeVisualService,
             ICastleSiteVisualService castleSiteVisualService,
             ICastleEconomySimulationService castleEconomySimulationService,
             IPlayerTeleportService playerTeleportService,
             IPlacementModeService placementModeService,
+            KingdomBuildingCommandSupport buildingCommandSupport,
             KingdomNodeCommandSupport nodeCommandSupport,
             KingdomPlacementCommandSupport placementCommandSupport,
             KingdomInteractionCommandSupport interactionCommandSupport
@@ -100,10 +109,13 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         this.playerDataService = playerDataService;
         this.gameStateService = gameStateService;
         this.infrastructureHealthService = infrastructureHealthService;
+        this.buildingService = buildingService;
+        this.buildingVisualService = buildingVisualService;
         this.resourceNodeVisualService = resourceNodeVisualService;
         this.castleSiteVisualService = castleSiteVisualService;
         this.castleEconomySimulationService = castleEconomySimulationService;
         this.playerTeleportService = playerTeleportService;
+        this.buildingCommandSupport = buildingCommandSupport;
         this.nodeCommandSupport = nodeCommandSupport;
         this.placementCommandSupport = placementCommandSupport;
         this.interactionCommandSupport = interactionCommandSupport;
@@ -144,6 +156,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                         case "citizens" -> handleCitizens(context, tokens, player.getUuid());
                         case "troops" -> handleTroops(context, tokens, player.getUuid());
                         case "resources" -> handleResources(context, tokens, player.getUuid());
+                        case "buildings" -> buildingCommandSupport.handle(context, player, tokens, session);
                         case "nodes" -> nodeCommandSupport.handle(context, player, tokens, session);
                         case "place" -> placementCommandSupport.handle(context, player, tokens);
                         case "focus" -> interactionCommandSupport.handleFocus(context, player);
@@ -156,7 +169,20 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                         case "debug" -> sendHelp(context);
                         default -> sendHelp(context);
                     }
-                }, executor));
+                }, executor))
+                .exceptionally(throwable -> {
+                    Throwable rootCause = rootCause(throwable);
+                    LOGGER.at(Level.SEVERE).withCause(rootCause).log(
+                            "Failed to execute /%s for %s (%s).",
+                            getName(),
+                            player.getDisplayName(),
+                            player.getUuid()
+                    );
+                    executor.execute(() -> context.sendMessage(
+                            Message.raw("Kingdom data failed to load: " + safeMessage(rootCause)).color("red")
+                    ));
+                    return null;
+                });
     }
 
     @Override
@@ -199,6 +225,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("Food: " + state.resources().food()).color("yellow"));
         context.sendMessage(Message.raw("Wood: " + state.resources().wood()).color("yellow"));
         context.sendMessage(Message.raw("Iron: " + state.resources().iron()).color("yellow"));
+        context.sendMessage(Message.raw("Buildings: " + buildingService.listBuildings(state).size()).color("yellow"));
         context.sendMessage(Message.raw("Cache: " + healthSnapshot.cacheSummary()).color("yellow"));
         context.sendMessage(Message.raw("Persistence: " + healthSnapshot.persistenceSummary()).color("yellow"));
         context.sendMessage(Message.raw("Interior tutorial: " + tutorialStatus(gameStateService.isInteriorTutorialPending(state))).color("yellow"));
@@ -328,6 +355,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         PlayerGameState state = session.gameState();
         castleSpawnService.ensureCastleSpawned(player, state.castleLocation());
         castleSiteVisualService.refreshSite(session.playerId(), state);
+        buildingVisualService.refreshBuildings(session.playerId(), state);
         resourceNodeVisualService.refreshNodes(session.playerId(), state);
         context.sendMessage(Message.raw("Scene refreshed.").color("green"));
     }
@@ -341,6 +369,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         PlayerGameState state = session.gameState();
         castleSpawnService.ensureCastleSpawned(player, state.castleLocation());
         castleSiteVisualService.refreshSite(session.playerId(), state);
+        buildingVisualService.refreshBuildings(session.playerId(), state);
         resourceNodeVisualService.refreshNodes(session.playerId(), state);
         context.sendMessage(Message.raw("Bootstrap refresh complete.").color("green"));
     }
@@ -361,7 +390,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         }
         Instant start = Instant.now();
         for (int index = 0; index < tickCount; index++) {
-            castleEconomySimulationService.runTick(start.plusSeconds(index));
+            castleEconomySimulationService.runTick(start.plusSeconds(index * CastleEconomySimulationService.TICK_INTERVAL_SECONDS));
         }
         context.sendMessage(Message.raw("Ran " + tickCount + " economy tick(s).").color("green"));
     }
@@ -388,6 +417,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd citizens add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd troops add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd resources add|set <type> <amount>").color("yellow"));
+        context.sendMessage(Message.raw("/kd buildings place|stage|list|status|select|align|goto|upgrade|finish|clear").color("yellow"));
         context.sendMessage(Message.raw("/kd nodes place|list|status|select|align|assign|add|stock|recall|goto|remove|clear").color("yellow"));
         context.sendMessage(Message.raw("/kd place castle|node <type>|confirm [here]|cancel|status|preview").color("yellow"));
         context.sendMessage(Message.raw("/kd focus").color("yellow"));
@@ -427,6 +457,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             case "troops" -> UiPageType.CASTLE_TROOPS;
             case "resources" -> UiPageType.CASTLE_RESOURCES;
             case "upgrades" -> UiPageType.CASTLE_UPGRADES;
+            case "buildings", "building" -> UiPageType.CASTLE_BUILDINGS;
+            case "buildingdetail", "building_detail" -> UiPageType.BUILDING_DETAIL;
             case "interior" -> UiPageType.INTERIOR_MAIN;
             case "debug" -> UiPageType.DEBUG_NAVIGATOR;
             default -> null;
@@ -452,5 +484,20 @@ public final class KingdomCommand extends AbstractAsyncCommand {
 
     private String tutorialStatus(boolean pending) {
         return pending ? "pending" : "complete";
+    }
+
+    private Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
+    }
+
+    private String safeMessage(Throwable throwable) {
+        if (throwable == null || throwable.getMessage() == null || throwable.getMessage().isBlank()) {
+            return "unexpected error";
+        }
+        return throwable.getMessage();
     }
 }

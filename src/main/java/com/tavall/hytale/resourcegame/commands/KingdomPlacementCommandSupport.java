@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
 import com.tavall.hytale.resourcegame.domain.PlacementRequest;
 import com.tavall.hytale.resourcegame.domain.PlacementResult;
@@ -29,13 +30,14 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
 
     public void handle(CommandContext context, Player player, List<String> tokens) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd place castle|node <type>|confirm [here]|cancel|status|preview").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd place castle|node <type>|building <type>|confirm [here]|cancel|status|preview").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
         switch (action) {
             case "castle" -> armCastlePlacement(context, player);
             case "node" -> armNodePlacement(context, player, tokens);
+            case "building" -> armBuildingPlacement(context, player, tokens);
             case "confirm" -> sendResult(context, confirmPlacement(context, player, tokens));
             case "cancel" -> sendResult(context, placementModeService.cancelPlacement(player.getUuid()));
             case "status" -> sendStatus(context, player);
@@ -60,6 +62,20 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             return;
         }
         PlacementRequest request = placementModeService.armNodePlacement(player, resourceType);
+        context.sendMessage(Message.raw(request.summary() + " armed. Click the ground or use /kd place confirm.").color("green"));
+    }
+
+    private void armBuildingPlacement(CommandContext context, Player player, List<String> tokens) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd place building <farmstead|lumber_mill|iron_works|barracks|workshop>").color("yellow"));
+            return;
+        }
+        BuildingType buildingType = BuildingType.parse(tokens.get(2));
+        if (buildingType == null) {
+            context.sendMessage(Message.raw("Unknown building type.").color("red"));
+            return;
+        }
+        PlacementRequest request = placementModeService.armBuildingPlacement(player, buildingType);
         context.sendMessage(Message.raw(request.summary() + " armed. Click the ground or use /kd place confirm.").color("green"));
     }
 

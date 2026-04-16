@@ -47,6 +47,7 @@ public final class CastleMainPage extends BaseUiPage {
         bind(uiEventBuilder, "#TroopsButton", UiActions.OPEN_TROOPS);
         bind(uiEventBuilder, "#ResourcesButton", UiActions.OPEN_RESOURCES);
         bind(uiEventBuilder, "#UpgradesButton", UiActions.OPEN_UPGRADES);
+        bind(uiEventBuilder, "#BuildingsButton", UiActions.OPEN_BUILDINGS);
         bind(uiEventBuilder, "#CloseButton", UiActions.CLOSE);
     }
 

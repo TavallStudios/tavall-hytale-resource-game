@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.dependency.composition.domains;
 
 import com.tavall.hytale.resourcegame.dependency.DependencyLoaderAccess;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IBuildingInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
@@ -34,6 +35,10 @@ public interface IResourceGameDomainGenerated {
 
     default IResourceNodeInteractionService getResourceNodeInteractionService() {
         return DependencyLoaderAccess.findInstance(IResourceNodeInteractionService.class);
+    }
+
+    default IBuildingInteractionService getBuildingInteractionService() {
+        return DependencyLoaderAccess.findInstance(IBuildingInteractionService.class);
     }
 
     default IPlacementInteractionService getPlacementInteractionService() {

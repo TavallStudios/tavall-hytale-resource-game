@@ -11,6 +11,9 @@ import com.tavall.hytale.resourcegame.config.KingdomClockConfig;
 import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.dependency.DependencyLoaderAccess;
 import com.tavall.hytale.resourcegame.dependency.IDependencyModule;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IBuildingInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
@@ -49,13 +52,19 @@ import com.tavall.hytale.resourcegame.interior.InteriorLayoutService;
 import com.tavall.hytale.resourcegame.interior.InteriorStructureService;
 import com.tavall.hytale.resourcegame.persistence.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.persistence.InMemoryPlayerProfileStore;
+import com.tavall.hytale.resourcegame.persistence.PersistenceStoreBootstrap;
 import com.tavall.hytale.resourcegame.persistence.PlayerGameStateRepository;
 import com.tavall.hytale.resourcegame.persistence.PlayerGameStateStore;
 import com.tavall.hytale.resourcegame.persistence.PlayerProfileRepository;
 import com.tavall.hytale.resourcegame.persistence.PlayerProfileStore;
 import com.tavall.hytale.resourcegame.persistence.PostgresConnectionProvider;
+import com.tavall.hytale.resourcegame.persistence.ResolvedPersistenceStores;
 import com.tavall.hytale.resourcegame.population.PromotionCost;
 import com.tavall.hytale.resourcegame.services.CastleInteractionService;
+import com.tavall.hytale.resourcegame.services.BuildingInteractionService;
+import com.tavall.hytale.resourcegame.services.BuildingPlacementPlanner;
+import com.tavall.hytale.resourcegame.services.CastleBuildingService;
+import com.tavall.hytale.resourcegame.services.CastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 import com.tavall.hytale.resourcegame.services.CastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.services.CastlePromptLaneService;
@@ -93,11 +102,13 @@ import com.tavall.hytale.resourcegame.services.ResourceNodeVisualPulseService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.ui.CastleCitizensPage;
+import com.tavall.hytale.resourcegame.ui.CastleBuildingsPage;
 import com.tavall.hytale.resourcegame.ui.CastleInfoPage;
 import com.tavall.hytale.resourcegame.ui.CastleMainPage;
 import com.tavall.hytale.resourcegame.ui.CastleResourcesPage;
 import com.tavall.hytale.resourcegame.ui.CastleTroopsPage;
 import com.tavall.hytale.resourcegame.ui.CastleUpgradesPage;
+import com.tavall.hytale.resourcegame.ui.BuildingDetailPage;
 import com.tavall.hytale.resourcegame.ui.DebugNavigatorPage;
 import com.tavall.hytale.resourcegame.ui.InteriorMainPage;
 import com.tavall.hytale.resourcegame.ui.ResourceNodePage;
@@ -106,6 +117,8 @@ import com.tavall.hytale.resourcegame.ui.UiNavigator;
 import com.tavall.hytale.resourcegame.ui.UiPageRegistry;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
+import com.tavall.hytale.resourcegame.world.CastleBuildingStructureService;
+import com.tavall.hytale.resourcegame.world.BuildingPlacementStageStructureService;
 import com.tavall.hytale.resourcegame.world.CastleSiteLayoutService;
 import com.tavall.hytale.resourcegame.world.CastleSiteStructureService;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayoutService;
@@ -114,11 +127,13 @@ import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneLayoutService;
 import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneStructureService;
 import com.tavall.hytale.resourcegame.world.ResourceNodeStructureService;
 import com.tavall.hytale.resourcegame.commands.KingdomInteractionCommandSupport;
+import com.tavall.hytale.resourcegame.commands.KingdomBuildingCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomNodeCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomPlacementCommandSupport;
 import org.tavall.abstractcache.semantic.SemanticCache;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Repo-local composition root that mirrors the shared Tavall DI bootstrap style.
@@ -141,17 +156,10 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         SemanticCache profileCache = cacheFactory.build("resource-game-profile");
         SemanticCache gameStateCache = cacheFactory.build("resource-game-game-state");
 
-        PlayerProfileStore profileStore;
-        PlayerGameStateStore gameStateStore;
-        if (databaseConfig.jdbcUrl() == null || databaseConfig.jdbcUrl().isBlank()) {
-            plugin.getLogger().at(Level.WARNING).log("Postgres config not found. Falling back to in-memory profile and game-state stores.");
-            profileStore = new InMemoryPlayerProfileStore();
-            gameStateStore = new InMemoryPlayerGameStateStore();
-        } else {
-            PostgresConnectionProvider connectionProvider = new PostgresConnectionProvider(databaseConfig);
-            profileStore = new PlayerProfileRepository(connectionProvider);
-            gameStateStore = new PlayerGameStateRepository(connectionProvider);
-        }
+        PersistenceStoreBootstrap persistenceBootstrap = new PersistenceStoreBootstrap(Logger.getLogger(ResourceGameDependencyModule.class.getName()));
+        ResolvedPersistenceStores persistenceStores = persistenceBootstrap.resolve(databaseConfig);
+        PlayerProfileStore profileStore = persistenceStores.profileStore();
+        PlayerGameStateStore gameStateStore = persistenceStores.gameStateStore();
 
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         PlayerProfileService profileService = new PlayerProfileService(
@@ -169,10 +177,32 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         CastleEntityRegistry castleEntityRegistry = new CastleEntityRegistry();
         CastleAssetConfig castleAssetConfig = CastleAssetConfig.defaults();
         PopulationDisplayConfig populationDisplayConfig = PopulationDisplayConfig.defaults();
+        InteriorLayoutService interiorLayoutService = new InteriorLayoutService();
+        InteriorStructureService interiorStructureService = new InteriorStructureService();
         InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
         CastleEconomyPlanner economyPlanner = new CastleEconomyPlanner();
         CastleSiteScenePlanner castleSiteScenePlanner = new CastleSiteScenePlanner();
         NpcVisualSpawner npcVisualSpawner = new NpcVisualSpawner();
+        InteriorInstanceService interiorInstanceService = new InteriorInstanceService();
+        CastleBuildingService buildingService = new CastleBuildingService(
+                sessionStore,
+                gameStateService,
+                interiorInstanceService,
+                interiorLayoutService,
+                mapperProvider.mapper()
+        );
+        CastleBuildingVisualService buildingVisualService = new CastleBuildingVisualService(
+                populationDisplayConfig,
+                buildingService,
+                new CastleBuildingStructureService(),
+                npcVisualSpawner
+        );
+        BuildingPlacementStageStructureService buildingPlacementStageStructureService = new BuildingPlacementStageStructureService();
+        BuildingPlacementPlanner buildingPlacementPlanner = new BuildingPlacementPlanner(
+                buildingService,
+                interiorInstanceService,
+                interiorLayoutService
+        );
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
         ResourceNodeRoutePlanner resourceNodeRoutePlanner = new ResourceNodeRoutePlanner();
         ResourceNodeVisualService resourceNodeVisualService = new ResourceNodeVisualService(
@@ -198,7 +228,6 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
         InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(populationDisplayConfig);
         PlayerTeleportService playerTeleportService = new PlayerTeleportService();
-        InteriorInstanceService interiorInstanceService = new InteriorInstanceService();
         IpHashService ipHashService = new IpHashService();
         PlacementPreviewService placementPreviewService = new PlacementPreviewService(populationDisplayConfig, npcVisualSpawner);
         CastlePromptLaneService castlePromptLaneService = new CastlePromptLaneService(
@@ -213,7 +242,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         );
         UiPageRegistry pageRegistry = new UiPageRegistry();
         UiNavigator uiNavigator = new UiNavigator(pageRegistry);
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         PopulationService populationService = new PopulationService(
                 sessionStore,
                 gameStateService,
@@ -221,12 +250,16 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 castleSiteVisualService,
                 populationDisplayService,
                 PromotionCost.defaultCost(),
+                buildingService,
                 resourceNodeService,
-                resourceNodeVisualService
+                resourceNodeVisualService,
+                uiNavigator
         );
         CastleEconomySimulationService castleEconomySimulationService = new CastleEconomySimulationService(
                 sessionStore,
                 gameStateService,
+                buildingService,
+                buildingVisualService,
                 castleSiteVisualService,
                 economyPlanner,
                 resourceNodeService,
@@ -238,11 +271,14 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 gameStateService,
                 castleSpawnService,
                 castleSiteVisualService,
+                buildingVisualService,
                 resourceNodeVisualService
         );
         PlacementModeService placementModeService = new PlacementModeService(
                 sessionStore,
                 placementPreviewService,
+                buildingService,
+                buildingVisualService,
                 castlePlacementService,
                 resourceNodeService,
                 resourceNodeVisualService
@@ -252,23 +288,26 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 sessionStore,
                 gameStateService,
                 interiorInstanceService,
-                new InteriorLayoutService(),
-                new InteriorStructureService(),
+                interiorLayoutService,
+                interiorStructureService,
                 interiorTourMarkerService,
                 playerTeleportService,
                 populationDisplayService,
+                buildingVisualService,
                 uiNavigator
         );
         UiActionService uiActionService = new UiActionService(
                 uiNavigator,
                 interiorWorldService,
                 populationService,
+                buildingService,
+                buildingVisualService,
                 sessionStore,
                 gameStateService,
                 resourceNodeService,
                 resourceNodeVisualService
         );
-        registerUiPages(pageRegistry, uiActionService, infrastructureHealthService, gameStateService, economyPlanner, resourceNodeService);
+        registerUiPages(pageRegistry, uiActionService, infrastructureHealthService, gameStateService, economyPlanner, resourceNodeService, buildingService);
 
         KingdomClockService clockService = new KingdomClockService(clockConfig);
         PlayerDataService playerDataService = new PlayerDataService(
@@ -280,6 +319,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 ipHashService,
                 clockService,
                 resourceNodeVisualService,
+                buildingVisualService,
                 uiNavigator
         );
         CastleInteractionService castleInteractionService = new CastleInteractionService(
@@ -291,6 +331,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         FocusedWorldTargetPlanner focusedWorldTargetPlanner = new FocusedWorldTargetPlanner();
         FocusedWorldInteractionService focusedWorldInteractionService = new FocusedWorldInteractionService(
                 sessionStore,
+                buildingService,
                 castleInteractionService,
                 resourceNodeService,
                 uiNavigator,
@@ -298,7 +339,18 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         );
         CastleProximityPromptService castleProximityPromptService = new CastleProximityPromptService(castleInteractionService, placementModeService);
         ResourceNodeInteractionService resourceNodeInteractionService = new ResourceNodeInteractionService(sessionStore, resourceNodeVisualService, uiNavigator);
+        BuildingInteractionService buildingInteractionService = new BuildingInteractionService(sessionStore, buildingVisualService, uiNavigator);
         KingdomPlacementCommandSupport placementCommandSupport = new KingdomPlacementCommandSupport(placementModeService);
+        KingdomBuildingCommandSupport buildingCommandSupport = new KingdomBuildingCommandSupport(
+                buildingService,
+                buildingVisualService,
+                uiNavigator,
+                playerTeleportService,
+                placementModeService,
+                focusedWorldInteractionService,
+                buildingPlacementPlanner,
+                buildingPlacementStageStructureService
+        );
         KingdomNodeCommandSupport nodeCommandSupport = new KingdomNodeCommandSupport(
                 resourceNodeService,
                 resourceNodeVisualService,
@@ -320,12 +372,15 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 playerDataService,
                 gameStateService,
                 infrastructureHealthService,
+                buildingService,
+                buildingVisualService,
                 resourceNodeService,
                 resourceNodeVisualService,
                 castleSiteVisualService,
                 castleEconomySimulationService,
                 playerTeleportService,
                 placementModeService,
+                buildingCommandSupport,
                 nodeCommandSupport,
                 placementCommandSupport,
                 interactionCommandSupport
@@ -334,6 +389,10 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IPlayerProfileService.class, profileService);
         registerSingleton(IPlayerGameStateService.class, gameStateService);
         registerSingleton(IPlayerSessionStore.class, sessionStore);
+        registerSingleton(ICastleBuildingService.class, buildingService);
+        registerSingleton(ICastleBuildingVisualService.class, buildingVisualService);
+        registerSingleton(BuildingPlacementStageStructureService.class, buildingPlacementStageStructureService);
+        registerSingleton(BuildingPlacementPlanner.class, buildingPlacementPlanner);
         registerSingleton(ICastleEconomySimulationService.class, castleEconomySimulationService);
         registerSingleton(ICastleSiteVisualService.class, castleSiteVisualService);
         registerSingleton(IResourceNodeService.class, resourceNodeService);
@@ -362,6 +421,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IPlacementModeService.class, placementModeService);
         registerSingleton(IPlacementInteractionService.class, placementInteractionService);
         registerSingleton(IResourceNodeInteractionService.class, resourceNodeInteractionService);
+        registerSingleton(IBuildingInteractionService.class, buildingInteractionService);
+        registerSingleton(KingdomBuildingCommandSupport.class, buildingCommandSupport);
         registerSingleton(KingdomNodeCommandSupport.class, nodeCommandSupport);
         registerSingleton(KingdomPlacementCommandSupport.class, placementCommandSupport);
         registerSingleton(KingdomInteractionCommandSupport.class, interactionCommandSupport);
@@ -375,7 +436,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
             IInfrastructureHealthService infrastructureHealthService,
             IPlayerGameStateService gameStateService,
             CastleEconomyPlanner economyPlanner,
-            IResourceNodeService resourceNodeService
+            IResourceNodeService resourceNodeService,
+            ICastleBuildingService buildingService
     ) {
         registry.register(UiPageType.CASTLE_MAIN, (player, context, state) -> new CastleMainPage(player, context, state, actionService, economyPlanner));
         registry.register(UiPageType.CASTLE_INFO, (player, context, state) -> new CastleInfoPage(player, context, state, actionService));
@@ -383,7 +445,9 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registry.register(UiPageType.CASTLE_TROOPS, (player, context, state) -> new CastleTroopsPage(player, context, state, actionService));
         registry.register(UiPageType.CASTLE_RESOURCES, (player, context, state) -> new CastleResourcesPage(player, context, state, actionService, economyPlanner));
         registry.register(UiPageType.CASTLE_UPGRADES, (player, context, state) -> new CastleUpgradesPage(player, context, state, actionService));
+        registry.register(UiPageType.CASTLE_BUILDINGS, (player, context, state) -> new CastleBuildingsPage(player, context, state, actionService, buildingService));
         registry.register(UiPageType.RESOURCE_NODE_DETAIL, (player, context, state) -> new ResourceNodePage(player, context, state, actionService, resourceNodeService));
+        registry.register(UiPageType.BUILDING_DETAIL, (player, context, state) -> new BuildingDetailPage(player, context, state, actionService, buildingService));
         registry.register(UiPageType.INTERIOR_MAIN, (player, context, state) -> new InteriorMainPage(player, context, state, actionService));
         registry.register(
                 UiPageType.DEBUG_NAVIGATOR,

@@ -2,6 +2,8 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
@@ -28,10 +30,12 @@ import java.util.logging.Logger;
  */
 public final class CastleEconomySimulationService implements ICastleEconomySimulationService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(CastleEconomySimulationService.class.getName());
-    private static final long TICK_INTERVAL_SECONDS = 12L;
+    public static final long TICK_INTERVAL_SECONDS = 12L;
 
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
+    private final ICastleBuildingService buildingService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final ICastleSiteVisualService castleSiteVisualService;
     private final CastleEconomyPlanner planner;
     private final IResourceNodeService resourceNodeService;
@@ -42,6 +46,8 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
     public CastleEconomySimulationService(
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
+            ICastleBuildingService buildingService,
+            ICastleBuildingVisualService buildingVisualService,
             ICastleSiteVisualService castleSiteVisualService,
             CastleEconomyPlanner planner,
             IResourceNodeService resourceNodeService,
@@ -50,6 +56,8 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
+        this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
+        this.buildingVisualService = Objects.requireNonNull(buildingVisualService, "buildingVisualService");
         this.castleSiteVisualService = Objects.requireNonNull(castleSiteVisualService, "castleSiteVisualService");
         this.planner = Objects.requireNonNull(planner, "planner");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
@@ -101,9 +109,11 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
                 .withIron(state.resources().iron() + snapshot.gainFor(ResourceType.IRON));
         PlayerGameState updatedState = state.withPopulation(updatedSummary, now).withResources(updatedResources, now);
         updatedState = resourceNodeService.applyTick(updatedState, now);
+        updatedState = buildingService.applyTick(session.playerId(), updatedState, now);
         session.updateGameState(updatedState);
         gameStateService.cacheState(session.playerId(), updatedState);
         castleSiteVisualService.refreshSite(session.playerId(), updatedState);
+        buildingVisualService.refreshBuildings(session.playerId(), updatedState);
         resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
         uiNavigator.refreshTrackedPage(session.playerId(), updatedState);
         PlayerGameState persistedState = updatedState;

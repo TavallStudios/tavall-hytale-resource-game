@@ -13,6 +13,7 @@ import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
+import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
 
@@ -296,7 +297,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 metadata.agingState(),
                 metadata.jobCounts(),
                 metadata.onboardingProgress(),
-                nodes
+                nodes,
+                metadata.castleBuildings()
         );
         try {
             return state.withMetadataJson(objectMapper.writeValueAsString(updatedMetadata), now);
@@ -307,7 +309,7 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
 
     private GameStateMetadata metadataOf(PlayerGameState state, Instant now) {
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
         }
         try {
             GameStateMetadata metadata = objectMapper.readValue(state.metadataJson(), GameStateMetadata.class);
@@ -317,11 +319,12 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                     metadata.agingState(),
                     metadata.jobCounts(),
                     metadata.onboardingProgress(),
-                    metadata.resourceNodes()
+                    metadata.resourceNodes(),
+                    metadata.castleBuildings()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode resource node metadata. Falling back to empty nodes. " + ex.getMessage());
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
         }
     }
 

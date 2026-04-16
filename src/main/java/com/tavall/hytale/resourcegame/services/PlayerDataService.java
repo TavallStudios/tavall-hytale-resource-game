@@ -10,6 +10,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IIpHashService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerProfileService;
@@ -42,6 +43,7 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
     private final IIpHashService ipHashService;
     private final IKingdomClockService clockService;
     private final IResourceNodeVisualService resourceNodeVisualService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final IUiNavigator uiNavigator;
 
     public PlayerDataService(
@@ -53,6 +55,7 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
             IIpHashService ipHashService,
             IKingdomClockService clockService,
             IResourceNodeVisualService resourceNodeVisualService,
+            ICastleBuildingVisualService buildingVisualService,
             IUiNavigator uiNavigator
     ) {
         this.profileService = Objects.requireNonNull(profileService, "profileService");
@@ -63,11 +66,20 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
         this.ipHashService = Objects.requireNonNull(ipHashService, "ipHashService");
         this.clockService = Objects.requireNonNull(clockService, "clockService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
+        this.buildingVisualService = Objects.requireNonNull(buildingVisualService, "buildingVisualService");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
     public void handlePlayerReady(PlayerReadyEvent event) {
-        ensureSession(event.getPlayer());
+        ensureSession(event.getPlayer()).whenComplete((session, throwable) -> {
+            if (throwable != null) {
+                LOGGER.at(Level.SEVERE).withCause(throwable).log(
+                        "Failed to initialize session for %s (%s).",
+                        event.getPlayer().getDisplayName(),
+                        event.getPlayer().getUuid()
+                );
+            }
+        });
     }
 
     public void handlePlayerDisconnect(PlayerDisconnectEvent event) {
@@ -104,6 +116,7 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
                         sessionStore.put(session);
                         castleSpawnService.ensureCastleSpawned(player, session.gameState().castleLocation());
                         resourceNodeVisualService.ensureNodes(player.getUuid(), session.gameState());
+                        buildingVisualService.ensureBuildings(player.getUuid(), session.gameState());
                         clockService.applyToWorld(player.getWorld());
                     });
                     LOGGER.at(Level.INFO).log("Session initialized for %s (%s).", player.getDisplayName(), player.getUuid());
