@@ -85,6 +85,11 @@ final class SimpleSemanticCache implements SemanticCache {
             return Optional.of(cached);
         } catch (Exception ex) {
             LOGGER.log(Level.WARNING, "Redis cache read failed for " + scopedKey + ".", ex);
+            try {
+                redis.del(scopedKey.getBytes());
+            } catch (Exception ignored) {
+                // Ignore secondary cleanup failures and fall back to the next tier.
+            }
             return Optional.empty();
         }
     }

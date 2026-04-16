@@ -49,7 +49,7 @@ public final class InteriorTourMarkerService implements IDependencyInjectableCon
         clearTourMarkers(playerId);
         Store<EntityStore> store = world.getEntityStore().getStore();
         NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = npcPlugin.getIndex(displayConfig.npcRoleName());
+        int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
         if (roleIndex < 0) {
             LOGGER.warning(() -> "Unable to spawn interior tour markers because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
             return;

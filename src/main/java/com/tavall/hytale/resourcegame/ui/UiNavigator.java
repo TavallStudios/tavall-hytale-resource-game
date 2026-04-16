@@ -35,7 +35,9 @@ public final class UiNavigator implements IUiNavigator, IDependencyInjectableCon
             UiPageType.CASTLE_CITIZENS,
             UiPageType.CASTLE_RESOURCES,
             UiPageType.CASTLE_UPGRADES,
-            UiPageType.RESOURCE_NODE_DETAIL
+            UiPageType.CASTLE_BUILDINGS,
+            UiPageType.RESOURCE_NODE_DETAIL,
+            UiPageType.BUILDING_DETAIL
     );
 
     private final IUiPageRegistry registry;
@@ -46,8 +48,10 @@ public final class UiNavigator implements IUiNavigator, IDependencyInjectableCon
     }
 
     public void open(UiPageType type, Player player, UiNavigationContext context, PlayerGameState state) {
-        trackedPages.put(player.getUuid(), new TrackedUiState(type, context));
-        open(type, player, context, state, MAX_RETRIES);
+        Player resolvedPlayer = resolveOnlinePlayer(player.getUuid());
+        Player targetPlayer = resolvedPlayer == null ? player : resolvedPlayer;
+        trackedPages.put(targetPlayer.getUuid(), new TrackedUiState(type, context));
+        open(type, targetPlayer, context, state, MAX_RETRIES);
     }
 
     @Override
@@ -72,20 +76,22 @@ public final class UiNavigator implements IUiNavigator, IDependencyInjectableCon
     }
 
     private void open(UiPageType type, Player player, UiNavigationContext context, PlayerGameState state, int retriesRemaining) {
-        Ref<EntityStore> ref = player.getPlayerRef().getReference();
+        Player resolvedPlayer = resolveOnlinePlayer(player.getUuid());
+        Player targetPlayer = resolvedPlayer == null ? player : resolvedPlayer;
+        Ref<EntityStore> ref = targetPlayer.getPlayerRef().getReference();
         if (ref != null && ref.isValid()) {
             Store<EntityStore> store = ref.getStore();
             World world = ((EntityStore) store.getExternalData()).getWorld();
-            world.execute(() -> openOnWorld(type, player, context, state));
+            world.execute(() -> openOnWorld(type, targetPlayer, context, state));
             return;
         }
-        if (player.getWorld() != null) {
-            player.getWorld().execute(() -> openOnWorld(type, player, context, state));
+        if (targetPlayer.getWorld() != null) {
+            targetPlayer.getWorld().execute(() -> openOnWorld(type, targetPlayer, context, state));
             return;
         }
         if (retriesRemaining > 0) {
             HytaleServer.SCHEDULED_EXECUTOR.schedule(
-                    () -> open(type, player, context, state, retriesRemaining - 1),
+                    () -> open(type, targetPlayer, context, state, retriesRemaining - 1),
                     RETRY_DELAY_MILLIS,
                     TimeUnit.MILLISECONDS
             );

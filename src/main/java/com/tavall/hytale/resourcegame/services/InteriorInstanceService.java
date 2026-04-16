@@ -24,41 +24,78 @@ import java.util.logging.Logger;
  */
 public final class InteriorInstanceService implements IInteriorInstanceService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(InteriorInstanceService.class.getName());
-    private static final String WORLD_NAME_PREFIX = "kingdom-interior-";
+    private static final String SHARED_WORLD_NAME = "kingdom-interiors";
+    private static final String LEGACY_WORLD_NAME_PREFIX = "kingdom-interior-";
+
+    private final Object worldCreationLock = new Object();
+    private volatile CompletableFuture<World> sharedWorldFuture;
 
     @Override
     public CompletableFuture<World> resolveInteriorWorld(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
-        String worldName = worldNameFor(playerId);
-        World existing = Universe.get().getWorld(worldName);
+        return warmInteriorWorld();
+    }
+
+    @Override
+    public CompletableFuture<World> warmInteriorWorld() {
+        World existing = Universe.get().getWorld(SHARED_WORLD_NAME);
         if (existing != null) {
             return CompletableFuture.completedFuture(existing);
         }
 
-        Path worldPath = Universe.get().validateWorldPath(worldName);
-        deleteWorldDirectoryIfPresent(worldPath);
-        return Universe.get().makeWorld(worldName, worldPath, createWorldConfig());
+        CompletableFuture<World> pendingFuture = sharedWorldFuture;
+        if (pendingFuture != null) {
+            return pendingFuture;
+        }
+
+        synchronized (worldCreationLock) {
+            existing = Universe.get().getWorld(SHARED_WORLD_NAME);
+            if (existing != null) {
+                return CompletableFuture.completedFuture(existing);
+            }
+            pendingFuture = sharedWorldFuture;
+            if (pendingFuture != null) {
+                return pendingFuture;
+            }
+            Path worldPath = Universe.get().validateWorldPath(SHARED_WORLD_NAME);
+            deleteWorldDirectoryIfPresent(worldPath);
+            sharedWorldFuture = Universe.get().makeWorld(SHARED_WORLD_NAME, worldPath, createWorldConfig())
+                    .whenComplete((world, throwable) -> {
+                        if (throwable != null) {
+                            LOGGER.log(Level.WARNING, "Failed to warm shared interior world.", throwable);
+                            synchronized (worldCreationLock) {
+                                sharedWorldFuture = null;
+                            }
+                            return;
+                        }
+                        LOGGER.info(() -> "Shared kingdom interior world is ready: " + world.getName());
+                    });
+            return sharedWorldFuture;
+        }
     }
 
     @Override
     public String worldNameFor(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
-        return WORLD_NAME_PREFIX + playerId.toString().replace("-", "");
+        return SHARED_WORLD_NAME;
     }
 
     @Override
     public void releaseInteriorWorld(UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
-        releaseInteriorWorldByName(worldNameFor(playerId));
+        World sharedWorld = Universe.get().getWorld(SHARED_WORLD_NAME);
+        if (sharedWorld == null) {
+            sharedWorldFuture = null;
+        }
     }
 
     @Override
     public void pruneTransientWorlds() {
         Universe.get().getWorlds().keySet().stream()
-                .filter(this::isTransientWorldName)
+                .filter(this::isLegacyTransientWorldName)
                 .toList()
-                .forEach(this::releaseInteriorWorldByName);
-        deleteOrphanedInteriorDirectories();
+                .forEach(this::deleteLegacyWorldByName);
+        deleteLegacyInteriorDirectories();
     }
 
     private WorldConfig createWorldConfig() {
@@ -76,7 +113,7 @@ public final class InteriorInstanceService implements IInteriorInstanceService, 
         return worldConfig;
     }
 
-    private void releaseInteriorWorldByName(String worldName) {
+    private void deleteLegacyWorldByName(String worldName) {
         World existing = Universe.get().getWorld(worldName);
         if (existing != null) {
             Universe.get().removeWorld(worldName);
@@ -84,22 +121,22 @@ public final class InteriorInstanceService implements IInteriorInstanceService, 
         deleteWorldDirectoryIfPresent(Universe.get().validateWorldPath(worldName));
     }
 
-    private void deleteOrphanedInteriorDirectories() {
+    private void deleteLegacyInteriorDirectories() {
         Path worldsPath = Universe.get().getWorldsPath();
         if (!Files.isDirectory(worldsPath)) {
             return;
         }
         try (var stream = Files.list(worldsPath)) {
             stream.filter(Files::isDirectory)
-                    .filter(path -> isTransientWorldName(path.getFileName().toString()))
+                    .filter(path -> isLegacyTransientWorldName(path.getFileName().toString()))
                     .forEach(this::deleteWorldDirectoryIfPresent);
         } catch (IOException exception) {
             LOGGER.log(Level.WARNING, "Failed to prune orphaned interior directories.", exception);
         }
     }
 
-    private boolean isTransientWorldName(String worldName) {
-        return worldName != null && worldName.startsWith(WORLD_NAME_PREFIX);
+    private boolean isLegacyTransientWorldName(String worldName) {
+        return worldName != null && worldName.startsWith(LEGACY_WORLD_NAME_PREFIX);
     }
 
     private void deleteWorldDirectoryIfPresent(Path worldPath) {

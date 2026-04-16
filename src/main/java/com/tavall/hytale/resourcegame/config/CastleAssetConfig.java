@@ -38,6 +38,6 @@ public final class CastleAssetConfig {
     }
 
     public static CastleAssetConfig defaults() {
-        return new CastleAssetConfig("human", "Your Castle", 6.0, 0.85);
+        return new CastleAssetConfig("Kweebec_Elder", "Your Castle", 6.0, 0.85);
     }
 }

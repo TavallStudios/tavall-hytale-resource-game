@@ -21,6 +21,11 @@ if ($LASTEXITCODE -ne 0) {
     throw "Local build failed."
 }
 
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-custom-ui-assets.ps1
+if ($LASTEXITCODE -ne 0) {
+    throw "Custom UI asset-pack validation failed."
+}
+
 $steps = @(
     @{ name = "persistence"; script = ".\scripts\run-remote-persistence-flow.ps1" },
     @{ name = "castle"; script = ".\scripts\run-remote-castle-interaction-flow.ps1" },
@@ -30,6 +35,7 @@ $steps = @(
     @{ name = "onboarding"; script = ".\scripts\run-remote-onboarding-flow.ps1" },
     @{ name = "interior-tour"; script = ".\scripts\run-remote-interior-tour-flow.ps1" },
     @{ name = "placement"; script = ".\scripts\run-remote-placement-flow.ps1" },
+    @{ name = "building-upgrade"; script = ".\scripts\run-remote-building-upgrade-flow.ps1" },
     @{ name = "node-assignment"; script = ".\scripts\run-remote-node-assignment-flow.ps1" },
     @{ name = "ui-edge"; script = ".\scripts\run-remote-ui-edge-flow.ps1" },
     @{ name = "visual-counter"; script = ".\scripts\run-remote-visual-counter-flow.ps1" }

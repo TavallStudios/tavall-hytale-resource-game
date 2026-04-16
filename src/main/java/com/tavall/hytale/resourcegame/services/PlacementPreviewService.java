@@ -44,7 +44,7 @@ public final class PlacementPreviewService implements IPlacementPreviewService, 
         player.getWorld().execute(() -> {
             clearPreview(player.getUuid());
             Store<EntityStore> store = player.getWorld().getEntityStore().getStore();
-            int roleIndex = NPCPlugin.get().getIndex(displayConfig.npcRoleName());
+            int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
             if (roleIndex < 0) {
                 LOGGER.warning(() -> "Unable to render placement preview because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
                 return;
@@ -74,19 +74,35 @@ public final class PlacementPreviewService implements IPlacementPreviewService, 
         if (request.modeType() == PlacementModeType.CASTLE) {
             return "Castle Preview | Click ground to place";
         }
+        if (request.modeType() == PlacementModeType.BUILDING) {
+            return (request.buildingType() == null ? "Building" : request.buildingType().displayName())
+                    + " Preview | Click ground to build";
+        }
         return request.resourceType() + " Node Preview | Click ground to place";
     }
 
     private float anchorScale(PlacementRequest request) {
-        return request.modeType() == PlacementModeType.CASTLE ? 1.9F : 1.35F;
+        return switch (request.modeType()) {
+            case CASTLE -> 1.9F;
+            case BUILDING -> 1.55F;
+            case RESOURCE_NODE -> 1.35F;
+        };
     }
 
     private float ghostScale(PlacementModeType modeType) {
-        return modeType == PlacementModeType.CASTLE ? 0.95F : 0.75F;
+        return switch (modeType) {
+            case CASTLE -> 0.95F;
+            case BUILDING -> 0.82F;
+            case RESOURCE_NODE -> 0.75F;
+        };
     }
 
     private int previewCount(PlacementModeType modeType) {
-        return modeType == PlacementModeType.CASTLE ? 4 : 3;
+        return switch (modeType) {
+            case CASTLE -> 4;
+            case BUILDING -> 4;
+            case RESOURCE_NODE -> 3;
+        };
     }
 
     private List<Vector3d> previewPositions(Vector3d base, PlacementModeType modeType) {
@@ -96,6 +112,14 @@ public final class PlacementPreviewService implements IPlacementPreviewService, 
                     new Vector3d(base.getX() - 2.5D, base.getY(), base.getZ()),
                     new Vector3d(base.getX(), base.getY(), base.getZ() + 2.5D),
                     new Vector3d(base.getX(), base.getY(), base.getZ() - 2.5D)
+            );
+        }
+        if (modeType == PlacementModeType.BUILDING) {
+            return List.of(
+                    new Vector3d(base.getX() + 1.8D, base.getY(), base.getZ() + 1.8D),
+                    new Vector3d(base.getX() - 1.8D, base.getY(), base.getZ() + 1.8D),
+                    new Vector3d(base.getX() + 1.8D, base.getY(), base.getZ() - 1.8D),
+                    new Vector3d(base.getX() - 1.8D, base.getY(), base.getZ() - 1.8D)
             );
         }
         return List.of(

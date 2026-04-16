@@ -35,8 +35,13 @@ public final class PlayerProfileService implements IPlayerProfileService, IDepen
 
     public Optional<PlayerProfile> readCached(UUID playerId) {
         SemanticCacheKey key = CacheKeyFactory.playerProfileKey(playerId.toString());
-        Optional<ICacheValue<PlayerProfile>> cached = cache.get(key, codec);
-        return cached.map(ICacheValue::getValue);
+        try {
+            Optional<ICacheValue<PlayerProfile>> cached = cache.get(key, codec);
+            return cached.map(ICacheValue::getValue);
+        } catch (Exception ex) {
+            LOGGER.warning(() -> "Player profile cache read failed for " + playerId + ". Falling back to persistence. " + ex.getMessage());
+            return Optional.empty();
+        }
     }
 
     public PlayerProfile loadOrCreate(UUID playerId, String name, String timezone, String ipHash, Instant now) {
@@ -61,7 +66,7 @@ public final class PlayerProfileService implements IPlayerProfileService, IDepen
                 }
             });
             PlayerProfile refreshed = repository.upsert(playerId, name, timezone, ipHash, now);
-            cache.put(CacheKeyFactory.playerProfileKey(playerId.toString()), refreshed, PROFILE_TTL, codec);
+            cacheProfile(playerId, refreshed);
             return refreshed;
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to load player profile", ex);
@@ -71,9 +76,17 @@ public final class PlayerProfileService implements IPlayerProfileService, IDepen
     public void persist(PlayerProfile profile, Instant now) {
         try {
             PlayerProfile refreshed = repository.upsert(profile.uuid(), profile.name(), profile.timezone(), profile.ipHash(), now);
-            cache.put(CacheKeyFactory.playerProfileKey(profile.uuid().toString()), refreshed, PROFILE_TTL, codec);
+            cacheProfile(profile.uuid(), refreshed);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to persist profile", ex);
+        }
+    }
+
+    private void cacheProfile(UUID playerId, PlayerProfile profile) {
+        try {
+            cache.put(CacheKeyFactory.playerProfileKey(playerId.toString()), profile, PROFILE_TTL, codec);
+        } catch (Exception ex) {
+            LOGGER.warning(() -> "Player profile cache write failed for " + playerId + ". " + ex.getMessage());
         }
     }
 }

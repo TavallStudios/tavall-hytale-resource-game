@@ -5,7 +5,8 @@ package com.tavall.hytale.resourcegame.domain;
  */
 public enum PlacementModeType {
     CASTLE("Castle"),
-    RESOURCE_NODE("Resource Node");
+    RESOURCE_NODE("Resource Node"),
+    BUILDING("Building");
 
     private final String displayName;
 

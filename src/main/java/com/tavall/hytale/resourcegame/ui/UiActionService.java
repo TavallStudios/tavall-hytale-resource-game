@@ -2,6 +2,8 @@ package com.tavall.hytale.resourcegame.ui;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
@@ -10,6 +12,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
+import com.tavall.hytale.resourcegame.domain.BuildingMutationResult;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
@@ -28,6 +31,8 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
     private final IUiNavigator uiNavigator;
     private final IInteriorWorldService interiorWorldService;
     private final IPopulationService populationService;
+    private final ICastleBuildingService buildingService;
+    private final ICastleBuildingVisualService buildingVisualService;
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
     private final IResourceNodeService resourceNodeService;
@@ -37,6 +42,8 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             IUiNavigator uiNavigator,
             IInteriorWorldService interiorWorldService,
             IPopulationService populationService,
+            ICastleBuildingService buildingService,
+            ICastleBuildingVisualService buildingVisualService,
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
             IResourceNodeService resourceNodeService,
@@ -45,6 +52,8 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.interiorWorldService = Objects.requireNonNull(interiorWorldService, "interiorWorldService");
         this.populationService = Objects.requireNonNull(populationService, "populationService");
+        this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
+        this.buildingVisualService = Objects.requireNonNull(buildingVisualService, "buildingVisualService");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
@@ -90,8 +99,20 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             uiNavigator.open(UiPageType.CASTLE_UPGRADES, player, context, state);
             return;
         }
+        if (UiActions.OPEN_BUILDINGS.equals(action) && state != null) {
+            UiNavigationContext targetContext = context.clearFeedback()
+                    .withSelectedNodeId(null)
+                    .withSelectedBuildingId(null);
+            uiNavigator.open(UiPageType.CASTLE_BUILDINGS, player, targetContext, state);
+            return;
+        }
         if (UiActions.OPEN_CASTLE_MAIN.equals(action) && state != null) {
-            uiNavigator.open(UiPageType.CASTLE_MAIN, player, context, state);
+            uiNavigator.open(
+                    UiPageType.CASTLE_MAIN,
+                    player,
+                    context.clearFeedback().withSelectedNodeId(null).withSelectedBuildingId(null),
+                    state
+            );
             return;
         }
         if (UiActions.OPEN_DEBUG.equals(action) && state != null) {
@@ -130,6 +151,10 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
         }
         if (context.selectedNodeId() != null) {
             handleNodeAction(player, context, action, playerId, context.selectedNodeId());
+            return;
+        }
+        if (context.selectedBuildingId() != null) {
+            handleBuildingAction(player, context, action, playerId, context.selectedBuildingId());
         }
     }
 
@@ -141,8 +166,8 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
         return populationService.demoteActionState(state);
     }
 
-    public String promotionCostSummary() {
-        return populationService.promotionCostSummary();
+    public String promotionCostSummary(PlayerGameState state) {
+        return populationService.promotionCostSummary(state);
     }
 
     public String upgradeTutorialMessage(PlayerGameState state) {
@@ -204,6 +229,26 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
                 UiPageType.RESOURCE_NODE_DETAIL,
                 player,
                 context.withFeedback(feedback).withSelectedNodeId(nodeId),
+                updatedState
+        );
+    }
+
+    private void handleBuildingAction(Player player, UiNavigationContext context, String action, UUID playerId, UUID buildingId) {
+        if (!UiActions.BUILDING_START_UPGRADE.equals(action)) {
+            return;
+        }
+        BuildingMutationResult mutationResult = buildingService.startUpgrade(playerId, buildingId, Instant.now());
+        PlayerGameState updatedState = mutationResult.state();
+        if (updatedState == null) {
+            return;
+        }
+        if (mutationResult.changed()) {
+            buildingVisualService.refreshBuildings(playerId, updatedState);
+        }
+        uiNavigator.open(
+                UiPageType.BUILDING_DETAIL,
+                player,
+                context.withFeedback(mutationResult.message()).withSelectedBuildingId(buildingId),
                 updatedState
         );
     }

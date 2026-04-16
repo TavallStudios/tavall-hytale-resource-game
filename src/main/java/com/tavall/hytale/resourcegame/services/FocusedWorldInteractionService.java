@@ -5,6 +5,7 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
@@ -26,6 +27,7 @@ import java.util.UUID;
  */
 public final class FocusedWorldInteractionService implements IFocusedWorldInteractionService, IDependencyInjectableConcrete {
     private final IPlayerSessionStore sessionStore;
+    private final ICastleBuildingService buildingService;
     private final ICastleInteractionService castleInteractionService;
     private final IResourceNodeService resourceNodeService;
     private final IUiNavigator uiNavigator;
@@ -33,12 +35,14 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
 
     public FocusedWorldInteractionService(
             IPlayerSessionStore sessionStore,
+            ICastleBuildingService buildingService,
             ICastleInteractionService castleInteractionService,
             IResourceNodeService resourceNodeService,
             IUiNavigator uiNavigator,
             FocusedWorldTargetPlanner planner
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
+        this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
         this.castleInteractionService = Objects.requireNonNull(castleInteractionService, "castleInteractionService");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
@@ -64,7 +68,10 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
                 playerPosition,
                 lookVector,
                 state.castleLocation(),
-                resourceNodeService.listNodes(state)
+                resourceNodeService.listNodes(state),
+                buildingService.listBuildings(state).stream()
+                        .map(building -> buildingService.summary(player.getUuid(), state, building, java.time.Instant.now()))
+                        .toList()
         );
     }
 
@@ -73,6 +80,13 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
         return resolve(player)
                 .filter(target -> target.type() == FocusedWorldTargetType.RESOURCE_NODE)
                 .map(FocusedWorldTarget::nodeId);
+    }
+
+    @Override
+    public Optional<UUID> focusedBuildingId(Player player) {
+        return resolve(player)
+                .filter(target -> target.type() == FocusedWorldTargetType.BUILDING)
+                .map(FocusedWorldTarget::buildingId);
     }
 
     @Override
@@ -88,6 +102,15 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
         FocusedWorldTarget focusedTarget = target.get();
         if (focusedTarget.type() == FocusedWorldTargetType.CASTLE) {
             castleInteractionService.openCastleUi(player);
+            return target;
+        }
+        if (focusedTarget.type() == FocusedWorldTargetType.BUILDING) {
+            uiNavigator.open(
+                    UiPageType.BUILDING_DETAIL,
+                    player,
+                    new UiNavigationContext(player.getUuid(), player.getDisplayName()).withSelectedBuildingId(focusedTarget.buildingId()),
+                    session.gameState()
+            );
             return target;
         }
         uiNavigator.open(

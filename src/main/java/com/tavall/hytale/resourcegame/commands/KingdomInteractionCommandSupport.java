@@ -35,7 +35,7 @@ public final class KingdomInteractionCommandSupport implements IDependencyInject
     public void handleInteract(CommandContext context, Player player) {
         Optional<FocusedWorldTarget> target = focusedWorldInteractionService.interact(player);
         if (target.isEmpty()) {
-            context.sendMessage(Message.raw("No focused castle or node in front of you.").color("red"));
+            context.sendMessage(Message.raw("No focused castle, node, or building in front of you.").color("red"));
             return;
         }
         context.sendMessage(Message.raw("Interacted with " + describe(target.get()) + ".").color("green"));

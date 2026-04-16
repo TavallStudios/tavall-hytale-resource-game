@@ -32,7 +32,7 @@ public final class CastleUpgradesPage extends BaseUiPage {
         uiCommandBuilder.set("#FoodCount.Text", String.valueOf(state().resources().food()));
         uiCommandBuilder.set("#WoodCount.Text", String.valueOf(state().resources().wood()));
         uiCommandBuilder.set("#IronCount.Text", String.valueOf(state().resources().iron()));
-        uiCommandBuilder.set("#PromotionCost.Text", actionService().promotionCostSummary());
+        uiCommandBuilder.set("#PromotionCost.Text", actionService().promotionCostSummary(state()));
         uiCommandBuilder.set("#PromoteStatus.Text", promoteState.message());
         uiCommandBuilder.set("#DemoteStatus.Text", demoteState.message());
         uiCommandBuilder.set("#TutorialStatus.Text", actionService().upgradeTutorialMessage(state()));

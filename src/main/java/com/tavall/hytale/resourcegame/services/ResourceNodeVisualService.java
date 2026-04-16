@@ -115,7 +115,7 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
             }
             world.execute(() -> {
                 Store<EntityStore> store = world.getEntityStore().getStore();
-                int roleIndex = NPCPlugin.get().getIndex(displayConfig.npcRoleName());
+                int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
                 if (roleIndex < 0) {
                     LOGGER.warning(() -> "Unable to build resource node visuals because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
                     return;

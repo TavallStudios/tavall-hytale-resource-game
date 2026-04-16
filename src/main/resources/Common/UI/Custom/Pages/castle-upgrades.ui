@@ -54,8 +54,8 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #PromoteButton { Text: "Promote Citizen"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #DemoteButton { Text: "Demote Troop"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); }
+    TextButton #PromoteButton { Text: "Promote Citizen"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #DemoteButton { Text: "Demote Troop"; Padding: (Full: 6); }
   }
 
   Label #PromotionCost { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 8); }
@@ -66,5 +66,5 @@ Group {
 
   Label { Text: "Future: branching upgrade paths, training buildings, equipment, and role-specific promotions."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
-  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); } }
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
 }

@@ -84,21 +84,21 @@ Group {
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 12);
-    TextButton #AssignOneButton { Text: "Send 1"; Padding: (Full: 6); Style: (BackgroundColor: #26404d, BackgroundColorHover: #325568, BackgroundColorPressed: #1a2d36, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #AssignThreeButton { Text: "Send 3"; Padding: (Full: 6); Style: (BackgroundColor: #26404d, BackgroundColorHover: #325568, BackgroundColorPressed: #1a2d36, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #AssignFiveButton { Text: "Send 5"; Padding: (Full: 6); Style: (BackgroundColor: #26404d, BackgroundColorHover: #325568, BackgroundColorPressed: #1a2d36, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #AssignAllButton { Text: "Send All"; Padding: (Full: 6); Style: (BackgroundColor: #33543a, BackgroundColorHover: #456f4d, BackgroundColorPressed: #243b29, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); }
+    TextButton #AssignOneButton { Text: "Send 1"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignThreeButton { Text: "Send 3"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignFiveButton { Text: "Send 5"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignAllButton { Text: "Send All"; Padding: (Full: 6); }
   }
 
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 20);
-    TextButton #RecallOneButton { Text: "Recall 1"; Padding: (Full: 6); Style: (BackgroundColor: #4d2c2c, BackgroundColorHover: #663a3a, BackgroundColorPressed: #331d1d, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); Style: (BackgroundColor: #4d2c2c, BackgroundColorHover: #663a3a, BackgroundColorPressed: #331d1d, TextColor: #f0f5fb, FontSize: 15, RenderBold: true); }
+    TextButton #RecallOneButton { Text: "Recall 1"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); }
   }
 
   Group {
     LayoutMode: Right;
-    TextButton #BackButton { Text: "Back"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); }
+    TextButton #BackButton { Text: "Back"; Padding: (Full: 6); }
   }
 }

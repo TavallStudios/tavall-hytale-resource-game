@@ -7,6 +7,7 @@ import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
+import com.tavall.hytale.resourcegame.support.RecordingCastleBuildingVisualService;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSpawnService;
 import com.tavall.hytale.resourcegame.support.RecordingResourceNodeVisualService;
@@ -34,12 +35,14 @@ public final class CastlePlacementServiceTest {
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSpawnService castleSpawnService = new RecordingCastleSpawnService();
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
+        RecordingCastleBuildingVisualService buildingVisualService = new RecordingCastleBuildingVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
         CastlePlacementService placementService = new CastlePlacementService(
                 sessionStore,
                 gameStateService,
                 castleSpawnService,
                 castleSiteVisualService,
+                buildingVisualService,
                 resourceNodeVisualService
         );
 
@@ -67,6 +70,7 @@ public final class CastlePlacementServiceTest {
         assertEquals(newLocation, castleSpawnService.replacedLocation(playerId));
         assertEquals(newLocation, sessionStore.get(playerId).gameState().castleLocation());
         assertEquals(newLocation, castleSiteVisualService.lastState(playerId).castleLocation());
+        assertEquals(newLocation, buildingVisualService.lastState(playerId).castleLocation());
         assertEquals(newLocation, resourceNodeVisualService.lastState(playerId).castleLocation());
 
         TestAwait.until(

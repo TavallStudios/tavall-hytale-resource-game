@@ -3,7 +3,10 @@ package com.tavall.hytale.resourcegame.interior;
 import com.hypixel.hytale.math.vector.Vector3d;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public final class InteriorLayoutServiceTest {
     @Test
@@ -49,5 +52,23 @@ public final class InteriorLayoutServiceTest {
         assertEquals(100.5, layout.tourStops().get(3).position().getX());
         assertEquals(201.0, layout.tourStops().get(3).position().getY());
         assertEquals(297.5, layout.tourStops().get(3).position().getZ());
+    }
+
+    @Test
+    void originForUsesStablePerPlayerGridCells() {
+        InteriorLayoutService service = new InteriorLayoutService();
+        UUID firstPlayerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID secondPlayerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
+        Vector3d firstOrigin = service.originFor(firstPlayerId);
+        Vector3d firstOriginRepeat = service.originFor(firstPlayerId);
+        Vector3d secondOrigin = service.originFor(secondPlayerId);
+
+        assertEquals(firstOrigin.getX(), firstOriginRepeat.getX(), 0.0001D);
+        assertEquals(firstOrigin.getY(), firstOriginRepeat.getY(), 0.0001D);
+        assertEquals(firstOrigin.getZ(), firstOriginRepeat.getZ(), 0.0001D);
+        assertEquals(120.0D, firstOrigin.getY(), 0.0001D);
+        assertNotEquals(firstOrigin.getX(), secondOrigin.getX(), 0.0001D);
+        assertNotEquals(firstOrigin.getZ(), secondOrigin.getZ(), 0.0001D);
     }
 }

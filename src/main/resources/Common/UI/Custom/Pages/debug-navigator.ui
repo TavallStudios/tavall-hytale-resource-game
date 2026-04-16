@@ -17,15 +17,15 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #CastleMainButton { Text: "Castle Main"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); Anchor: (Right: 8); }
-    TextButton #CastleInfoButton { Text: "Castle Info"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
-    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
-    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
-    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); Anchor: (Right: 8); }
-    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); }
+    TextButton #CastleMainButton { Text: "Castle Main"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "Castle Info"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); }
   }
 
-  Group { LayoutMode: Left; Anchor: (Bottom: 16); TextButton #InteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Style: (BackgroundColor: #2a3642, BackgroundColorHover: #3a4b5c, BackgroundColorPressed: #202b35, TextColor: #f0f5fb, TextColorHover: #ffffff, FontSize: 16, RenderBold: true); } }
+  Group { LayoutMode: Left; Anchor: (Bottom: 16); TextButton #InteriorButton { Text: "Enter Interior"; Padding: (Full: 6); } }
 
-  Group { LayoutMode: Right; TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); Style: (BackgroundColor: #1c2530, BackgroundColorHover: #273241, BackgroundColorPressed: #131a22, TextColor: #c8d2dc, TextColorHover: #ffffff, FontSize: 15); } }
+  Group { LayoutMode: Right; TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); } }
 }

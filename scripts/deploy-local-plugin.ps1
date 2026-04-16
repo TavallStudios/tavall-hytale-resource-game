@@ -1,5 +1,5 @@
 param(
-    [string]$ServerRoot = "C:\\Users\\TJ\\Documents\\HyTaleDevServer",
+    [string]$ServerRoot = "C:\Users\TJ\Documents\HyTaleDevServer",
     [switch]$Build,
     [string]$JarPath = ""
 )
@@ -7,25 +7,43 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$validatorScript = Join-Path $PSScriptRoot "validate-custom-ui-assets.ps1"
 if ([string]::IsNullOrWhiteSpace($JarPath)) {
-    $JarPath = Join-Path $repoRoot "target\\tavall-hytale-resource-game.jar"
+    $JarPath = Join-Path $repoRoot "target\tavall-hytale-resource-game.jar"
 }
 
-if ($Build -or -not (Test-Path $JarPath)) {
-    Write-Host "Building plugin jar..."
-    Push-Location $repoRoot
-    try {
-        $mavenCommand = "mvn.cmd"
-        if (-not (Get-Command $mavenCommand -ErrorAction SilentlyContinue)) {
-            $mavenCommand = "C:\Tools\apache-maven-3.9.9\bin\mvn.cmd"
+function Get-LatestSourceTimestamp {
+    param([string]$Path)
+
+    $targets = @(
+        (Join-Path $Path "src\main\java"),
+        (Join-Path $Path "src\main\resources"),
+        (Join-Path $Path "pom.xml")
+    )
+
+    $items = foreach ($candidate in $targets) {
+        if (Test-Path $candidate) {
+            Get-ChildItem -Path $candidate -Recurse -File -ErrorAction SilentlyContinue
         }
-        $exitCode = (Start-Process -FilePath $mavenCommand -ArgumentList @("-DskipTests", "package") -Wait -NoNewWindow -PassThru).ExitCode
-        if ($exitCode -ne 0) {
-            throw "Maven build failed with exit code $exitCode"
-        }
-    } finally {
-        Pop-Location
     }
+
+    if (-not $items) {
+        return Get-Date "2000-01-01"
+    }
+
+    return ($items | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime
+}
+
+$shouldBuild = $Build -or -not (Test-Path $JarPath)
+if (-not $shouldBuild -and (Get-Item $JarPath).LastWriteTime -lt (Get-LatestSourceTimestamp -Path $repoRoot)) {
+    $shouldBuild = $true
+}
+
+if ($shouldBuild) {
+    Write-Host "Building and validating plugin jar..."
+    & $validatorScript -RepoRoot $repoRoot -Build | Out-Null
+} else {
+    & $validatorScript -RepoRoot $repoRoot -JarPath $JarPath | Out-Null
 }
 
 if (-not (Test-Path $JarPath)) {
@@ -39,5 +57,6 @@ if (-not (Test-Path $modsDir)) {
 
 $destPath = Join-Path $modsDir "tavall-hytale-resource-game.jar"
 Copy-Item -Path $JarPath -Destination $destPath -Force
+& $validatorScript -RepoRoot $repoRoot -JarPath $JarPath -CompareJarPath $destPath | Out-Null
 
 Write-Host "Copied plugin jar to $destPath"

@@ -5,5 +5,6 @@ package com.tavall.hytale.resourcegame.domain;
  */
 public enum FocusedWorldTargetType {
     CASTLE,
-    RESOURCE_NODE
+    RESOURCE_NODE,
+    BUILDING
 }

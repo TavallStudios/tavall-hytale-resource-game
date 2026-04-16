@@ -32,6 +32,7 @@ public final class InteriorMainPage extends BaseUiPage {
                         : context().feedbackMessage()
         );
         bind(uiEventBuilder, "#ExitInteriorButton", UiActions.EXIT_INTERIOR);
+        bind(uiEventBuilder, "#BuildingsButton", UiActions.OPEN_BUILDINGS);
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 
