@@ -131,8 +131,8 @@ public final class CastleBuildingServiceTest {
                 seededState
         ));
 
-        String interiorWorld = interiorInstanceService.worldNameFor(playerId);
-        Vector3d interiorOrigin = layoutService.originFor(playerId);
+        String interiorWorld = seededState.castleLocation().worldName();
+        Vector3d interiorOrigin = layoutService.originForCastle(seededState.castleLocation());
         BuildingMutationResult workshopPlacement = buildingService.placeBuilding(
                 playerId,
                 BuildingType.WORKSHOP,

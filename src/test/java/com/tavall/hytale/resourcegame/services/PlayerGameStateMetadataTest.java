@@ -51,6 +51,7 @@ public final class PlayerGameStateMetadataTest {
                 0L,
                 99L,
                 UUID.randomUUID(),
+                "stone_column_castle",
                 castleLocation,
                 summary,
                 new ResourceInventory(90, 45, 21),

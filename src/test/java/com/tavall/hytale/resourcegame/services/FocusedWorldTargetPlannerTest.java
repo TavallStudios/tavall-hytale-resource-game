@@ -40,6 +40,35 @@ public final class FocusedWorldTargetPlannerTest {
     }
 
     @Test
+    void resolvesCastleInsideSevenPointFiveBlockInspectionRange() {
+        Optional<FocusedWorldTarget> target = planner.resolve(
+                "default",
+                new Vector3d(10.0, 64.0, 2.6),
+                new Vector3d(0.0, 0.0, 1.0),
+                new CastleLocationData("default", 10.0, 64.0, 10.0),
+                List.of(),
+                List.of()
+        );
+
+        assertTrue(target.isPresent());
+        assertEquals(FocusedWorldTargetType.CASTLE, target.get().type());
+    }
+
+    @Test
+    void ignoresCastleOutsideSevenPointFiveBlockInspectionRange() {
+        Optional<FocusedWorldTarget> target = planner.resolve(
+                "default",
+                new Vector3d(10.0, 64.0, 2.4),
+                new Vector3d(0.0, 0.0, 1.0),
+                new CastleLocationData("default", 10.0, 64.0, 10.0),
+                List.of(),
+                List.of()
+        );
+
+        assertTrue(target.isEmpty());
+    }
+
+    @Test
     void resolvesNodeWhenNodeIsBetterAlignedThanCastle() {
         UUID nodeId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         ResourceNodeData node = new ResourceNodeData(

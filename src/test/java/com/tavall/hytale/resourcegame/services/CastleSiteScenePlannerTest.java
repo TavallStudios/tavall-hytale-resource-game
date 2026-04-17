@@ -55,6 +55,7 @@ public final class CastleSiteScenePlannerTest {
                 7L,
                 8L,
                 UUID.randomUUID(),
+                "stone_column_castle",
                 new CastleLocationData("default", 0.0, 65.0, 0.0),
                 new PopulationSummary(
                         12,

@@ -70,6 +70,7 @@ public final class CastleEconomyPlannerTest {
                 1L,
                 2L,
                 UUID.randomUUID(),
+                "stone_column_castle",
                 new CastleLocationData("overworld", 0.0, 70.0, 0.0),
                 new PopulationSummary(
                         citizens,

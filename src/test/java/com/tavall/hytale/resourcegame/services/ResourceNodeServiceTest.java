@@ -5,6 +5,8 @@ import com.tavall.hytale.resourcegame.cache.JacksonCacheCodec;
 import com.tavall.hytale.resourcegame.cache.SemanticCacheFactory;
 import com.tavall.hytale.resourcegame.config.CacheConfig;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
+import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
+import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
@@ -77,7 +79,7 @@ public final class ResourceNodeServiceTest {
 
         ResourceNodeData tickedNode = resourceNodeService.findNode(ticked, node.nodeId()).orElseThrow();
         assertEquals(assignedState.resources().iron() + 9, ticked.resources().iron());
-        assertEquals(116, tickedNode.currentStock());
+        assertEquals(111, tickedNode.currentStock());
         assertTrue(ticked.metadataJson().contains(node.nodeId().toString()));
     }
 
@@ -114,7 +116,7 @@ public final class ResourceNodeServiceTest {
     }
 
     @Test
-    void depletedNodesRegenerateWhenNotFullyHarvested() {
+    void depletedNodesAreRemovedWhenHarvestingConsumesRemainingStock() {
         JsonMapperProvider mapperProvider = new JsonMapperProvider();
         InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
         PlayerGameStateService gameStateService = new PlayerGameStateService(
@@ -134,13 +136,46 @@ public final class ResourceNodeServiceTest {
 
         PlayerGameState withNode = resourceNodeService.placeNode(playerId, ResourceType.FOOD, "default", new Vector3d(11.0, 72.0, 11.0), now);
         ResourceNodeData node = resourceNodeService.listNodes(withNode).getFirst();
-        PlayerGameState drainedState = resourceNodeService.assignTroops(playerId, node.nodeId(), 9, now.plusSeconds(1));
-        PlayerGameState afterFirstTick = resourceNodeService.applyTick(drainedState, now.plusSeconds(12));
-        PlayerGameState afterSecondTick = resourceNodeService.applyTick(afterFirstTick.withPopulation(afterFirstTick.populationSummary().withTroopCount(0), now.plusSeconds(13)), now.plusSeconds(24));
+        PlayerGameState reducedStock = resourceNodeService.setStock(playerId, node.nodeId(), 10, now.plusSeconds(1));
+        PlayerGameState assignedState = resourceNodeService.assignTroops(playerId, node.nodeId(), 9, now.plusSeconds(2));
+        PlayerGameState afterTick = resourceNodeService.applyTick(assignedState, now.plusSeconds(12));
 
-        ResourceNodeData afterFirstNode = resourceNodeService.findNode(afterFirstTick, node.nodeId()).orElseThrow();
-        ResourceNodeData afterSecondNode = resourceNodeService.findNode(afterSecondTick, node.nodeId()).orElseThrow();
-        assertTrue(afterFirstNode.currentStock() < afterFirstNode.maxStock());
-        assertTrue(afterSecondNode.currentStock() > afterFirstNode.currentStock());
+        assertTrue(resourceNodeService.findNode(afterTick, node.nodeId()).isEmpty());
+    }
+
+    @Test
+    void expiredNodesAreHiddenAndDroppedOnTick() throws Exception {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("node-expiry"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "node-expiry"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-15T08:15:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(25L, playerId, new CastleLocationData("default", 0.0, 72.0, 0.0), now);
+        sessionStore.put(new PlayerSession(playerId, new PlayerProfile(25L, playerId, "ExpiryBot", "UTC", "hash", now, now, now), initialState));
+
+        PlayerGameState withNode = resourceNodeService.placeNode(playerId, ResourceType.FOOD, "default", new Vector3d(12.0, 72.0, 12.0), now);
+        ResourceNodeData node = resourceNodeService.listNodes(withNode).getFirst();
+        ResourceNodeData expiredNode = node.withLifetime(now.minusSeconds(30));
+        String expiredMetadata = mapperProvider.mapper().writeValueAsString(
+                GameStateMetadata.fromPopulation(
+                        withNode.populationSummary(),
+                        OnboardingProgress.defaults(),
+                        java.util.List.of(expiredNode),
+                        java.util.List.of()
+                )
+        );
+        PlayerGameState expiredState = withNode.withMetadataJson(expiredMetadata, now);
+
+        assertTrue(resourceNodeService.listNodes(expiredState).isEmpty());
+        PlayerGameState afterTick = resourceNodeService.applyTick(expiredState, now.plusSeconds(1));
+        assertTrue(resourceNodeService.listNodes(afterTick).isEmpty());
     }
 }
