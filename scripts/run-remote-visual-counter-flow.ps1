@@ -6,7 +6,6 @@ param(
     [string]$RemotePluginJarPath = "/srv/hytale-startup-patch-test/Server/mods/tavall-hytale-resource-game.jar",
     [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$Transport = "QUIC",
-    [string]$AuthMode = "OFFLINE",
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5522,
     [string]$Username = "VisualCounterBot",
@@ -143,8 +142,8 @@ fi
 cd {1}
 unset TAVALL_POSTGRES_URL TAVALL_POSTGRES_USER TAVALL_POSTGRES_PASSWORD
 unset TAVALL_REDIS_HOST TAVALL_REDIS_PORT TAVALL_REDIS_PASSWORD TAVALL_REDIS_TLS
-nohup ./start.sh --transport {2} --auth-mode {3} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
-'@ -f $Port, $ServerRoot, $Transport, $AuthMode
+nohup ./start.sh --transport {2} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
+'@ -f $Port, $ServerRoot, $Transport
     Invoke-RemoteBash -Script $script | Out-Null
     Wait-RemoteServerReady -SshAlias $SshAlias -LogPath $logPath -Transport $Transport -Port $Port -StartOutPath "$ServerRoot/start.out"
 }

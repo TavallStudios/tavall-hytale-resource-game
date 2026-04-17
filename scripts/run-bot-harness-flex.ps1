@@ -7,10 +7,19 @@ param(
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5522,
     [int]$BridgePort = 5522,
-    [int]$RemoteForwardPort = 5523
+    [int]$RemoteForwardPort = 5523,
+    [string]$AuthDomain = "",
+    [string]$IdentityToken = "",
+    [string]$SessionToken = "",
+    [string]$AuthPassword = "",
+    [string]$AuthScopes = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($AuthDomain) -and -not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) {
+    $AuthDomain = $env:HYTALE_AUTH_DOMAIN
+}
 
 if ($BotLocation -eq "remote") {
     & (Join-Path $PSScriptRoot "run-remote-bot-harness-via-local.ps1") `
@@ -19,6 +28,11 @@ if ($BotLocation -eq "remote") {
         -ServerPort $Port `
         -BridgePort $BridgePort `
         -RemoteForwardPort $RemoteForwardPort `
+        -AuthDomain $AuthDomain `
+        -IdentityToken $IdentityToken `
+        -SessionToken $SessionToken `
+        -AuthPassword $AuthPassword `
+        -AuthScopes $AuthScopes `
         -StartBridge
     exit $LASTEXITCODE
 }
@@ -56,7 +70,24 @@ Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHos
 
 Push-Location $LocalHarnessDir
 try {
-    $exitCode = (Start-Process -FilePath "node.exe" -ArgumentList @($cliPath, "scenario", $Scenario, "--host", $ServerHost, "--port", $Port, "--username", $Username, "--output-dir", $outputDir, "--json") -Wait -NoNewWindow -PassThru).ExitCode
+    $arguments = @($cliPath, "scenario", $Scenario, "--host", $ServerHost, "--port", $Port, "--username", $Username, "--output-dir", $outputDir, "--json")
+    if (-not [string]::IsNullOrWhiteSpace($AuthDomain)) {
+        $arguments += @("--auth-domain", $AuthDomain)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($IdentityToken)) {
+        $arguments += @("--identity-token", $IdentityToken)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SessionToken)) {
+        $arguments += @("--session-token", $SessionToken)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AuthPassword)) {
+        $arguments += @("--auth-password", $AuthPassword)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AuthScopes)) {
+        $arguments += @("--auth-scopes", $AuthScopes)
+    }
+
+    $exitCode = (Start-Process -FilePath "node.exe" -ArgumentList $arguments -Wait -NoNewWindow -PassThru).ExitCode
 } finally {
     Pop-Location
 }
