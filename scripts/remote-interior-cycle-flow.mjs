@@ -1,8 +1,23 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import {
+  captureWorldSnapshot,
+  createTraceSession,
+  delay,
+  ensureBotBaseline,
+  resolveBotClientModuleUrl,
+  waitForPageOrNull,
+  writeJson,
+  printStructured
+} from "./bot-flow-helpers.mjs";
 
 function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
+}
+
+function sendBoundAction(bot, selector, fallbackAction) {
+  const snapshot = bot.snapshotPage();
+  const binding = snapshot?.eventBindings?.find((entry) => entry.selector === selector && entry.data);
+  bot.sendPageEvent("Data", binding?.data ?? JSON.stringify({ Action: fallbackAction }));
 }
 
 async function waitForSnapshot(bot, key, selector, timeoutMs, label) {
@@ -26,7 +41,7 @@ async function main() {
   const username = process.argv[4] ?? "InteriorCycleBot";
   const uuid = process.argv[5] ?? "423e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "interior-cycle-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -39,9 +54,10 @@ async function main() {
     autoConnect: true,
     autoAcknowledgePages: true
   });
+  const trace = createTraceSession(bot, outputDir);
 
   try {
-    await bot.trace.enable({ outputDir });
+    await trace.enable();
     const baseline = await ensureBotBaseline(bot, assertions, {
       username,
       nearbyRadius: 12
@@ -64,7 +80,12 @@ async function main() {
       pages.push({ key: `cycle-${cycle}-interior`, title: null, snapshot: interiorSnapshot });
       assertions.push(`entered-interior-cycle-${cycle}`);
 
-      sendAction(bot, "ExitInterior");
+      sendBoundAction(bot, "#ExitInteriorButton", "ExitInterior");
+      const uiReturnPage = await waitForPageOrNull(bot, "com.tavall.hytale.resourcegame.ui.CastleMainPage", 7_500);
+      if (!uiReturnPage) {
+        assertions.push(`exit-ui-event-fallback-cycle-${cycle}`);
+        bot.chat("/kingdom interior exit");
+      }
       await bot.waitForWorldActivity(20_000);
       await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleMainPage", 20_000);
       const returnSnapshot = await waitForSnapshot(
@@ -92,9 +113,9 @@ async function main() {
       },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
-    await bot.trace.flush(outputDir);
+    await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-interior-cycle-flow",
@@ -107,11 +128,11 @@ async function main() {
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {
-      await bot.trace.flush(outputDir);
+      await trace.flush();
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -119,4 +140,3 @@ async function main() {
 }
 
 await main();
-

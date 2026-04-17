@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Version = "1.21.4",
     [string]$HarnessDir = "",
     [string]$LogDir = "",
@@ -23,8 +23,8 @@ if (-not (Test-Path $scriptPath)) {
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$logPath = Join-Path $LogDir ("java-smoke-{0}-{1}.log" -f $Version.Replace(".", "_"), $timestamp)
-$summaryPath = Join-Path $LogDir ("java-smoke-{0}-{1}.json" -f $Version.Replace(".", "_"), $timestamp)
+$logPath = Join-Path $LogDir ("java-smoke-{0}-{1}-run.txt" -f $Version.Replace(".", "_"), $timestamp)
+$summaryPath = Join-Path $LogDir ("java-smoke-{0}-{1}-summary.txt" -f $Version.Replace(".", "_"), $timestamp)
 
 function Write-LogLine {
     param([string]$Message)
@@ -119,7 +119,7 @@ $summary = [ordered]@{
     logPath = $logPath
 }
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+Set-TextSummary -Path $summaryPath -Data $summary
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] ExitCode={1}" -f (Get-Date).ToString("o"), $exitCode)
 

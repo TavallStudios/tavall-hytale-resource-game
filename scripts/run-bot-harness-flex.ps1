@@ -12,13 +12,20 @@ param(
     [string]$IdentityToken = "",
     [string]$SessionToken = "",
     [string]$AuthPassword = "",
-    [string]$AuthScopes = ""
+    [string]$AuthScopes = "",
+    [string]$ServerJarPath = "C:\Users\TJ\Documents\HyTaleDevServer\HytaleServer.jar"
 )
 
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($AuthDomain) -and -not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) {
     $AuthDomain = $env:HYTALE_AUTH_DOMAIN
+}
+if ([string]::IsNullOrWhiteSpace($env:HYTALE_SERVER_JAR) -and -not [string]::IsNullOrWhiteSpace($ServerJarPath)) {
+    if (-not (Test-Path $ServerJarPath)) {
+        throw "HYTALE_SERVER_JAR is not set and ServerJarPath does not exist: $ServerJarPath"
+    }
+    $env:HYTALE_SERVER_JAR = $ServerJarPath
 }
 
 if ($BotLocation -eq "remote") {
@@ -52,8 +59,8 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $baseName = "local-{0}-{1}" -f $Scenario, $timestamp
-$logPath = Join-Path $logDir ($baseName + ".log")
-$summaryPath = Join-Path $logDir ($baseName + ".json")
+$logPath = Join-Path $logDir ($baseName + ".txt")
+$summaryPath = Join-Path $logDir ($baseName + ".txt.summary")
 $outputDir = Join-Path $logDir ($baseName + "-output")
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
@@ -92,22 +99,22 @@ try {
     Pop-Location
 }
 
-$summary = [ordered]@{
-    startedAt = $startedAt
-    completedAt = (Get-Date).ToString("o")
-    botLocation = $BotLocation
-    scenario = $Scenario
-    host = $ServerHost
-    port = $Port
-    username = $Username
-    harnessDir = $LocalHarnessDir
-    outputDir = $outputDir
-    exitCode = $exitCode
-    success = ($exitCode -eq 0)
-    logPath = $logPath
-}
+$summaryLines = @(
+    "startedAt=$startedAt",
+    "completedAt=$((Get-Date).ToString('o'))",
+    "botLocation=$BotLocation",
+    "scenario=$Scenario",
+    "host=$ServerHost",
+    "port=$Port",
+    "username=$Username",
+    "harnessDir=$LocalHarnessDir",
+    "outputDir=$outputDir",
+    "exitCode=$exitCode",
+    "success=$($exitCode -eq 0)",
+    "logPath=$logPath"
+)
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+Set-Content -Path $summaryPath -Value $summaryLines -Encoding utf8
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] ExitCode={1}" -f (Get-Date).ToString("o"), $exitCode)
 

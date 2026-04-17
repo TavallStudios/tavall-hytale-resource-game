@@ -1,5 +1,5 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -101,7 +101,7 @@ async function main() {
   const username = process.argv[4] ?? "HealthBot";
   const uuid = process.argv[5] ?? "623e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "data-health-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -201,7 +201,7 @@ async function main() {
     };
     await bot.trace.flush(outputDir);
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-data-health-flow",
@@ -218,7 +218,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -226,4 +226,3 @@ async function main() {
 }
 
 await main();
-

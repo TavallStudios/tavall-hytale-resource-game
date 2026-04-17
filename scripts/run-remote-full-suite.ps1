@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$LogDir = "",
     [int]$MaxAttemptsPerStep = 2
 )
@@ -12,7 +12,7 @@ if ([string]::IsNullOrWhiteSpace($LogDir)) {
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$summaryPath = Join-Path $LogDir ("remote-full-suite-{0}.json" -f $timestamp)
+$summaryPath = Join-Path $LogDir ("remote-full-suite-{0}-summary.txt" -f $timestamp)
 $startedAt = (Get-Date).ToString("o")
 
 $mvn = "C:/Program Files/JetBrains/IntelliJ IDEA 2025.3/plugins/maven/lib/maven3/bin/mvn.cmd"
@@ -81,5 +81,5 @@ $summary = [ordered]@{
     results = $results
 }
 
-$summary | ConvertTo-Json -Depth 5 | Set-Content -Path $summaryPath -Encoding utf8
+Set-TextSummary -Path $summaryPath -Data $summary
 Write-Host ("SummaryFile={0}" -f $summaryPath)

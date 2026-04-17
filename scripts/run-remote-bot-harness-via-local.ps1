@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$SshConfigPath = "C:\\Users\\TJ\\.ssh\\config",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
@@ -30,9 +30,9 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $baseName = "remote-via-local-{0}-{1}" -f $Scenario, $timestamp
-$logPath = Join-Path $LogDir ($baseName + ".log")
-$summaryPath = Join-Path $LogDir ($baseName + ".json")
-$resultPath = Join-Path $LogDir ($baseName + "-scenario-result.json")
+$logPath = Join-Path $LogDir ($baseName + "-run.txt")
+$summaryPath = Join-Path $LogDir ($baseName + "-summary.txt")
+$resultPath = Join-Path $LogDir ($baseName + "-scenario-result.txt")
 
 function Write-LogLine {
     param([string]$Message)
@@ -77,8 +77,14 @@ function Invoke-SshCapture {
 
 $startedAt = (Get-Date).ToString("o")
 $remoteOutputDir = "/tmp/{0}" -f $baseName
-$remoteResultFile = "{0}/scenario-result.json" -f $remoteOutputDir
+$remoteResultFile = "{0}/scenario-result.txt" -f $remoteOutputDir
 $authArgs = ""
+if ([string]::IsNullOrWhiteSpace($AuthDomain) -and -not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) {
+    $AuthDomain = $env:HYTALE_AUTH_DOMAIN
+}
+if ([string]::IsNullOrWhiteSpace($AuthDomain)) {
+    $AuthDomain = "auth.sanasol.ws"
+}
 if (-not [string]::IsNullOrWhiteSpace($AuthDomain)) {
     $authArgs += " --auth-domain '$AuthDomain'"
 }
@@ -130,7 +136,7 @@ try {
 set -e
 cd '$RemoteHarnessDir'
 mkdir -p '$remoteOutputDir'
-node ./apps/cli/dist/index.js scenario $Scenario --host 127.0.0.1 --port $RemoteForwardPort --username '$Username' --authoritative-log-dir '$RemoteServerLogDir' --output-dir '$remoteOutputDir' --json$authArgs
+node ./apps/cli/dist/index.js scenario $Scenario --host 127.0.0.1 --port $RemoteForwardPort --username '$Username' --authoritative-log-dir '$RemoteServerLogDir' --output-dir '$remoteOutputDir' $authArgs
 "@
 
     $exitCode = Invoke-SshCapture -RemoteCommand $remoteCommand
@@ -191,7 +197,7 @@ $summary = [ordered]@{
     scenarioResultPath = $(if (Test-Path $resultPath) { $resultPath } else { $null })
 }
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+Set-TextSummary -Path $summaryPath -Data $summary
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] ExitCode={1}" -f (Get-Date).ToString("o"), $exitCode)
 

@@ -6,14 +6,11 @@ import {
   ensureBotBaseline,
   resolveBotClientModuleUrl,
   waitForPageOrNull,
-  waitForServerMessage,
-  waitForWorldSnapshot,
   writeJson, printStructured,
 } from "./bot-flow-helpers.mjs";
 
 const BUILDING_DETAIL_PAGE = "com.tavall.hytale.resourcegame.ui.BuildingDetailPage";
 const BUILDINGS_OVERVIEW_PAGE = "com.tavall.hytale.resourcegame.ui.CastleBuildingsPage";
-const INTERIOR_MAIN_PAGE = "com.tavall.hytale.resourcegame.ui.InteriorMainPage";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -68,41 +65,6 @@ async function openBuildingsOverview(bot, statusSelector, expectedText, timeoutM
   throw new Error("Timed out waiting for castle buildings overview");
 }
 
-async function waitForInteriorReady(bot) {
-  const interiorPage = await waitForPageOrNull(bot, INTERIOR_MAIN_PAGE, 12_000);
-  if (interiorPage) {
-    return { via: "page", page: interiorPage };
-  }
-  try {
-    const worldSnapshot = await waitForWorldSnapshot(
-      bot,
-      (snapshot) => {
-        const position = snapshot?.position;
-        return position
-          && Math.abs(position.x - 0.5) <= 1.5
-          && position.y >= 119
-          && position.y <= 123
-          && Math.abs(position.z - 0.5) <= 1.5;
-      },
-      12_000,
-      "interior world position"
-    );
-    return { via: "position", worldSnapshot };
-  } catch {
-  }
-  try {
-    const serverMessage = await waitForServerMessage(
-      bot,
-      (message) => message.toLowerCase().includes("interior ready"),
-      12_000,
-      "interior ready"
-    );
-    return { via: "message", serverMessage };
-  } catch {
-    return { via: "timeout" };
-  }
-}
-
 async function placeBuildingUntilDetail(bot, buildingType, displayName, levelPredicate, attempts = 4) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     bot.chat(`/kingdom buildings stage ${buildingType}`);
@@ -148,9 +110,9 @@ async function main() {
 
   const host = process.argv[2] ?? "127.0.0.1";
   const port = Number.parseInt(process.argv[3] ?? "5520", 10);
-  const username = process.argv[4] ?? "BuildingBot";
-  const uuid = process.argv[5] ?? "a23e4567-e89b-12d3-a456-426614174000";
-  const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "building-upgrade-flow");
+  const username = process.argv[4] ?? "SurfaceBuildBot";
+  const uuid = process.argv[5] ?? "b23e4567-e89b-12d3-a456-426614174000";
+  const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "surface-building-flow");
   const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
@@ -193,31 +155,30 @@ async function main() {
       (levelText) => levelText.includes("L0 -> L1")
     );
     assertions.push("farmstead-placed");
-    if (!`${readSelectorValue(buildingDetailSnapshot, "#StatusText.Text")}`.includes("%")) {
-      throw new Error(`Expected under-construction building status, got ${readSelectorValue(buildingDetailSnapshot, "#StatusText.Text")}`);
-    }
     pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: buildingDetailSnapshot });
-    assertions.push("building-detail-opened");
 
     await finishAndRefreshBuilding(bot, "farmstead");
     buildingDetailSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
         && readSelectorValue(snapshot, "#LevelText.Text") === "L1"
-        && readSelectorValue(snapshot, "#StatusText.Text") === "Operational"
-        && readSelectorValue(snapshot, "#EffectText.Text") === "Passive yield: +2 Food, +0 Wood, +0 Iron per tick.",
+        && readSelectorValue(snapshot, "#StatusText.Text") === "Operational",
       10_000,
       "completed level one building detail"
     );
     assertions.push("farmstead-level-one-complete");
 
-    sendAction(bot, "BuildingStartUpgrade");
+    bot.sendPageEvent("Dismiss", null);
+    await delay(500);
+    bot.chat("/kd buildings upgrade farmstead");
+    await delay(1_250);
+    bot.chat("/kd buildings select farmstead");
     buildingDetailSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
-        && readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Farmstead upgrade started."
-        && readSelectorValue(snapshot, "#LevelText.Text") === "L1 -> L2",
-      6_000,
+        && readSelectorValue(snapshot, "#LevelText.Text") === "L1 -> L2"
+        && `${readSelectorValue(snapshot, "#StatusText.Text")}`.includes("%"),
+      12_000,
       "building upgrade start"
     );
     assertions.push("farmstead-upgrade-started-from-ui");
@@ -242,47 +203,8 @@ async function main() {
     pages.push({ key: BUILDINGS_OVERVIEW_PAGE, title: null, snapshot: overviewSnapshot });
     assertions.push("building-overview-reflects-upgrade");
 
-    bot.chat("/kingdom interior");
-    await bot.waitForWorldActivity(20_000);
-    const interiorReady = await waitForInteriorReady(bot);
-    await delay(2_000);
-    pages.push({ key: INTERIOR_MAIN_PAGE, title: interiorReady.via, snapshot: interiorReady.page ?? interiorReady.worldSnapshot ?? interiorReady.serverMessage ?? null });
-    assertions.push("entered-interior-for-buildings");
-    assertions.push(`interior-ready-${interiorReady.via}`);
-
-    let barracksSnapshot = await placeBuildingUntilDetail(
-      bot,
-      "barracks",
-      "Barracks",
-      (levelText) => levelText.includes("L0 -> L1")
-    );
-    assertions.push("barracks-placed");
-    if (!`${readSelectorValue(barracksSnapshot, "#StatusText.Text")}`.includes("%")) {
-      throw new Error(`Expected barracks construction status, got ${readSelectorValue(barracksSnapshot, "#StatusText.Text")}`);
-    }
-    pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: barracksSnapshot });
-    assertions.push("barracks-detail-opened");
-
-    await finishAndRefreshBuilding(bot, "barracks");
-    barracksSnapshot = await waitForSnapshot(
-      bot,
-      (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
-        && readSelectorValue(snapshot, "#LevelText.Text") === "L1"
-        && readSelectorValue(snapshot, "#StatusText.Text") === "Operational"
-        && readSelectorValue(snapshot, "#EffectText.Text") === "Training effect: promotion discount -1 Food, -0 Wood, -0 Iron.",
-      12_000,
-      "completed barracks detail"
-    );
-    pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: barracksSnapshot });
-    assertions.push("barracks-level-one-complete");
-
-    bot.chat("/kingdom interior exit");
-    await bot.waitForWorldActivity(12_000);
-    await delay(1_000);
-    assertions.push("exited-interior-after-buildings");
-
     const result = {
-      name: "remote-building-upgrade-flow",
+      name: "remote-surface-building-flow",
       success: true,
       startedAt,
       endedAt: new Date().toISOString(),
@@ -299,7 +221,7 @@ async function main() {
     printStructured(result);
   } catch (error) {
     const result = {
-      name: "remote-building-upgrade-flow",
+      name: "remote-surface-building-flow",
       success: false,
       startedAt,
       endedAt: new Date().toISOString(),

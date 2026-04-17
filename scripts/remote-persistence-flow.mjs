@@ -1,5 +1,5 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 async function waitForSnapshot(bot, predicate, timeoutMs, label) {
   const startedAt = Date.now();
@@ -98,7 +98,7 @@ async function main() {
     iron: 29
   };
 
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -165,7 +165,7 @@ async function main() {
     };
     await bot.trace.flush(outputDir);
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: `remote-persistence-${mode}`,
@@ -187,7 +187,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -195,5 +195,3 @@ async function main() {
 }
 
 await main();
-
-

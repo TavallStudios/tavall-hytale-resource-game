@@ -1,5 +1,5 @@
-import path from "node:path";
-import { captureWorldSnapshot, delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson } from "./bot-flow-helpers.mjs";
+﻿import path from "node:path";
+import { captureWorldSnapshot, delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured, } from "./bot-flow-helpers.mjs";
 
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
@@ -8,8 +8,9 @@ async function main() {
   const host = process.argv[2] ?? "127.0.0.1";
   const port = Number.parseInt(process.argv[3] ?? "5520", 10);
   const username = process.argv[4] ?? "CastleBot";
-  const outputDir = process.argv[5] ?? path.resolve(process.cwd(), ".runs", "castle-interaction-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const uuid = process.argv[5] ?? process.env.HYTALE_BOT_UUID;
+  const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "castle-interaction-flow");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -18,6 +19,7 @@ async function main() {
     host,
     port,
     username,
+    uuid,
     autoConnect: true,
     autoAcknowledgePages: true
   });
@@ -55,7 +57,7 @@ async function main() {
     };
     await bot.trace.flush(outputDir);
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "castle-interaction-flow",
@@ -72,7 +74,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();

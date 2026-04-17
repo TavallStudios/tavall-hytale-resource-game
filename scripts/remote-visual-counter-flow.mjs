@@ -1,7 +1,8 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, findNearbyEntityByPosition, resolveBotClientModuleUrl, waitForPageOrNull, waitForWorldSnapshot, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import { captureWorldSnapshot, createTraceSession, delay, ensureBotBaseline, findNearbyEntityByPosition, resolveBotClientModuleUrl, waitForPageOrNull, waitForWorldSnapshot, writeJson, printStructured, } from "./bot-flow-helpers.mjs";
 
-const CITIZEN_ANCHOR = { x: 3.5, y: 121.0, z: 2.5 };
+const IDLE_WORKER_ANCHOR = { x: -3.5, y: 121.0, z: 7.0 };
+const SOLDIER_WORKER_ANCHOR = { x: 0.5, y: 121.0, z: 12.0 };
 const TROOP_ANCHOR = { x: -2.5, y: 121.0, z: 2.5 };
 
 async function main() {
@@ -13,7 +14,7 @@ async function main() {
   const username = process.argv[4] ?? "VisualCounterBot";
   const uuid = process.argv[5] ?? "223e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "visual-counter-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -26,14 +27,17 @@ async function main() {
     autoConnect: true,
     autoAcknowledgePages: true
   });
+  const trace = createTraceSession(bot, outputDir);
 
   try {
-    await bot.trace.enable({ outputDir });
+    await trace.enable();
     const baseline = await ensureBotBaseline(bot, assertions, {
       username,
-      nearbyRadius: 12
+      op: false,
+      nearbyRadius: 12,
+      settleDelayMs: 600
     });
-    await delay(1_500);
+    await delay(500);
 
     bot.chat("/kingdom citizens set 8");
     await delay(350);
@@ -53,12 +57,14 @@ async function main() {
     if (initialInteriorSnapshot.nearbyEntities.length > 0) {
       initialInteriorSnapshot = await waitForWorldSnapshot(
         bot,
-        (snapshot) => findNearbyEntityByPosition(snapshot, CITIZEN_ANCHOR) && findNearbyEntityByPosition(snapshot, TROOP_ANCHOR),
+        (snapshot) => findNearbyEntityByPosition(snapshot, IDLE_WORKER_ANCHOR)
+          && findNearbyEntityByPosition(snapshot, SOLDIER_WORKER_ANCHOR)
+          && findNearbyEntityByPosition(snapshot, TROOP_ANCHOR),
         10_000,
-        "population anchor entities",
-        20
+        "worker and troop anchor entities",
+        24
       );
-      assertions.push("population-anchors-visible");
+      assertions.push("worker-and-troop-anchors-visible");
     } else {
       assertions.push("population-anchor-scan-unavailable");
     }
@@ -70,6 +76,8 @@ async function main() {
     await delay(1_250);
     assertions.push("interior-population-updated");
 
+    bot.sendPageEvent("Dismiss", null);
+    await delay(500);
     bot.chat("/kingdom interior exit");
     await bot.waitForWorldActivity(10_000);
     await delay(1_000);
@@ -95,9 +103,9 @@ async function main() {
       },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
-    await bot.trace.flush(outputDir);
+    await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-visual-counter-flow",
@@ -110,11 +118,11 @@ async function main() {
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {
-      await bot.trace.flush(outputDir);
+      await trace.flush();
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -122,4 +130,3 @@ async function main() {
 }
 
 await main();
-

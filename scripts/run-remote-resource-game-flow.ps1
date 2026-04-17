@@ -22,10 +22,10 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $baseName = "remote-resource-game-flow-{0}" -f $timestamp
-$logPath = Join-Path $LogDir ($baseName + ".log")
-$summaryPath = Join-Path $LogDir ($baseName + ".json")
-$resultPath = Join-Path $LogDir ($baseName + "-scenario-result.json")
-$tracePath = Join-Path $LogDir ($baseName + "-transcript.json")
+$logPath = Join-Path $LogDir ($baseName + "-run.txt")
+$summaryPath = Join-Path $LogDir ($baseName + "-summary.txt")
+$resultPath = Join-Path $LogDir ($baseName + "-scenario-result.txt")
+$tracePath = Join-Path $LogDir ($baseName + "-transcript.txt")
 $remoteScriptPath = "/tmp/{0}.mjs" -f $baseName
 $remoteOutputDir = "/tmp/{0}" -f $baseName
 
@@ -100,7 +100,7 @@ Ensure-RemoteQuicBridge `
     -ServerHost $ServerHost `
     -ServerPort $Port
 
-$remoteCommand = "cd $RemoteHarnessDir && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $remoteOutputDir"
+$remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=${HYTALE_AUTH_DOMAIN:-auth.sanasol.ws} && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $remoteOutputDir"
 $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $SshAlias,
@@ -109,13 +109,13 @@ $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
 
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
-    ("{0}:{1}/scenario-result.json" -f $SshAlias, $remoteOutputDir),
+    ("{0}:{1}/scenario-result.txt" -f $SshAlias, $remoteOutputDir),
     $resultPath
 ) | Out-Null
 
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
-    ("{0}:{1}/transcript.json" -f $SshAlias, $remoteOutputDir),
+    ("{0}:{1}/transcript.txt" -f $SshAlias, $remoteOutputDir),
     $tracePath
 ) | Out-Null
 
@@ -138,9 +138,8 @@ $summary = [ordered]@{
     transcriptPath = $(if (Test-Path $tracePath) { $tracePath } else { $null })
 }
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+Set-TextSummary -Path $summaryPath -Data $summary
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] ExitCode={1}" -f (Get-Date).ToString("o"), $exitCode)
 
 exit $exitCode
-

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-persistence-flow.mjs",
@@ -33,12 +33,12 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $baseName = "remote-persistence-flow-{0}" -f $timestamp
-$logPath = Join-Path $LogDir ($baseName + ".log")
-$summaryPath = Join-Path $LogDir ($baseName + ".json")
-$phaseOneResultPath = Join-Path $LogDir ($baseName + "-seed-result.json")
-$phaseOneTracePath = Join-Path $LogDir ($baseName + "-seed-transcript.json")
-$phaseTwoResultPath = Join-Path $LogDir ($baseName + "-verify-result.json")
-$phaseTwoTracePath = Join-Path $LogDir ($baseName + "-verify-transcript.json")
+$logPath = Join-Path $LogDir ($baseName + "-run.txt")
+$summaryPath = Join-Path $LogDir ($baseName + "-summary.txt")
+$phaseOneResultPath = Join-Path $LogDir ($baseName + "-seed-result.txt")
+$phaseOneTracePath = Join-Path $LogDir ($baseName + "-seed-transcript.txt")
+$phaseTwoResultPath = Join-Path $LogDir ($baseName + "-verify-result.txt")
+$phaseTwoTracePath = Join-Path $LogDir ($baseName + "-verify-transcript.txt")
 $schemaTempPath = Join-Path $env:TEMP ($baseName + "-schema.sql")
 $remoteScriptPath = "/tmp/{0}.mjs" -f $baseName
 $remoteSchemaPath = "/tmp/{0}-schema.sql" -f $baseName
@@ -181,7 +181,7 @@ function Invoke-RemoteScenario {
         [string]$LocalTracePath
     )
 
-    $remoteCommand = "cd $RemoteHarnessDir && mkdir -p $RemoteOutputDir && node $remoteScriptPath $Mode $ServerHost $Port $Username $StableUuid $RemoteOutputDir"
+    $remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=${HYTALE_AUTH_DOMAIN:-auth.sanasol.ws} && mkdir -p $RemoteOutputDir && node $remoteScriptPath $Mode $ServerHost $Port $Username $StableUuid $RemoteOutputDir"
     $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
         "-F", "C:\Users\TJ\.ssh\config",
         $SshAlias,
@@ -192,12 +192,12 @@ function Invoke-RemoteScenario {
     }
     Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
         "-F", "C:\Users\TJ\.ssh\config",
-        ("{0}:{1}/scenario-result.json" -f $SshAlias, $RemoteOutputDir),
+        ("{0}:{1}/scenario-result.txt" -f $SshAlias, $RemoteOutputDir),
         $LocalResultPath
     ) | Out-Null
     Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
         "-F", "C:\Users\TJ\.ssh\config",
-        ("{0}:{1}/transcript.json" -f $SshAlias, $RemoteOutputDir),
+        ("{0}:{1}/transcript.txt" -f $SshAlias, $RemoteOutputDir),
         $LocalTracePath
     ) | Out-Null
 }
@@ -337,11 +337,10 @@ $summary = [ordered]@{
     serverLogPath = $serverLogPathFile
 }
 
-$summary | ConvertTo-Json | Set-Content -Path $summaryPath -Encoding utf8
+Set-TextSummary -Path $summaryPath -Data $summary
 Write-LogLine ("[{0}] SummaryFile={1}" -f (Get-Date).ToString("o"), $summaryPath)
 Write-LogLine ("[{0}] Persistence flow passed" -f (Get-Date).ToString("o"))
 
 if (Test-Path $schemaTempPath) {
     Remove-Item -Path $schemaTempPath -Force
 }
-
