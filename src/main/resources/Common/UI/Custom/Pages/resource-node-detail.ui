@@ -30,6 +30,13 @@ Group {
     Group {
       Anchor: (Width: 180);
       LayoutMode: Top;
+      Label { Text: "Auto Workers"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #AssignedWorkers { Style: (FontSize: 22); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
       Label { Text: "Reserve Troops"; Style: (FontSize: 14, TextColor: #9eb0bf); }
       Label #AvailableTroops { Style: (FontSize: 22); }
     }
@@ -73,6 +80,13 @@ Group {
       Label { Text: "Supply Lane"; Style: (FontSize: 14, TextColor: #9eb0bf); }
       Label #RouteStatus { Style: (FontSize: 18); }
     }
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Pillage"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #PillageReward { Style: (FontSize: 18); }
+    }
   }
 
   Label #FeedbackStatus {
@@ -94,7 +108,8 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 20);
     TextButton #RecallOneButton { Text: "Recall 1"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); }
+    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); Anchor: (Right: 12); }
+    TextButton #PillageButton { Text: "Pillage Node"; Padding: (Full: 6); }
   }
 
   Group {

@@ -30,8 +30,60 @@ Group {
     Group {
       Anchor: (Width: 180);
       LayoutMode: Top;
-      Label { Text: "Builders"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label { Text: "Hunters"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #HunterCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Cooks"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #CookCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Miners"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #MinerCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Builder Team"; Style: (FontSize: 14, TextColor: #a7b0ba); }
       Label #BuilderCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Blacksmiths"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #BlacksmithCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Architects"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #ArchitectCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Grunt Builders"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #GruntBuilderCount { Style: (FontSize: 20); }
     }
 
     Group {
