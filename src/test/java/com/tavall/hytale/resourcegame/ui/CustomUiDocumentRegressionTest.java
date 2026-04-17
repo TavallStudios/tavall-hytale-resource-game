@@ -15,6 +15,11 @@ public final class CustomUiDocumentRegressionTest {
     private static final Path RESOURCE_ROOT = Path.of("src", "main", "resources");
     private static final Path UI_ROOT = RESOURCE_ROOT.resolve(Path.of("Common", "UI", "Custom", "Pages"));
     private static final Path MANIFEST_PATH = RESOURCE_ROOT.resolve("manifest.json");
+    private static final List<String> UNSAFE_CUSTOM_UI_TOKENS = List.of(
+            "BackgroundColorHover",
+            "BackgroundColorPressed",
+            "TextColorHover"
+    );
 
     @Test
     void uiPagesAreStandaloneDocumentsWithNoBomOrSharedImports() throws IOException {
@@ -31,6 +36,9 @@ public final class CustomUiDocumentRegressionTest {
             assertFalse(content.startsWith("\uFEFF"), () -> "UI page has UTF-8 BOM: " + page);
             assertFalse(content.contains("../Common.ui"), () -> "UI page still imports Common.ui: " + page);
             assertTrue(content.stripLeading().startsWith("Group"), () -> "UI page must start with a root Group: " + page);
+            for (String unsafeToken : UNSAFE_CUSTOM_UI_TOKENS) {
+                assertFalse(content.contains(unsafeToken), () -> "UI page uses unsupported token " + unsafeToken + ": " + page);
+            }
         }
     }
 

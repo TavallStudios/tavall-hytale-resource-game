@@ -19,8 +19,10 @@ import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.support.RecordingCastleSiteVisualService;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerProfileStore;
+import com.tavall.hytale.resourcegame.support.NoopCastleBuildingService;
 import com.tavall.hytale.resourcegame.support.RecordingPopulationDisplayGateway;
 import com.tavall.hytale.resourcegame.support.RecordingResourceNodeVisualService;
+import com.tavall.hytale.resourcegame.support.RecordingUiNavigator;
 import com.tavall.hytale.resourcegame.support.TestAwait;
 import org.junit.jupiter.api.Test;
 import org.tavall.abstractcache.semantic.SemanticCache;
@@ -92,8 +94,9 @@ public final class VerticalSliceServiceTest {
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
+        RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         RecordingPopulationDisplayGateway displayGateway = new RecordingPopulationDisplayGateway();
         PopulationService populationService = new PopulationService(
                 sessionStore,
@@ -102,8 +105,10 @@ public final class VerticalSliceServiceTest {
                 castleSiteVisualService,
                 displayGateway,
                 PromotionCost.defaultCost(),
+                new NoopCastleBuildingService(),
                 resourceNodeService,
-                resourceNodeVisualService
+                resourceNodeVisualService,
+                uiNavigator
         );
 
         UUID playerId = UUID.randomUUID();
@@ -163,8 +168,9 @@ public final class VerticalSliceServiceTest {
         PlayerSessionStore sessionStore = new PlayerSessionStore();
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
+        RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
-        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService);
+        ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         PopulationService populationService = new PopulationService(
                 sessionStore,
                 gameStateService,
@@ -172,8 +178,10 @@ public final class VerticalSliceServiceTest {
                 castleSiteVisualService,
                 new RecordingPopulationDisplayGateway(),
                 PromotionCost.defaultCost(),
+                new NoopCastleBuildingService(),
                 resourceNodeService,
-                resourceNodeVisualService
+                resourceNodeVisualService,
+                uiNavigator
         );
 
         UUID playerId = UUID.randomUUID();
@@ -204,6 +212,6 @@ public final class VerticalSliceServiceTest {
         PlayerGameState readyState = sessionStore.get(playerId).gameState();
         assertTrue(populationService.promoteActionState(readyState).allowed());
         assertEquals("Ready: promote 1 citizen into 1 troop.", populationService.promoteActionState(readyState).message());
-        assertEquals("Cost per promotion: 4 Food, 2 Wood, 1 Iron.", populationService.promotionCostSummary());
+        assertEquals("Cost per promotion: 4 Food, 2 Wood, 1 Iron.", populationService.promotionCostSummary(readyState));
     }
 }
