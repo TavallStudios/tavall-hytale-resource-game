@@ -45,7 +45,7 @@ public final class CastleEconomySimulationServiceTest {
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
         RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
         CastleEconomyPlanner planner = new CastleEconomyPlanner();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
         CastleEconomySimulationService simulationService = new CastleEconomySimulationService(
                 sessionStore,
                 gameStateService,
@@ -125,7 +125,7 @@ public final class CastleEconomySimulationServiceTest {
                 new com.tavall.hytale.resourcegame.interior.InteriorLayoutService(),
                 mapperProvider.mapper()
         );
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
         CastleEconomySimulationService simulationService = new CastleEconomySimulationService(
                 sessionStore,
                 gameStateService,

@@ -37,19 +37,33 @@ public final class ResourceNodeStructureService {
     private void applyResourceShape(World world, ResourceNodeData node, int originX, int originY, int originZ) {
         switch (node.resourceType()) {
             case FOOD -> {
-                setBlock(world, originX + 2, originY, originZ, FLOOR_BLOCK);
-                setBlock(world, originX - 2, originY, originZ, FLOOR_BLOCK);
+                for (int dz = -2; dz <= 2; dz++) {
+                    setBlock(world, originX - 2, originY, originZ + dz, FLOOR_BLOCK);
+                    setBlock(world, originX + 2, originY, originZ + dz, FLOOR_BLOCK);
+                }
+                setBlock(world, originX - 2, originY + 1, originZ - 2, FLOOR_BLOCK);
+                setBlock(world, originX + 2, originY + 1, originZ + 2, FLOOR_BLOCK);
             }
             case WOOD -> {
-                setBlock(world, originX, originY, originZ + 2, FLOOR_BLOCK);
-                setBlock(world, originX, originY, originZ - 2, FLOOR_BLOCK);
+                setColumn(world, originX, originY, originZ + 2, 3);
+                setColumn(world, originX, originY, originZ - 2, 2);
+                setColumn(world, originX + 2, originY, originZ, 2);
+                setColumn(world, originX - 2, originY, originZ, 2);
             }
             case IRON -> {
-                setBlock(world, originX + 2, originY, originZ + 1, FLOOR_BLOCK);
-                setBlock(world, originX - 2, originY, originZ + 1, FLOOR_BLOCK);
-                setBlock(world, originX + 2, originY, originZ - 1, FLOOR_BLOCK);
-                setBlock(world, originX - 2, originY, originZ - 1, FLOOR_BLOCK);
+                setColumn(world, originX + 2, originY, originZ + 1, 2);
+                setColumn(world, originX - 2, originY, originZ + 1, 1);
+                setColumn(world, originX + 2, originY, originZ - 1, 1);
+                setColumn(world, originX - 2, originY, originZ - 1, 2);
+                setBlock(world, originX + 1, originY + 1, originZ + 2, FLOOR_BLOCK);
+                setBlock(world, originX - 1, originY + 1, originZ - 2, FLOOR_BLOCK);
             }
+        }
+    }
+
+    private void setColumn(World world, int x, int originY, int z, int height) {
+        for (int offset = 0; offset < height; offset++) {
+            setBlock(world, x, originY + offset, z, FLOOR_BLOCK);
         }
     }
 

@@ -44,6 +44,11 @@ function parseStockValue(snapshot) {
   };
 }
 
+function parseLeadingNumber(rawText) {
+  const match = `${rawText}`.match(/^\+?(\d+)/);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
 async function openNodePage(bot) {
   bot.chat("/kingdom nodes select 1");
   await bot.waitForPage("com.tavall.hytale.resourcegame.ui.ResourceNodePage", 10_000);
@@ -119,9 +124,10 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "3"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "6"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+12/tick"
+        && Number.parseInt(`${readSelectorValue(candidate, "#AssignedWorkers.Text")}`, 10) > 0
+        && parseLeadingNumber(readSelectorValue(candidate, "#GainPerTick.Text")) >= 12
         && readSelectorValue(candidate, "#StatusText.Text") === "Rich"
-        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 1 convoy markers",
+        && `${readSelectorValue(candidate, "#RouteStatus.Text")}`.startsWith("Supply lane active:"),
       5_000,
       "assign three update"
     );
@@ -133,9 +139,10 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "9"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "0"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+36/tick"
+        && Number.parseInt(`${readSelectorValue(candidate, "#AssignedWorkers.Text")}`, 10) > 0
+        && parseLeadingNumber(readSelectorValue(candidate, "#GainPerTick.Text")) >= 36
         && readSelectorValue(candidate, "#StatusText.Text") === "Rich"
-        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
+        && `${readSelectorValue(candidate, "#RouteStatus.Text")}`.startsWith("Supply lane active:"),
       5_000,
       "assign all update"
     );
@@ -178,9 +185,9 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "8"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "1"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+8/tick"
+        && `${readSelectorValue(candidate, "#GainPerTick.Text")}`.startsWith("+8/tick")
         && readSelectorValue(candidate, "#StatusText.Text") === "Low"
-        && readSelectorValue(candidate, "#RouteStatus.Text") === "Supply lane active: 3 convoy markers",
+        && `${readSelectorValue(candidate, "#RouteStatus.Text")}`.startsWith("Supply lane active:"),
       5_000,
       "recall one update"
     );
@@ -192,14 +199,30 @@ async function main() {
       bot,
       (candidate) => readSelectorValue(candidate, "#AssignedTroops.Text") === "0"
         && readSelectorValue(candidate, "#AvailableTroops.Text") === "9"
-        && readSelectorValue(candidate, "#GainPerTick.Text") === "+0/tick"
+        && Number.parseInt(`${readSelectorValue(candidate, "#AssignedWorkers.Text")}`, 10) > 0
+        && parseLeadingNumber(readSelectorValue(candidate, "#GainPerTick.Text")) > 0
         && readSelectorValue(candidate, "#StatusText.Text") === "Low"
-        && readSelectorValue(candidate, "#RouteStatus.Text") === "No supply lane",
+        && `${readSelectorValue(candidate, "#RouteStatus.Text")}`.startsWith("Supply lane active:"),
       5_000,
       "recall all update"
     );
     pages.push({ key: snapshot.key, title: null, snapshot });
     assertions.push("node-recall-all");
+
+    bot.chat("/kingdom nodes pillage 1");
+    await refreshNodePage(bot);
+    snapshot = await waitForSnapshot(
+      bot,
+      (candidate) => {
+        const stock = parseStockValue(candidate);
+        return stock != null
+          && stock.current < 8
+          && parseLeadingNumber(readSelectorValue(candidate, "#PillageReward.Text")) >= 0;
+      },
+      5_000,
+      "manual pillage drain"
+    );
+    assertions.push("node-manual-pillage");
 
     const result = {
       name: "remote-node-assignment-flow",

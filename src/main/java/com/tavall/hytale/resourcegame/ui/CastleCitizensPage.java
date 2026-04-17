@@ -40,9 +40,22 @@ public final class CastleCitizensPage extends BaseUiPage {
         CastleEconomySnapshot snapshot = economyPlanner.snapshot(state());
         uiCommandBuilder.set("#IdleCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.IDLE)));
         uiCommandBuilder.set("#GathererCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.GATHERER)));
-        uiCommandBuilder.set("#BuilderCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.BUILDER)));
+        uiCommandBuilder.set("#HunterCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.HUNTER)));
+        uiCommandBuilder.set("#CookCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.COOK)));
+        uiCommandBuilder.set("#MinerCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.MINER)));
+        uiCommandBuilder.set("#BuilderCount.Text", String.valueOf(builderSpecialistCount(snapshot)));
+        uiCommandBuilder.set("#BlacksmithCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.BLACKSMITH)));
+        uiCommandBuilder.set("#ArchitectCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.ARCHITECT)));
+        uiCommandBuilder.set("#GruntBuilderCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)));
         uiCommandBuilder.set("#TraineeCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.TRAINEE)));
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
+    }
+
+    private int builderSpecialistCount(CastleEconomySnapshot snapshot) {
+        return snapshot.jobCount(CitizenJobType.BLACKSMITH)
+                + snapshot.jobCount(CitizenJobType.ARCHITECT)
+                + snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)
+                + snapshot.jobCount(CitizenJobType.BUILDER);
     }
 
     private void bind(UIEventBuilder uiEventBuilder, String selector, String action) {

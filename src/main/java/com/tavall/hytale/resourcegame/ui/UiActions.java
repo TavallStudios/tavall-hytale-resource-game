@@ -20,6 +20,7 @@ public final class UiActions {
     public static final String NODE_ASSIGN_ALL = "NodeAssignAll";
     public static final String NODE_RECALL_ONE = "NodeRecallOne";
     public static final String NODE_RECALL_ALL = "NodeRecallAll";
+    public static final String NODE_PILLAGE = "NodePillage";
     public static final String BUILDING_START_UPGRADE = "BuildingStartUpgrade";
     public static final String BUILDING_OPEN_DETAIL = "BuildingOpenDetail";
     public static final String PROMOTE = "PromoteCitizen";

@@ -108,7 +108,7 @@ public final class CastleEconomySimulationService implements ICastleEconomySimul
                 .withWood(state.resources().wood() + snapshot.gainFor(ResourceType.WOOD))
                 .withIron(state.resources().iron() + snapshot.gainFor(ResourceType.IRON));
         PlayerGameState updatedState = state.withPopulation(updatedSummary, now).withResources(updatedResources, now);
-        updatedState = resourceNodeService.applyTick(updatedState, now);
+        updatedState = resourceNodeService.applyTick(updatedState, snapshot, now);
         updatedState = buildingService.applyTick(session.playerId(), updatedState, now);
         session.updateGameState(updatedState);
         gameStateService.cacheState(session.playerId(), updatedState);

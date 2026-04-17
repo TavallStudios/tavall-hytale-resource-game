@@ -13,6 +13,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualS
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.domain.ResourceNodePillageResult;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
@@ -58,7 +59,7 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
 
     public void handle(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd nodes place|list|status|select|align|assign|add|stock|recall|goto|remove|clear").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd nodes place|list|status|select|align|assign|add|pillage|stock|recall|goto|remove|clear").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
@@ -70,6 +71,7 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
             case "align" -> handleNodeAlign(context, player, tokens, session);
             case "assign" -> handleNodeAssign(context, tokens, session, false);
             case "add" -> handleNodeAssign(context, tokens, session, true);
+            case "pillage" -> handleNodePillage(context, player, tokens, session);
             case "stock" -> handleNodeStock(context, tokens, session);
             case "recall" -> handleNodeRecall(context, tokens, session);
             case "goto" -> handleNodeGoto(context, player, tokens, session);
@@ -215,6 +217,27 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
         PlayerGameState updatedState = resourceNodeService.setStock(session.playerId(), node.get().nodeId(), amount.getAsInt(), Instant.now());
         resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
         uiNavigator.refreshTrackedPage(session.playerId(), updatedState);
+        sendNodeSummary(context, updatedState, node.get().nodeId());
+    }
+
+    private void handleNodePillage(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd nodes pillage <index|node_id_prefix|focus>").color("yellow"));
+            return;
+        }
+        Optional<ResourceNodeData> node = resolveNode(context, player, session, tokens.get(2));
+        if (node.isEmpty()) {
+            return;
+        }
+        ResourceNodePillageResult pillageResult = resourceNodeService.pillageNode(session.playerId(), node.get().nodeId(), Instant.now());
+        PlayerGameState updatedState = pillageResult.state();
+        if (updatedState == null) {
+            context.sendMessage(Message.raw(pillageResult.message()).color("red"));
+            return;
+        }
+        resourceNodeVisualService.refreshNodes(session.playerId(), updatedState);
+        uiNavigator.refreshTrackedPage(session.playerId(), updatedState);
+        context.sendMessage(Message.raw(pillageResult.message()).color(pillageResult.changed() ? "green" : "yellow"));
         sendNodeSummary(context, updatedState, node.get().nodeId());
     }
 

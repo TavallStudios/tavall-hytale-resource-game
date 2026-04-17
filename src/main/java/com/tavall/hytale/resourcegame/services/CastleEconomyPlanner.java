@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.resources.ResourceType;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Computes workforce distribution and per-tick production from the current castle state.
@@ -21,32 +22,60 @@ public final class CastleEconomyPlanner {
         int citizens = Math.max(0, state.populationSummary().citizenCount());
         int troops = Math.max(0, state.populationSummary().troopCount());
 
-        int builders = citizens >= 8 ? 1 : 0;
-        int trainees = troops < 4 ? Math.min(2, Math.max(0, citizens / 5)) : Math.min(1, Math.max(0, citizens / 8));
-        int idle = citizens >= 10 ? 1 : 0;
-        int gatherers = Math.max(0, citizens - builders - trainees - idle);
+        int remaining = citizens;
+        int idle = take(remaining, citizens >= 10 ? 1 : 0);
+        remaining -= idle;
+        int trainees = take(remaining, troops < 4 ? Math.min(2, citizens / 5) : Math.min(1, citizens / 8));
+        remaining -= trainees;
+        int architect = take(remaining, citizens >= 12 ? 1 : 0);
+        remaining -= architect;
+        int blacksmith = take(remaining, citizens >= 10 && troops > 0 ? 1 : 0);
+        remaining -= blacksmith;
+        int cook = take(remaining, citizens >= 6 ? 1 : 0);
+        remaining -= cook;
+        int hunter = take(remaining, citizens >= 5 ? 1 : 0);
+        remaining -= hunter;
+        int miner = take(remaining, citizens >= 7 ? 1 : 0);
+        remaining -= miner;
+        int gruntBuilder = take(remaining, citizens >= 8 ? 1 : 0);
+        remaining -= gruntBuilder;
+        int gatherers = Math.max(0, remaining);
 
         if (gatherers == 0 && citizens > 0) {
-            if (trainees > 0) {
-                trainees--;
-                gatherers++;
-            } else if (builders > 0) {
-                builders--;
-                gatherers++;
-            } else if (idle > 0) {
+            gatherers = 1;
+            if (idle > 0) {
                 idle--;
-                gatherers++;
+            } else if (trainees > 0) {
+                trainees--;
+            } else if (gruntBuilder > 0) {
+                gruntBuilder--;
+            } else if (architect > 0) {
+                architect--;
+            } else if (blacksmith > 0) {
+                blacksmith--;
+            } else if (cook > 0) {
+                cook--;
+            } else if (hunter > 0) {
+                hunter--;
+            } else if (miner > 0) {
+                miner--;
             }
         }
 
         EnumMap<CitizenJobType, Integer> jobCounts = new EnumMap<>(CitizenJobType.class);
         jobCounts.put(CitizenJobType.IDLE, idle);
         jobCounts.put(CitizenJobType.GATHERER, gatherers);
-        jobCounts.put(CitizenJobType.BUILDER, builders);
+        jobCounts.put(CitizenJobType.HUNTER, hunter);
+        jobCounts.put(CitizenJobType.COOK, cook);
+        jobCounts.put(CitizenJobType.MINER, miner);
+        jobCounts.put(CitizenJobType.BLACKSMITH, blacksmith);
+        jobCounts.put(CitizenJobType.ARCHITECT, architect);
+        jobCounts.put(CitizenJobType.GRUNT_BUILDER, gruntBuilder);
+        jobCounts.put(CitizenJobType.BUILDER, 0);
         jobCounts.put(CitizenJobType.TRAINEE, trainees);
         jobCounts.put(CitizenJobType.SOLDIER, 0);
 
-        EnumMap<ResourceType, Integer> workers = allocateGatherers(state, gatherers);
+        EnumMap<ResourceType, Integer> workers = allocateWorkers(state, jobCounts);
         EnumMap<ResourceType, Integer> gains = new EnumMap<>(ResourceType.class);
         gains.put(ResourceType.FOOD, workers.get(ResourceType.FOOD) * FOOD_PER_WORKER);
         gains.put(ResourceType.WOOD, workers.get(ResourceType.WOOD) * WOOD_PER_WORKER);
@@ -58,8 +87,12 @@ public final class CastleEconomyPlanner {
         CastleEconomySnapshot snapshot = snapshot(state);
         return "Gatherers "
                 + snapshot.jobCount(CitizenJobType.GATHERER)
+                + " | Hunters "
+                + snapshot.jobCount(CitizenJobType.HUNTER)
+                + " | Miners "
+                + snapshot.jobCount(CitizenJobType.MINER)
                 + " | Builders "
-                + snapshot.jobCount(CitizenJobType.BUILDER)
+                + builderCount(snapshot)
                 + " | Trainees "
                 + snapshot.jobCount(CitizenJobType.TRAINEE)
                 + " | Idle "
@@ -76,9 +109,22 @@ public final class CastleEconomyPlanner {
         return currentAmount
                 + " stored | "
                 + snapshot.workersFor(resourceType)
-                + " workers | +"
+                + " workers/troops routed | +"
                 + snapshot.gainFor(resourceType)
                 + " per tick";
+    }
+
+    private EnumMap<ResourceType, Integer> allocateWorkers(PlayerGameState state, Map<CitizenJobType, Integer> jobCounts) {
+        EnumMap<ResourceType, Integer> workers = allocateGatherers(state, jobCounts.getOrDefault(CitizenJobType.GATHERER, 0));
+        workers.put(ResourceType.FOOD, workers.get(ResourceType.FOOD)
+                + jobCounts.getOrDefault(CitizenJobType.HUNTER, 0)
+                + jobCounts.getOrDefault(CitizenJobType.COOK, 0));
+        workers.put(ResourceType.WOOD, workers.get(ResourceType.WOOD)
+                + jobCounts.getOrDefault(CitizenJobType.GRUNT_BUILDER, 0));
+        workers.put(ResourceType.IRON, workers.get(ResourceType.IRON)
+                + jobCounts.getOrDefault(CitizenJobType.MINER, 0)
+                + jobCounts.getOrDefault(CitizenJobType.BLACKSMITH, 0));
+        return workers;
     }
 
     private EnumMap<ResourceType, Integer> allocateGatherers(PlayerGameState state, int gatherers) {
@@ -112,5 +158,16 @@ public final class CastleEconomyPlanner {
             remaining--;
         }
         return workers;
+    }
+
+    private int take(int available, int requested) {
+        return Math.max(0, Math.min(available, requested));
+    }
+
+    private int builderCount(CastleEconomySnapshot snapshot) {
+        return snapshot.jobCount(CitizenJobType.ARCHITECT)
+                + snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)
+                + snapshot.jobCount(CitizenJobType.BLACKSMITH)
+                + snapshot.jobCount(CitizenJobType.BUILDER);
     }
 }

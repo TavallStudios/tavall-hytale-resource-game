@@ -124,7 +124,7 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                 ResourceNodeSummary summary = resourceNodeService.summary(state, node);
                 structureService.ensureNodeSite(world, node, summary);
                 Ref<EntityStore> anchorRef = spawnNamed(store, roleIndex, new Vector3d(node.x(), node.y(), node.z()), anchorLabel(node, summary), anchorScale(summary));
-                List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops(), workerScale(summary));
+                List<Ref<EntityStore>> workerRefs = spawnWorkers(store, roleIndex, node, summary.assignedTroops() + summary.assignedWorkers(), workerScale(summary));
                 Ref<EntityStore> routeAnchorRef = spawnRouteAnchor(store, roleIndex, state, node, summary);
                 List<Ref<EntityStore>> routeRefs = spawnRouteMarkers(store, roleIndex, state, summary, refreshTime);
                 rebuiltRefs.put(node.nodeId(), new ResourceNodeVisualRefs(anchorRef, routeAnchorRef, workerRefs, routeRefs));
@@ -137,9 +137,9 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
         return npcVisualSpawner.spawnNamed(store, roleIndex, position, label, scale);
     }
 
-    private List<Ref<EntityStore>> spawnWorkers(Store<EntityStore> store, int roleIndex, ResourceNodeData node, int assignedTroops, float scale) {
+    private List<Ref<EntityStore>> spawnWorkers(Store<EntityStore> store, int roleIndex, ResourceNodeData node, int assignedPopulation, float scale) {
         List<Vector3d> positions = workerPositions(node);
-        int visibleCount = Math.min(MAX_WORKER_MARKERS, Math.max(0, (int) Math.ceil(assignedTroops / 2.0)));
+        int visibleCount = Math.min(MAX_WORKER_MARKERS, Math.max(0, (int) Math.ceil(assignedPopulation / 2.0)));
         return npcVisualSpawner.spawnGroup(store, roleIndex, positions, visibleCount, scale);
     }
 
@@ -203,19 +203,21 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
 
     private String anchorLabel(ResourceNodeData node, ResourceNodeSummary summary) {
         return node.resourceType()
-                + " Node | Sent " + summary.assignedTroops()
+                + " Node | Troops " + summary.assignedTroops()
+                + " | Workers " + summary.assignedWorkers()
                 + " | Stock " + summary.currentStock() + "/" + summary.maxStock()
                 + " (" + summary.stockPercent() + "%)"
                 + " " + summary.stockStatus()
+                + " | Pillage +" + summary.pillageReward()
                 + " | +" + summary.gainPerTick() + "/tick";
     }
 
     private float anchorScale(ResourceNodeSummary summary) {
-        return clampScale(0.95F + (summary.stockPercent() / 100.0F) + (summary.assignedTroops() / 10.0F), 0.95F, 2.15F);
+        return clampScale(0.95F + (summary.stockPercent() / 100.0F) + ((summary.assignedTroops() + summary.assignedWorkers()) / 10.0F), 0.95F, 2.15F);
     }
 
     private float workerScale(ResourceNodeSummary summary) {
-        return clampScale(0.6F + (summary.assignedTroops() / 12.0F), 0.6F, 1.35F);
+        return clampScale(0.6F + ((summary.assignedTroops() + summary.assignedWorkers()) / 12.0F), 0.6F, 1.35F);
     }
 
     private float routeScale(ResourceNodeSummary summary) {

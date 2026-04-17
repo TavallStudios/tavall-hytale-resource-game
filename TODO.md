@@ -12,7 +12,7 @@
 
 ## Population & Jobs
 - Implement per-citizen simulation with individual stats feeding aggregated medians.
-- Build job loops for gatherer/builder/trainee/soldier roles.
+- Build full job loops for gatherer, hunter, cook, miner, blacksmith, architect, grunt builder, trainee, and soldier roles.
 - Add job assignment UI and persistent job metadata.
 
 ## Citizen Aging
@@ -22,6 +22,8 @@
 ## Resources & Economy
 - Add production buildings for Food/Wood/Iron generation.
 - Add storage limits, decay, and transport logic.
+- Add pillage cooldowns, node defense risk, and richer reward tables once combat pressure exists.
+- Replace safe single-block node silhouettes with verified Hytale static assets/prefabs after asset keys are stable.
 
 ## UI & UX
 - Replace placeholder UI visuals with final art and flow.

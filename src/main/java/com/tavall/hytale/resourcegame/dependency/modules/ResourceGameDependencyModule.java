@@ -203,7 +203,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 interiorInstanceService,
                 interiorLayoutService
         );
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), economyPlanner);
         ResourceNodeRoutePlanner resourceNodeRoutePlanner = new ResourceNodeRoutePlanner();
         ResourceNodeVisualService resourceNodeVisualService = new ResourceNodeVisualService(
                 populationDisplayConfig,

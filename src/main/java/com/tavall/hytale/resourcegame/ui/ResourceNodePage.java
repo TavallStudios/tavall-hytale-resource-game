@@ -44,8 +44,10 @@ public final class ResourceNodePage extends BaseUiPage {
             uiCommandBuilder.set("#NodeTitle.Text", "Node not found");
             uiCommandBuilder.set("#NodeSummary.Text", "Select a node from /kd nodes list or click a node in-world.");
             uiCommandBuilder.set("#AssignedTroops.Text", "0");
+            uiCommandBuilder.set("#AssignedWorkers.Text", "0");
             uiCommandBuilder.set("#AvailableTroops.Text", String.valueOf(resourceNodeService.availableTroops(state())));
             uiCommandBuilder.set("#GainPerTick.Text", "+0/tick");
+            uiCommandBuilder.set("#PillageReward.Text", "+0");
             uiCommandBuilder.set("#StockStatus.Text", "0 / 0 (0%)");
             uiCommandBuilder.set("#RegenStatus.Text", "+0 / tick");
             uiCommandBuilder.set("#StatusText.Text", "Exhausted");
@@ -57,13 +59,15 @@ public final class ResourceNodePage extends BaseUiPage {
             uiCommandBuilder.set("#NodeTitle.Text", node.resourceType() + " Node " + node.nodeId().toString().substring(0, 8));
             uiCommandBuilder.set("#NodeSummary.Text", node.worldName() + " | " + (int) node.x() + ", " + (int) node.y() + ", " + (int) node.z());
             uiCommandBuilder.set("#AssignedTroops.Text", String.valueOf(summary.assignedTroops()));
+            uiCommandBuilder.set("#AssignedWorkers.Text", String.valueOf(summary.assignedWorkers()));
             uiCommandBuilder.set("#AvailableTroops.Text", String.valueOf(summary.availableTroops()));
-            uiCommandBuilder.set("#GainPerTick.Text", "+" + summary.gainPerTick() + "/tick");
+            uiCommandBuilder.set("#GainPerTick.Text", "+" + summary.gainPerTick() + "/tick (" + summary.workerGainPerTick() + " worker, " + summary.troopGainPerTick() + " troop)");
+            uiCommandBuilder.set("#PillageReward.Text", "+" + summary.pillageReward());
             uiCommandBuilder.set("#StockStatus.Text", summary.currentStock() + " / " + summary.maxStock() + " (" + summary.stockPercent() + "%)");
             uiCommandBuilder.set("#RegenStatus.Text", "+" + summary.regenerationPerTick() + " / tick");
             uiCommandBuilder.set("#StatusText.Text", summary.stockStatus());
             uiCommandBuilder.set("#RouteStatus.Text", summary.visibleRouteCount() <= 0 ? "No supply lane" : "Supply lane active: " + summary.visibleRouteCount() + " convoy markers");
-            uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Send troops here to pull in extra " + node.resourceType().name().toLowerCase() + "." : context().feedbackMessage());
+            uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Workers auto-gather here. Troops can be sent or used for a larger manual pillage." : context().feedbackMessage());
         }
 
         bind(uiEventBuilder, "#AssignOneButton", UiActions.NODE_ASSIGN_ONE);
@@ -72,6 +76,7 @@ public final class ResourceNodePage extends BaseUiPage {
         bind(uiEventBuilder, "#AssignAllButton", UiActions.NODE_ASSIGN_ALL);
         bind(uiEventBuilder, "#RecallOneButton", UiActions.NODE_RECALL_ONE);
         bind(uiEventBuilder, "#RecallAllButton", UiActions.NODE_RECALL_ALL);
+        bind(uiEventBuilder, "#PillageButton", UiActions.NODE_PILLAGE);
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_RESOURCES);
     }
 
