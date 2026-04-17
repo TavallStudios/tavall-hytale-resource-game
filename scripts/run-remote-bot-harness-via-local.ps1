@@ -12,7 +12,12 @@ param(
     [int]$RemoteForwardPort = 5521,
     [switch]$StartBridge,
     [string]$LocalServerRoot = "F:\\Games\\Hytale\\install\\release\\package\\game\\latest\\Server",
-    [string]$LogDir = ""
+    [string]$LogDir = "",
+    [string]$AuthDomain = "",
+    [string]$IdentityToken = "",
+    [string]$SessionToken = "",
+    [string]$AuthPassword = "",
+    [string]$AuthScopes = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,6 +78,22 @@ function Invoke-SshCapture {
 $startedAt = (Get-Date).ToString("o")
 $remoteOutputDir = "/tmp/{0}" -f $baseName
 $remoteResultFile = "{0}/scenario-result.json" -f $remoteOutputDir
+$authArgs = ""
+if (-not [string]::IsNullOrWhiteSpace($AuthDomain)) {
+    $authArgs += " --auth-domain '$AuthDomain'"
+}
+if (-not [string]::IsNullOrWhiteSpace($IdentityToken)) {
+    $authArgs += " --identity-token '$IdentityToken'"
+}
+if (-not [string]::IsNullOrWhiteSpace($SessionToken)) {
+    $authArgs += " --session-token '$SessionToken'"
+}
+if (-not [string]::IsNullOrWhiteSpace($AuthPassword)) {
+    $authArgs += " --auth-password '$AuthPassword'"
+}
+if (-not [string]::IsNullOrWhiteSpace($AuthScopes)) {
+    $authArgs += " --auth-scopes '$AuthScopes'"
+}
 
 Write-LogLine ("[{0}] Starting remote bot harness (via local server)" -f $startedAt)
 Write-LogLine ("[{0}] SSH alias={1}" -f (Get-Date).ToString("o"), $SshAlias)
@@ -109,7 +130,7 @@ try {
 set -e
 cd '$RemoteHarnessDir'
 mkdir -p '$remoteOutputDir'
-node ./apps/cli/dist/index.js scenario $Scenario --host 127.0.0.1 --port $RemoteForwardPort --username '$Username' --authoritative-log-dir '$RemoteServerLogDir' --output-dir '$remoteOutputDir' --json
+node ./apps/cli/dist/index.js scenario $Scenario --host 127.0.0.1 --port $RemoteForwardPort --username '$Username' --authoritative-log-dir '$RemoteServerLogDir' --output-dir '$remoteOutputDir' --json$authArgs
 "@
 
     $exitCode = Invoke-SshCapture -RemoteCommand $remoteCommand
