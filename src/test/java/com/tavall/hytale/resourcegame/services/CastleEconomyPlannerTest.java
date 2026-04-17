@@ -24,11 +24,12 @@ public final class CastleEconomyPlannerTest {
 
         CastleEconomySnapshot snapshot = planner.snapshot(state(12, 1, 20, 20, 20));
 
-        int totalAssigned = snapshot.jobCount(CitizenJobType.IDLE)
-                + snapshot.jobCount(CitizenJobType.GATHERER)
-                + snapshot.jobCount(CitizenJobType.BUILDER)
-                + snapshot.jobCount(CitizenJobType.TRAINEE);
+        int totalAssigned = snapshot.jobCounts().values().stream().mapToInt(Integer::intValue).sum();
         assertEquals(12, totalAssigned);
+        assertTrue(snapshot.jobCount(CitizenJobType.HUNTER) >= 1);
+        assertTrue(snapshot.jobCount(CitizenJobType.COOK) >= 1);
+        assertTrue(snapshot.jobCount(CitizenJobType.MINER) >= 1);
+        assertTrue(snapshot.jobCount(CitizenJobType.GRUNT_BUILDER) >= 1);
     }
 
     @Test
@@ -37,11 +38,16 @@ public final class CastleEconomyPlannerTest {
 
         CastleEconomySnapshot snapshot = planner.snapshot(state(12, 0, 0, 0, 0));
 
-        int gatherers = snapshot.jobCount(CitizenJobType.GATHERER);
+        int resourceWorkers = snapshot.jobCount(CitizenJobType.GATHERER)
+                + snapshot.jobCount(CitizenJobType.HUNTER)
+                + snapshot.jobCount(CitizenJobType.COOK)
+                + snapshot.jobCount(CitizenJobType.MINER)
+                + snapshot.jobCount(CitizenJobType.BLACKSMITH)
+                + snapshot.jobCount(CitizenJobType.GRUNT_BUILDER);
         int allocated = snapshot.workersFor(ResourceType.FOOD)
                 + snapshot.workersFor(ResourceType.WOOD)
                 + snapshot.workersFor(ResourceType.IRON);
-        assertEquals(gatherers, allocated);
+        assertEquals(resourceWorkers, allocated);
         assertTrue(snapshot.workersFor(ResourceType.WOOD) >= 1);
         assertTrue(snapshot.workersFor(ResourceType.IRON) >= 1);
         assertTrue(snapshot.workersFor(ResourceType.FOOD) >= 1);

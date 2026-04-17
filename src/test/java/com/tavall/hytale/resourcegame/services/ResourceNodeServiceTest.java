@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.domain.ResourceNodePillageResult;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.support.InMemoryPlayerGameStateStore;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ public final class ResourceNodeServiceTest {
                 mapperProvider.mapper()
         );
         PlayerSessionStore sessionStore = new PlayerSessionStore();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
 
         UUID playerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-04-15T08:00:00Z");
@@ -61,7 +62,7 @@ public final class ResourceNodeServiceTest {
                 mapperProvider.mapper()
         );
         PlayerSessionStore sessionStore = new PlayerSessionStore();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
 
         UUID playerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-04-15T08:05:00Z");
@@ -75,9 +76,41 @@ public final class ResourceNodeServiceTest {
         PlayerGameState ticked = resourceNodeService.applyTick(assignedState, now.plusSeconds(12));
 
         ResourceNodeData tickedNode = resourceNodeService.findNode(ticked, node.nodeId()).orElseThrow();
-        assertEquals(assignedState.resources().iron() + 6, ticked.resources().iron());
-        assertEquals(119, tickedNode.currentStock());
+        assertEquals(assignedState.resources().iron() + 9, ticked.resources().iron());
+        assertEquals(116, tickedNode.currentStock());
         assertTrue(ticked.metadataJson().contains(node.nodeId().toString()));
+    }
+
+    @Test
+    void pillageAddsImmediateRewardAndDrainsNodeStock() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("node-pillage"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "node-pillage"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-15T08:07:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(21L, playerId, new CastleLocationData("default", 0.0, 72.0, 0.0), now);
+        PlayerGameState troopState = initialState.withPopulation(initialState.populationSummary().withTroopCount(2), now);
+        sessionStore.put(new PlayerSession(playerId, new PlayerProfile(21L, playerId, "PillageBot", "UTC", "hash", now, now, now), troopState));
+
+        PlayerGameState withNode = resourceNodeService.placeNode(playerId, ResourceType.WOOD, "default", new Vector3d(10.0, 72.0, 10.0), now);
+        ResourceNodeData node = resourceNodeService.listNodes(withNode).getFirst();
+        PlayerGameState assignedState = resourceNodeService.assignTroops(playerId, node.nodeId(), 2, now.plusSeconds(1));
+        int woodBefore = assignedState.resources().wood();
+
+        ResourceNodePillageResult result = resourceNodeService.pillageNode(playerId, node.nodeId(), now.plusSeconds(2));
+
+        assertTrue(result.changed());
+        assertEquals(28, result.reward());
+        assertEquals(woodBefore + 28, result.state().resources().wood());
+        assertEquals(122, resourceNodeService.findNode(result.state(), node.nodeId()).orElseThrow().currentStock());
     }
 
     @Test
@@ -91,7 +124,7 @@ public final class ResourceNodeServiceTest {
                 mapperProvider.mapper()
         );
         PlayerSessionStore sessionStore = new PlayerSessionStore();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
 
         UUID playerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-04-15T08:10:00Z");

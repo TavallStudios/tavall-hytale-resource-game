@@ -9,6 +9,7 @@ import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.population.PromotionCost;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.services.JsonMapperProvider;
+import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 import com.tavall.hytale.resourcegame.services.PlayerGameStateService;
 import com.tavall.hytale.resourcegame.services.PlayerProfileService;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
@@ -95,7 +96,7 @@ public final class VerticalSliceServiceTest {
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
         RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
         ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         RecordingPopulationDisplayGateway displayGateway = new RecordingPopulationDisplayGateway();
         PopulationService populationService = new PopulationService(
@@ -169,7 +170,7 @@ public final class VerticalSliceServiceTest {
         RecordingCastleSiteVisualService castleSiteVisualService = new RecordingCastleSiteVisualService();
         RecordingResourceNodeVisualService resourceNodeVisualService = new RecordingResourceNodeVisualService();
         RecordingUiNavigator uiNavigator = new RecordingUiNavigator();
-        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper());
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
         ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         PopulationService populationService = new PopulationService(
                 sessionStore,
