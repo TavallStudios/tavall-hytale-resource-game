@@ -418,7 +418,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd troops add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd resources add|set <type> <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd buildings place|stage|list|status|select|align|goto|upgrade|finish|clear").color("yellow"));
-        context.sendMessage(Message.raw("/kd nodes place|list|status|select|align|assign|add|stock|recall|goto|remove|clear").color("yellow"));
+        context.sendMessage(Message.raw("/kd nodes place|list|status|select|align|assign|add|pillage|stock|recall|goto|remove|clear").color("yellow"));
         context.sendMessage(Message.raw("/kd place castle|node <type>|confirm [here]|cancel|status|preview").color("yellow"));
         context.sendMessage(Message.raw("/kd focus").color("yellow"));
         context.sendMessage(Message.raw("/kd interact").color("yellow"));

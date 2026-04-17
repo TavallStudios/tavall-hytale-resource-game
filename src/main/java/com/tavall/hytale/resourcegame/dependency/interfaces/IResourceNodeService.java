@@ -2,8 +2,10 @@ package com.tavall.hytale.resourcegame.dependency.interfaces;
 
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableInterface;
+import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.domain.ResourceNodePillageResult;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 
@@ -39,7 +41,11 @@ public interface IResourceNodeService extends IDependencyInjectableInterface {
 
     PlayerGameState setStock(UUID playerId, UUID nodeId, int currentStock, Instant now);
 
+    ResourceNodePillageResult pillageNode(UUID playerId, UUID nodeId, Instant now);
+
     PlayerGameState normalizeAssignments(PlayerGameState state, Instant now);
 
     PlayerGameState applyTick(PlayerGameState state, Instant now);
+
+    PlayerGameState applyTick(PlayerGameState state, CastleEconomySnapshot economySnapshot, Instant now);
 }

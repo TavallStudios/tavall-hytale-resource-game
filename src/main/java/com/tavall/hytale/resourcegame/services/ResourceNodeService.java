@@ -11,7 +11,9 @@ import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
 import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
+import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.domain.ResourceNodePillageResult;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
@@ -37,15 +39,18 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
     private final ObjectMapper objectMapper;
+    private final CastleEconomyPlanner economyPlanner;
 
     public ResourceNodeService(
             IPlayerSessionStore sessionStore,
             IPlayerGameStateService gameStateService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CastleEconomyPlanner economyPlanner
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.economyPlanner = Objects.requireNonNull(economyPlanner, "economyPlanner");
     }
 
     @Override
@@ -85,22 +90,30 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
 
     @Override
     public ResourceNodeSummary summary(PlayerGameState state, ResourceNodeData node) {
+        return summary(state, node, economyPlanner.snapshot(state));
+    }
+
+    public ResourceNodeSummary summary(PlayerGameState state, ResourceNodeData node, CastleEconomySnapshot economySnapshot) {
         ResourceNodeData normalizedNode = normalizeNode(node);
-        int gainPerTick = Math.min(
-                normalizedNode.currentStock(),
-                normalizedNode.assignedTroops() * yieldPerTroop(normalizedNode.resourceType())
-        );
+        int assignedWorkers = workerShareForNode(state, normalizedNode, economySnapshot);
+        int troopGain = normalizedNode.assignedTroops() * yieldPerTroop(normalizedNode.resourceType());
+        int workerGain = assignedWorkers * yieldPerWorker(normalizedNode.resourceType());
+        int gainPerTick = Math.min(normalizedNode.currentStock(), troopGain + workerGain);
         int stockPercent = normalizedNode.maxStock() == 0
                 ? 0
                 : (int) Math.round((normalizedNode.currentStock() * 100.0) / normalizedNode.maxStock());
-        int routeCount = normalizedNode.assignedTroops() == 0
+        int routeCount = normalizedNode.assignedTroops() + assignedWorkers == 0
                 ? 0
-                : Math.max(1, (int) Math.ceil(normalizedNode.assignedTroops() / (double) DEFAULT_ROUTE_DIVISOR));
+                : Math.max(1, (int) Math.ceil((normalizedNode.assignedTroops() + assignedWorkers) / (double) DEFAULT_ROUTE_DIVISOR));
         return new ResourceNodeSummary(
                 normalizedNode,
                 availableTroops(state),
                 normalizedNode.assignedTroops(),
+                assignedWorkers,
                 gainPerTick,
+                Math.min(normalizedNode.currentStock(), troopGain),
+                Math.min(normalizedNode.currentStock(), workerGain),
+                pillageReward(normalizedNode, normalizedNode.assignedTroops(), assignedWorkers),
                 normalizedNode.currentStock(),
                 normalizedNode.maxStock(),
                 normalizedNode.regenerationPerTick(),
@@ -194,6 +207,41 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     }
 
     @Override
+    public ResourceNodePillageResult pillageNode(UUID playerId, UUID nodeId, Instant now) {
+        PlayerSession session = sessionStore.get(playerId);
+        if (session == null || nodeId == null) {
+            return new ResourceNodePillageResult(null, false, 0, "No active player session.");
+        }
+        PlayerGameState state = session.gameState();
+        List<ResourceNodeData> nodes = new ArrayList<>(listNodes(state));
+        CastleEconomySnapshot snapshot = economyPlanner.snapshot(state);
+        for (int index = 0; index < nodes.size(); index++) {
+            ResourceNodeData node = nodes.get(index);
+            if (!node.nodeId().equals(nodeId)) {
+                continue;
+            }
+            ResourceNodeSummary summary = summary(state, node, snapshot);
+            int reward = Math.min(summary.currentStock(), summary.pillageReward());
+            if (reward <= 0) {
+                return new ResourceNodePillageResult(state, false, 0, "Node is exhausted. Let it regenerate before pillaging again.");
+            }
+            ResourceInventory resources = addResource(state.resources(), node.resourceType(), reward);
+            nodes.set(index, node.withCurrentStock(summary.currentStock() - reward));
+            PlayerGameState updatedState = rewriteNodes(state.withResources(resources, now), nodes, now);
+            session.updateGameState(updatedState);
+            gameStateService.cacheState(session.playerId(), updatedState);
+            AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, now));
+            return new ResourceNodePillageResult(
+                    updatedState,
+                    true,
+                    reward,
+                    "Pillage complete: +" + reward + " " + node.resourceType().name().toLowerCase(Locale.ROOT) + "."
+            );
+        }
+        return new ResourceNodePillageResult(state, false, 0, "Node not found.");
+    }
+
+    @Override
     public PlayerGameState normalizeAssignments(PlayerGameState state, Instant now) {
         List<ResourceNodeData> nodes = listNodes(state);
         if (nodes.isEmpty()) {
@@ -218,6 +266,10 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
 
     @Override
     public PlayerGameState applyTick(PlayerGameState state, Instant now) {
+        return applyTick(state, economyPlanner.snapshot(state), now);
+    }
+
+    public PlayerGameState applyTick(PlayerGameState state, CastleEconomySnapshot economySnapshot, Instant now) {
         PlayerGameState normalizedState = normalizeAssignments(state, now);
         ResourceInventory resources = normalizedState.resources();
         int food = resources.food();
@@ -225,7 +277,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
         int iron = resources.iron();
         List<ResourceNodeData> updatedNodes = new ArrayList<>();
         for (ResourceNodeData node : listNodes(normalizedState)) {
-            int potentialGain = node.assignedTroops() * yieldPerTroop(node.resourceType());
+            ResourceNodeSummary summary = summary(normalizedState, node, economySnapshot);
+            int potentialGain = summary.troopGainPerTick() + summary.workerGainPerTick();
             int actualGain = Math.min(node.currentStock(), potentialGain);
             switch (node.resourceType()) {
                 case FOOD -> food += actualGain;
@@ -251,10 +304,12 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 + " @ " + node.worldName()
                 + " " + (int) node.x() + "," + (int) node.y() + "," + (int) node.z()
                 + " | assigned " + summary.assignedTroops()
+                + " troops, " + summary.assignedWorkers() + " workers"
                 + " | reserve " + summary.availableTroops()
                 + " | stock " + summary.currentStock() + "/" + summary.maxStock()
                 + " (" + summary.stockPercent() + "%)"
                 + " " + summary.stockStatus()
+                + " | pillage +" + summary.pillageReward()
                 + " | regen " + summary.regenerationPerTick()
                 + " | +" + summary.gainPerTick() + "/tick";
     }
@@ -337,6 +392,58 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
             case FOOD -> 4;
             case WOOD -> 3;
             case IRON -> 2;
+        };
+    }
+
+    private int yieldPerWorker(ResourceType resourceType) {
+        return switch (resourceType) {
+            case FOOD -> 2;
+            case WOOD -> 2;
+            case IRON -> 1;
+        };
+    }
+
+    private int workerShareForNode(PlayerGameState state, ResourceNodeData node, CastleEconomySnapshot economySnapshot) {
+        List<ResourceNodeData> sameTypeNodes = listNodes(state).stream()
+                .filter(candidate -> candidate.resourceType() == node.resourceType())
+                .sorted(Comparator.comparing(ResourceNodeData::placedAt).thenComparing(ResourceNodeData::nodeId))
+                .toList();
+        if (sameTypeNodes.isEmpty()) {
+            return 0;
+        }
+        int totalWorkers = economySnapshot.workersFor(node.resourceType());
+        int nodeIndex = -1;
+        for (int index = 0; index < sameTypeNodes.size(); index++) {
+            if (sameTypeNodes.get(index).nodeId().equals(node.nodeId())) {
+                nodeIndex = index;
+                break;
+            }
+        }
+        if (nodeIndex < 0) {
+            return 0;
+        }
+        int baseShare = totalWorkers / sameTypeNodes.size();
+        int remainder = totalWorkers % sameTypeNodes.size();
+        return baseShare + (nodeIndex < remainder ? 1 : 0);
+    }
+
+    private int pillageReward(ResourceNodeData node, int assignedTroops, int assignedWorkers) {
+        int baseReward = switch (node.resourceType()) {
+            case FOOD -> 24;
+            case WOOD -> 18;
+            case IRON -> 12;
+        };
+        int forcedHarvest = baseReward
+                + (assignedTroops * yieldPerTroop(node.resourceType()))
+                + (assignedWorkers * yieldPerWorker(node.resourceType()));
+        return Math.min(node.currentStock(), forcedHarvest);
+    }
+
+    private ResourceInventory addResource(ResourceInventory inventory, ResourceType resourceType, int amount) {
+        return switch (resourceType) {
+            case FOOD -> inventory.withFood(inventory.food() + amount);
+            case WOOD -> inventory.withWood(inventory.wood() + amount);
+            case IRON -> inventory.withIron(inventory.iron() + amount);
         };
     }
 

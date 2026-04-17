@@ -16,6 +16,7 @@ import com.tavall.hytale.resourcegame.domain.BuildingMutationResult;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.domain.ResourceNodePillageResult;
 import com.tavall.hytale.resourcegame.services.PlayerSession;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
 
@@ -220,6 +221,23 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             case UiActions.NODE_RECALL_ALL -> resourceNodeService.assignTroops(playerId, nodeId, 0, now);
             default -> null;
         };
+        if (UiActions.NODE_PILLAGE.equals(action)) {
+            ResourceNodePillageResult pillageResult = resourceNodeService.pillageNode(playerId, nodeId, now);
+            PlayerGameState pillagedState = pillageResult.state();
+            if (pillagedState == null) {
+                return;
+            }
+            if (pillageResult.changed()) {
+                resourceNodeVisualService.refreshNodes(playerId, pillagedState);
+            }
+            uiNavigator.open(
+                    UiPageType.RESOURCE_NODE_DETAIL,
+                    player,
+                    context.withFeedback(pillageResult.message()).withSelectedNodeId(nodeId),
+                    pillagedState
+            );
+            return;
+        }
         if (updatedState == null) {
             return;
         }
@@ -261,6 +279,7 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
         String verb = switch (action) {
             case UiActions.NODE_ASSIGN_ONE, UiActions.NODE_ASSIGN_THREE, UiActions.NODE_ASSIGN_FIVE, UiActions.NODE_ASSIGN_ALL -> "Troops sent.";
             case UiActions.NODE_RECALL_ONE, UiActions.NODE_RECALL_ALL -> "Troops recalled.";
+            case UiActions.NODE_PILLAGE -> "Node pillaged.";
             default -> "Node updated.";
         };
         return verb + " Assigned now: " + updatedNode.get().assignedTroops() + ".";

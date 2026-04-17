@@ -15,6 +15,7 @@ import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
+import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
@@ -110,8 +111,14 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                 return;
             }
             int totalStored = state.resources().food() + state.resources().wood() + state.resources().iron();
-            int citizenSceneCount = snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE) + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER);
-            int troopSceneCount = state.populationSummary().troopCount() + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE);
+            int builderSceneCount = builderSpecialistCount(snapshot);
+            int citizenSceneCount = snapshot.jobCount(CitizenJobType.IDLE)
+                    + snapshot.jobCount(CitizenJobType.GATHERER)
+                    + snapshot.jobCount(CitizenJobType.HUNTER)
+                    + snapshot.jobCount(CitizenJobType.COOK)
+                    + snapshot.jobCount(CitizenJobType.MINER)
+                    + builderSceneCount;
+            int troopSceneCount = state.populationSummary().troopCount() + snapshot.jobCount(CitizenJobType.TRAINEE);
 
             Ref<EntityStore> stockpileAnchorRef = spawnNamed(
                     store,
@@ -125,8 +132,8 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                     roleIndex,
                     layout.citizenAnchor(),
                     "Citizen Yard: " + state.populationSummary().citizenCount()
-                            + " | Idle " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.IDLE)
-                            + " | Builders " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.BUILDER),
+                            + " | Gatherers " + snapshot.jobCount(CitizenJobType.GATHERER)
+                            + " | Builders " + builderSceneCount,
                     scenePlanner.populationAnchorScale(state.populationSummary().citizenCount())
             );
             Ref<EntityStore> troopAnchorRef = spawnNamed(
@@ -134,7 +141,7 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
                     roleIndex,
                     layout.troopAnchor(),
                     "Troop Drill: " + state.populationSummary().troopCount()
-                            + " | Trainees " + snapshot.jobCount(com.tavall.hytale.resourcegame.domain.CitizenJobType.TRAINEE),
+                            + " | Trainees " + snapshot.jobCount(CitizenJobType.TRAINEE),
                     scenePlanner.populationAnchorScale(troopSceneCount)
             );
             Ref<EntityStore> foodNodeRef = spawnNamed(
@@ -225,6 +232,13 @@ public final class CastleSiteVisualService implements ICastleSiteVisualService, 
 
     private Ref<EntityStore> spawnNamed(Store<EntityStore> store, int roleIndex, Vector3d position, String label, float scale) {
         return npcVisualSpawner.spawnNamed(store, roleIndex, position, label, scale);
+    }
+
+    private int builderSpecialistCount(CastleEconomySnapshot snapshot) {
+        return snapshot.jobCount(CitizenJobType.BLACKSMITH)
+                + snapshot.jobCount(CitizenJobType.ARCHITECT)
+                + snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)
+                + snapshot.jobCount(CitizenJobType.BUILDER);
     }
 
     private List<Ref<EntityStore>> spawnCrowd(Store<EntityStore> store, int roleIndex, List<Vector3d> positions, int visibleCount, float scale) {
