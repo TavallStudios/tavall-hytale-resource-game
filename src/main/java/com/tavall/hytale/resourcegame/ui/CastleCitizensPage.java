@@ -48,6 +48,7 @@ public final class CastleCitizensPage extends BaseUiPage {
         uiCommandBuilder.set("#ArchitectCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.ARCHITECT)));
         uiCommandBuilder.set("#GruntBuilderCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)));
         uiCommandBuilder.set("#TraineeCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.TRAINEE)));
+        uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Right-click an interior worker anchor to inspect that worker type." : context().feedbackMessage());
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 

@@ -38,6 +38,7 @@ public final class InMemoryPlayerGameStateStore implements PlayerGameStateStore 
                 existing == null ? idSequence.getAndIncrement() : existing.id(),
                 state.profileId(),
                 state.castleId(),
+                state.castleAssetType(),
                 state.castleLocation(),
                 state.populationSummary(),
                 state.resources(),

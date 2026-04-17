@@ -1,13 +1,10 @@
 package com.tavall.hytale.resourcegame.services;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.config.CastleAssetConfig;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
@@ -16,7 +13,6 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.ui.UiPageType;
-import com.tavall.hytale.resourcegame.world.CastleEntityRegistry;
 import com.tavall.hytale.resourcegame.world.VectorMath;
 
 import java.util.Objects;
@@ -26,18 +22,15 @@ import java.util.UUID;
  * Detects castle interactions and opens the main UI.
  */
 public final class CastleInteractionService implements ICastleInteractionService, IDependencyInjectableConcrete {
-    private final CastleEntityRegistry registry;
     private final IPlayerSessionStore sessionStore;
     private final IUiNavigator uiNavigator;
     private final CastleAssetConfig assetConfig;
 
     public CastleInteractionService(
-            CastleEntityRegistry registry,
             IPlayerSessionStore sessionStore,
             IUiNavigator uiNavigator,
             CastleAssetConfig assetConfig
     ) {
-        this.registry = Objects.requireNonNull(registry, "registry");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.assetConfig = Objects.requireNonNull(assetConfig, "assetConfig");
@@ -48,7 +41,7 @@ public final class CastleInteractionService implements ICastleInteractionService
             return;
         }
         Player player = event.getPlayer();
-        if (!isOwnedCastleTarget(player, event.getTargetRef())) {
+        if (!isPlayerFocusingOwnedCastle(player)) {
             return;
         }
         openCastleUi(player);
@@ -86,27 +79,10 @@ public final class CastleInteractionService implements ICastleInteractionService
         uiNavigator.open(UiPageType.CASTLE_MAIN, player, new UiNavigationContext(playerId, player.getDisplayName()), state);
     }
 
-    private boolean isOwnedCastleTarget(Player player, Ref<EntityStore> targetRef) {
-        UUID playerId = player.getUuid();
-        if (targetRef == null || !targetRef.isValid()) {
-            return false;
-        }
-        Ref<EntityStore> castleRef = registry.get(playerId);
-        return castleRef != null && castleRef.equals(targetRef);
-    }
-
     private Vector3d resolveCastlePosition(Player player) {
         PlayerSession session = sessionStore.get(player.getUuid());
         if (session == null || session.gameState().castleLocation() == null) {
             return null;
-        }
-        Ref<EntityStore> castleRef = registry.get(player.getUuid());
-        if (castleRef != null && castleRef.isValid()) {
-            Store<EntityStore> store = castleRef.getStore();
-            TransformComponent castleTransform = store.getComponent(castleRef, TransformComponent.getComponentType());
-            if (castleTransform != null) {
-                return castleTransform.getPosition();
-            }
         }
         var castleLocation = session.gameState().castleLocation();
         return new Vector3d(castleLocation.x(), castleLocation.y(), castleLocation.z());

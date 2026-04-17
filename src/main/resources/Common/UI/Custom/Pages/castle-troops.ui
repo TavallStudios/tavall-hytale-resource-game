@@ -9,7 +9,12 @@ Group {
   Label { Text: "Total Troops"; Style: (FontSize: 14, TextColor: #a7b0ba); }
   Label #TroopCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
 
-  Label { Text: "Future: formations, combat readiness, and equipment layers."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+  Label { Text: "Might"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+  Label #MightCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
+
+  Label #FeedbackStatus { Text: "Right-click the soldier or troop anchor to inspect military status."; Style: (FontSize: 14, TextColor: #e2c168); Anchor: (Bottom: 12); }
+
+  Label { Text: "Future: tiered troops, formations, combat readiness, and equipment layers."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
   Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
 }

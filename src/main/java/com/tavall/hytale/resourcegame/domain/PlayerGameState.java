@@ -11,6 +11,7 @@ public final class PlayerGameState {
     private final long id;
     private final long profileId;
     private final UUID castleId;
+    private final String castleAssetType;
     private final CastleLocationData castleLocation;
     private final PopulationSummary populationSummary;
     private final ResourceInventory resources;
@@ -23,6 +24,7 @@ public final class PlayerGameState {
             long id,
             long profileId,
             UUID castleId,
+            String castleAssetType,
             CastleLocationData castleLocation,
             PopulationSummary populationSummary,
             ResourceInventory resources,
@@ -34,6 +36,7 @@ public final class PlayerGameState {
         this.id = id;
         this.profileId = profileId;
         this.castleId = castleId;
+        this.castleAssetType = castleAssetType == null ? "" : castleAssetType;
         this.castleLocation = castleLocation;
         this.populationSummary = Objects.requireNonNull(populationSummary, "populationSummary");
         this.resources = Objects.requireNonNull(resources, "resources");
@@ -53,6 +56,10 @@ public final class PlayerGameState {
 
     public UUID castleId() {
         return castleId;
+    }
+
+    public String castleAssetType() {
+        return castleAssetType;
     }
 
     public CastleLocationData castleLocation() {
@@ -88,6 +95,7 @@ public final class PlayerGameState {
                 id,
                 profileId,
                 castleId,
+                castleAssetType,
                 castleLocation,
                 populationSummary,
                 resources,
@@ -103,6 +111,7 @@ public final class PlayerGameState {
                 id,
                 profileId,
                 castleId,
+                castleAssetType,
                 castleLocation,
                 populationSummary,
                 resources,
@@ -113,11 +122,12 @@ public final class PlayerGameState {
         );
     }
 
-    public PlayerGameState withCastleLocation(CastleLocationData castleLocation, UUID castleId, Instant updatedAt) {
+    public PlayerGameState withCastleLocation(CastleLocationData castleLocation, UUID castleId, String castleAssetType, Instant updatedAt) {
         return new PlayerGameState(
                 id,
                 profileId,
                 castleId,
+                castleAssetType,
                 castleLocation,
                 populationSummary,
                 resources,
@@ -133,6 +143,7 @@ public final class PlayerGameState {
                 id,
                 profileId,
                 castleId,
+                castleAssetType,
                 castleLocation,
                 populationSummary,
                 resources,
@@ -148,6 +159,23 @@ public final class PlayerGameState {
                 id,
                 profileId,
                 castleId,
+                castleAssetType,
+                castleLocation,
+                populationSummary,
+                resources,
+                interiorSession,
+                metadataJson,
+                createdAt,
+                updatedAt
+        );
+    }
+
+    public PlayerGameState withCastleAssetType(String castleAssetType, Instant updatedAt) {
+        return new PlayerGameState(
+                id,
+                profileId,
+                castleId,
+                castleAssetType,
                 castleLocation,
                 populationSummary,
                 resources,

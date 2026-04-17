@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.world;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.ArrayList;
@@ -11,46 +12,38 @@ import java.util.Objects;
  * Tracks a single placed resource node anchor plus its visible worker refs.
  */
 public final class ResourceNodeVisualRefs {
-    private final Ref<EntityStore> anchorRef;
-    private final Ref<EntityStore> routeAnchorRef;
-    private final List<Ref<EntityStore>> workerRefs;
-    private final List<Ref<EntityStore>> routeRefs;
+    private final String worldName;
+    private final Vector3d worldPosition;
+    private final List<Ref<EntityStore>> anchorRefs;
 
     public ResourceNodeVisualRefs(
-            Ref<EntityStore> anchorRef,
-            Ref<EntityStore> routeAnchorRef,
-            List<Ref<EntityStore>> workerRefs,
-            List<Ref<EntityStore>> routeRefs
+            String worldName,
+            Vector3d worldPosition,
+            List<Ref<EntityStore>> anchorRefs
     ) {
-        this.anchorRef = anchorRef;
-        this.routeAnchorRef = routeAnchorRef;
-        this.workerRefs = List.copyOf(workerRefs);
-        this.routeRefs = List.copyOf(routeRefs);
+        this.worldName = Objects.requireNonNull(worldName, "worldName");
+        this.worldPosition = Objects.requireNonNull(worldPosition, "worldPosition");
+        this.anchorRefs = anchorRefs == null ? List.of() : List.copyOf(anchorRefs);
+    }
+
+    public String worldName() {
+        return worldName;
+    }
+
+    public Vector3d worldPosition() {
+        return worldPosition;
     }
 
     public boolean matches(Ref<EntityStore> targetRef) {
         if (targetRef == null) {
             return false;
         }
-        if (Objects.equals(anchorRef, targetRef)) {
-            return true;
-        }
-        if (Objects.equals(routeAnchorRef, targetRef)) {
-            return true;
-        }
-        return workerRefs.stream().anyMatch(targetRef::equals) || routeRefs.stream().anyMatch(targetRef::equals);
+        return anchorRefs.stream().anyMatch(ref -> Objects.equals(ref, targetRef));
     }
 
     public List<Ref<EntityStore>> allRefs() {
         List<Ref<EntityStore>> refs = new ArrayList<>();
-        if (anchorRef != null) {
-            refs.add(anchorRef);
-        }
-        if (routeAnchorRef != null) {
-            refs.add(routeAnchorRef);
-        }
-        refs.addAll(workerRefs);
-        refs.addAll(routeRefs);
+        refs.addAll(anchorRefs);
         return List.copyOf(refs);
     }
 }

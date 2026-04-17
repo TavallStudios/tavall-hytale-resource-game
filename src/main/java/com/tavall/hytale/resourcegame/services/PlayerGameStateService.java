@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 public final class PlayerGameStateService implements IPlayerGameStateService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(PlayerGameStateService.class.getName());
     private static final Duration STATE_TTL = Duration.ofMinutes(15);
+    private static final String DEFAULT_CASTLE_ASSET_TYPE = "stone_column_castle";
 
     private final PlayerGameStateStore repository;
     private final SemanticCache cache;
@@ -81,7 +82,15 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             }
             PlayerGameState state = existing.orElseGet(() -> createDefaultState(profileId, spawnLocation, now));
             if (state.castleLocation() == null && spawnLocation != null) {
-                state = state.withCastleLocation(spawnLocation, state.castleId() == null ? UUID.randomUUID() : state.castleId(), now);
+                state = state.withCastleLocation(
+                        spawnLocation,
+                        state.castleId() == null ? UUID.randomUUID() : state.castleId(),
+                        defaultCastleAssetType(state),
+                        now
+                );
+            }
+            if (state.castleAssetType() == null || state.castleAssetType().isBlank()) {
+                state = state.withCastleAssetType(DEFAULT_CASTLE_ASSET_TYPE, now);
             }
             state = refreshAging(hydrateMetadata(state, now), now);
             PlayerGameState persisted = persistState(state, now);
@@ -163,6 +172,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                 0,
                 profileId,
                 UUID.randomUUID(),
+                DEFAULT_CASTLE_ASSET_TYPE,
                 spawnLocation,
                 populationSummary,
                 resources,
@@ -269,5 +279,12 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("Failed to update player game state metadata", ex);
         }
+    }
+
+    private String defaultCastleAssetType(PlayerGameState state) {
+        if (state.castleAssetType() != null && !state.castleAssetType().isBlank()) {
+            return state.castleAssetType();
+        }
+        return DEFAULT_CASTLE_ASSET_TYPE;
     }
 }

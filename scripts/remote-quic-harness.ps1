@@ -134,6 +134,100 @@ exit 1
     }
 }
 
+function ConvertTo-TextSummaryLines {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        [object]$Data,
+        [int]$Indent = 0
+    )
+
+    $prefix = (' ' * $Indent)
+    if ($null -eq $Data) {
+        return @("${prefix}null")
+    }
+
+    if ($Data -is [string] -or $Data -is [char] -or $Data -is [ValueType]) {
+        return @("${prefix}$Data")
+    }
+
+    if ($Data -is [System.Collections.IDictionary]) {
+        $lines = [System.Collections.Generic.List[string]]::new()
+        if ($Data.Count -eq 0) {
+            $lines.Add("${prefix}{}")
+            return $lines.ToArray()
+        }
+        foreach ($key in $Data.Keys) {
+            $value = $Data[$key]
+            if ($null -eq $value -or $value -is [string] -or $value -is [char] -or $value -is [ValueType]) {
+                $lines.Add(("{0}{1}: {2}" -f $prefix, $key, $value))
+                continue
+            }
+            $lines.Add(("{0}{1}:" -f $prefix, $key))
+            foreach ($line in ConvertTo-TextSummaryLines -Data $value -Indent ($Indent + 2)) {
+                $lines.Add($line)
+            }
+        }
+        return $lines.ToArray()
+    }
+
+    if ($Data -is [System.Collections.IEnumerable] -and -not ($Data -is [string])) {
+        $items = @($Data)
+        if ($items.Count -eq 0) {
+            return @("${prefix}[]")
+        }
+        $lines = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $items) {
+            if ($null -eq $item -or $item -is [string] -or $item -is [char] -or $item -is [ValueType]) {
+                $lines.Add(("{0}- {1}" -f $prefix, $item))
+                continue
+            }
+            $lines.Add("${prefix}-")
+            foreach ($line in ConvertTo-TextSummaryLines -Data $item -Indent ($Indent + 2)) {
+                $lines.Add($line)
+            }
+        }
+        return $lines.ToArray()
+    }
+
+    $properties = $Data.PSObject.Properties | Where-Object { $_.MemberType -in @('NoteProperty', 'Property') }
+    if (-not $properties -or $properties.Count -eq 0) {
+        return @("${prefix}$Data")
+    }
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($property in $properties) {
+        $value = $property.Value
+        if ($null -eq $value -or $value -is [string] -or $value -is [char] -or $value -is [ValueType]) {
+            $lines.Add(("{0}{1}: {2}" -f $prefix, $property.Name, $value))
+            continue
+        }
+        $lines.Add(("{0}{1}:" -f $prefix, $property.Name))
+        foreach ($line in ConvertTo-TextSummaryLines -Data $value -Indent ($Indent + 2)) {
+            $lines.Add($line)
+        }
+    }
+    return $lines.ToArray()
+}
+
+function Set-TextSummary {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        [object]$Data
+    )
+
+    $directory = Split-Path -Parent $Path
+    if (-not [string]::IsNullOrWhiteSpace($directory)) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    }
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    $lines = ConvertTo-TextSummaryLines -Data $Data
+    [System.IO.File]::WriteAllLines($Path, $lines, $encoding)
+}
+
 function Wait-RemoteServerReady {
     param(
         [string]$SshAlias,
@@ -198,5 +292,5 @@ function Minimize-TranscriptArtifact {
     }
 
     Remove-Item -LiteralPath $Path -Force
-    $summary | ConvertTo-Json -Depth 4 | Set-Content -Path $Path -Encoding utf8
+    Set-TextSummary -Path $Path -Data $summary
 }

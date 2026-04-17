@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$LogDir = "",
     [switch]$Aggressive
 )
@@ -30,11 +30,16 @@ Get-ChildItem -LiteralPath $resolved -Force | ForEach-Object {
 
     $name = $_.Name
     $shouldRemove =
-        $name -like "*-transcript.json" -or
-        $name -like "*-seed-transcript.json" -or
-        $name -like "*-verify-transcript.json" -or
+        $name -like "*.json" -or
+        $name -like "*.log" -or
+        $name -like "*-transcript.txt" -or
+        $name -like "*-seed-transcript.txt" -or
+        $name -like "*-verify-transcript.txt" -or
         $name -like "*-server-log.txt" -or
-        ($Aggressive -and $name -like "*-scenario-result.json")
+        ($Aggressive -and (
+            $name -like "*-scenario-result.txt" -or
+            $name -like "*.txt.summary"
+        ))
 
     if ($shouldRemove) {
         Remove-Item -LiteralPath $_.FullName -Force
@@ -42,11 +47,15 @@ Get-ChildItem -LiteralPath $resolved -Force | ForEach-Object {
     }
 }
 
-$summary = [ordered]@{
-    logDir = $resolved
-    aggressive = [bool]$Aggressive
-    removedCount = $removed.Count
-    removed = $removed
+$summaryLines = @(
+    "logDir=$resolved",
+    "aggressive=$([bool]$Aggressive)",
+    "removedCount=$($removed.Count)"
+)
+if ($removed.Count -gt 0) {
+    $summaryLines += ""
+    $summaryLines += "[removed]"
+    $summaryLines += $removed
 }
 
-$summary | ConvertTo-Json -Depth 4
+$summaryLines -join [Environment]::NewLine

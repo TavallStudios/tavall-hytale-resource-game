@@ -48,10 +48,20 @@ public final class UiNavigator implements IUiNavigator, IDependencyInjectableCon
     }
 
     public void open(UiPageType type, Player player, UiNavigationContext context, PlayerGameState state) {
-        Player resolvedPlayer = resolveOnlinePlayer(player.getUuid());
-        Player targetPlayer = resolvedPlayer == null ? player : resolvedPlayer;
-        trackedPages.put(targetPlayer.getUuid(), new TrackedUiState(type, context));
-        open(type, targetPlayer, context, state, MAX_RETRIES);
+        try {
+            Player resolvedPlayer = resolveOnlinePlayer(player.getUuid());
+            Player targetPlayer = resolvedPlayer == null ? player : resolvedPlayer;
+            trackedPages.put(targetPlayer.getUuid(), new TrackedUiState(type, context));
+            open(type, targetPlayer, context, state, MAX_RETRIES);
+        } catch (Throwable throwable) {
+            Throwable rootCause = rootCause(throwable);
+            LOGGER.at(Level.SEVERE).withCause(throwable).log(
+                    "UI open failed for %s. cause=%s: %s",
+                    type,
+                    rootCause.getClass().getName(),
+                    safeMessage(rootCause)
+            );
+        }
     }
 
     @Override
@@ -134,5 +144,20 @@ public final class UiNavigator implements IUiNavigator, IDependencyInjectableCon
             return ref.getStore().getComponent(ref, Player.getComponentType());
         }
         return null;
+    }
+
+    private Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
+    }
+
+    private String safeMessage(Throwable throwable) {
+        if (throwable == null || throwable.getMessage() == null || throwable.getMessage().isBlank()) {
+            return "unknown error";
+        }
+        return throwable.getMessage();
     }
 }

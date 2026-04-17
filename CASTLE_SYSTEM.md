@@ -38,10 +38,13 @@ Own the player's castle as the main-world anchor for interaction, readable econo
 
 ## Current runtime behavior
 - On first session bootstrap the castle is spawned near the player's initial join position.
-- Castle proximity scan opens the main castle UI when the player is near and looking at their own castle, unless placement mode is active.
+- The current castle reads as a 3-block stone marker plus a nameplate showing owner, troop count, and Might.
+- Castle focus uses a 15-block inspection range. The castle nameplate includes right-click guidance so the player gets readable feedback without proximity chat spam.
+- Castle right-click opens the main castle UI when the player is targeting the castle entity or simply focused on the castle marker.
 - `/kd castle align` plus `/kd focus` and `/kd interact` reproduce that same selection path for bots and admin testing.
 - Castle relocation updates session state, cache, async persistence, castle entity refs, and dependent node visuals.
 - Castle-site visuals use NPC scale and crowd counts to show stockpile size, citizen/troop presence, and production lanes.
+- Castle UI currently exposes future attack, friend, and guild access actions as non-destructive placeholders.
 
 ## Extension points
 - Replace the placeholder NPC castle entity with a proper Hytale asset without changing bootstrap or interaction logic.

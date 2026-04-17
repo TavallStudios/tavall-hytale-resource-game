@@ -36,11 +36,13 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getCastleInteractionService()::handleInteract);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getResourceNodeInteractionService()::handleInteract);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getBuildingInteractionService()::handleInteract);
+        getEventRegistry().registerGlobal(PlayerInteractEvent.class, getWorkerNpcInteractionService()::handleInteract);
         getInteriorInstanceService().pruneTransientWorlds();
-        getInteriorInstanceService().warmInteriorWorld();
+        getKingdomClockService().start();
         getCastleProximityPromptService().start();
         getCastleEconomySimulationService().start();
         getResourceNodeVisualPulseService().start();
+        getProtectedBlockSystemService().start();
 
         List<AbstractAsyncCommand> commands = getDebugCommandService().commands();
         for (AbstractAsyncCommand command : commands) {
@@ -54,6 +56,8 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getCastleProximityPromptService().shutdown();
         getCastleEconomySimulationService().shutdown();
         getResourceNodeVisualPulseService().shutdown();
+        getProtectedBlockSystemService().shutdown();
+        getKingdomClockService().shutdown();
         AsyncTask.shutdown();
     }
 }

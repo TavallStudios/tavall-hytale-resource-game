@@ -14,22 +14,16 @@ import java.util.Objects;
 public final class CastleBuildingVisualRefs {
     private final String worldName;
     private final Vector3d worldPosition;
-    private final Ref<EntityStore> anchorRef;
-    private final List<Ref<EntityStore>> crewRefs;
-    private final List<Ref<EntityStore>> scaffoldRefs;
+    private final List<Ref<EntityStore>> labelRefs;
 
     public CastleBuildingVisualRefs(
             String worldName,
             Vector3d worldPosition,
-            Ref<EntityStore> anchorRef,
-            List<Ref<EntityStore>> crewRefs,
-            List<Ref<EntityStore>> scaffoldRefs
+            List<Ref<EntityStore>> labelRefs
     ) {
         this.worldName = Objects.requireNonNull(worldName, "worldName");
         this.worldPosition = Objects.requireNonNull(worldPosition, "worldPosition");
-        this.anchorRef = anchorRef;
-        this.crewRefs = List.copyOf(crewRefs);
-        this.scaffoldRefs = List.copyOf(scaffoldRefs);
+        this.labelRefs = labelRefs == null ? List.of() : List.copyOf(labelRefs);
     }
 
     public String worldName() {
@@ -44,19 +38,12 @@ public final class CastleBuildingVisualRefs {
         if (targetRef == null) {
             return false;
         }
-        if (Objects.equals(anchorRef, targetRef)) {
-            return true;
-        }
-        return crewRefs.stream().anyMatch(targetRef::equals) || scaffoldRefs.stream().anyMatch(targetRef::equals);
+        return labelRefs.stream().anyMatch(ref -> Objects.equals(ref, targetRef));
     }
 
     public List<Ref<EntityStore>> allRefs() {
         List<Ref<EntityStore>> refs = new ArrayList<>();
-        if (anchorRef != null) {
-            refs.add(anchorRef);
-        }
-        refs.addAll(crewRefs);
-        refs.addAll(scaffoldRefs);
+        refs.addAll(labelRefs);
         return List.copyOf(refs);
     }
 }

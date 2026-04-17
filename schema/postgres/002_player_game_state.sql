@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS player_game_state (
     id BIGSERIAL PRIMARY KEY,
     profile_id BIGINT NOT NULL REFERENCES player_profile(id) ON DELETE CASCADE,
     castle_id UUID,
+    castle_asset_type TEXT NOT NULL DEFAULT 'stone_column_castle',
     castle_world TEXT,
     castle_x DOUBLE PRECISION,
     castle_y DOUBLE PRECISION,

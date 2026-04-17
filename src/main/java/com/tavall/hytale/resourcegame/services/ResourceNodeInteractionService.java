@@ -3,6 +3,7 @@ package com.tavall.hytale.resourcegame.services;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
@@ -20,15 +21,18 @@ import java.util.UUID;
 public final class ResourceNodeInteractionService implements IResourceNodeInteractionService, IDependencyInjectableConcrete {
     private final IPlayerSessionStore sessionStore;
     private final IResourceNodeVisualService resourceNodeVisualService;
+    private final IFocusedWorldInteractionService focusedWorldInteractionService;
     private final IUiNavigator uiNavigator;
 
     public ResourceNodeInteractionService(
             IPlayerSessionStore sessionStore,
             IResourceNodeVisualService resourceNodeVisualService,
+            IFocusedWorldInteractionService focusedWorldInteractionService,
             IUiNavigator uiNavigator
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
+        this.focusedWorldInteractionService = Objects.requireNonNull(focusedWorldInteractionService, "focusedWorldInteractionService");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
     }
 
@@ -44,6 +48,9 @@ public final class ResourceNodeInteractionService implements IResourceNodeIntera
             return;
         }
         Optional<UUID> nodeId = resourceNodeVisualService.findNodeId(playerId, event.getTargetRef());
+        if (nodeId.isEmpty()) {
+            nodeId = focusedWorldInteractionService.focusedNodeId(player);
+        }
         if (nodeId.isEmpty()) {
             return;
         }

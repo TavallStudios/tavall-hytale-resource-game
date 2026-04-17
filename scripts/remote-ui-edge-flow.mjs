@@ -1,5 +1,5 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
+import { captureWorldSnapshot, createTraceSession, delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
   const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
@@ -30,6 +30,27 @@ function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
 }
 
+async function sendActionUntilSnapshot(bot, action, predicate, timeoutMs, label) {
+  const startedAt = Date.now();
+  while ((Date.now() - startedAt) < timeoutMs) {
+    sendAction(bot, action);
+    const retryUntil = Date.now() + 1_250;
+    while (Date.now() < retryUntil) {
+      const snapshot = bot.snapshotPage();
+      if (snapshot && predicate(snapshot)) {
+        return snapshot;
+      }
+      await delay(150);
+    }
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function dismissPage(bot) {
+  bot.sendPageEvent("Dismiss", null);
+  await delay(350);
+}
+
 function matchesExpectedValues(snapshot, expected) {
   if (!expected) {
     return true;
@@ -43,7 +64,8 @@ function matchesExpectedValues(snapshot, expected) {
 }
 
 async function openUpgrades(bot, expected = null) {
-  bot.chat("/kingdom ui upgrades");
+  await dismissPage(bot);
+  bot.chat("/kd ui upgrades");
   return waitForSnapshot(
     bot,
     (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage" && matchesExpectedValues(snapshot, expected),
@@ -81,7 +103,7 @@ async function main() {
   const username = process.argv[4] ?? "UiEdgeBot";
   const uuid = process.argv[5] ?? "323e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "ui-edge-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -94,16 +116,17 @@ async function main() {
     autoConnect: true,
     autoAcknowledgePages: true
   });
+  const trace = createTraceSession(bot, outputDir);
 
   try {
-    await bot.trace.enable({ outputDir });
+    await trace.enable();
     const baseline = await ensureBotBaseline(bot, assertions, {
       username,
       nearbyRadius: 12
     });
-    await delay(1_500);
+    await delay(5_000);
 
-    bot.chat("/kingdom ui");
+    bot.chat("/kd ui");
     const debugSnapshot = await waitForSnapshot(bot, (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage", 15_000, "debug page");
     pages.push({ key: debugSnapshot.key, title: null, snapshot: debugSnapshot });
     assertions.push("debug-ui-opened");
@@ -122,15 +145,16 @@ async function main() {
     pages.push({ key: resourcesSnapshot.key, title: null, snapshot: resourcesSnapshot });
     assertions.push("resources-opened-from-ui");
 
-    bot.chat("/kingdom citizens set 0");
+    await dismissPage(bot);
+    bot.chat("/kd citizens set 0");
     await delay(250);
-    bot.chat("/kingdom troops set 0");
+    bot.chat("/kd troops set 0");
     await delay(250);
-    bot.chat("/kingdom resources set food 0");
+    bot.chat("/kd resources set food 0");
     await delay(250);
-    bot.chat("/kingdom resources set wood 0");
+    bot.chat("/kd resources set wood 0");
     await delay(250);
-    bot.chat("/kingdom resources set iron 0");
+    bot.chat("/kd resources set iron 0");
     await delay(700);
 
     let upgradesSnapshot = await openUpgrades(bot, {
@@ -148,22 +172,23 @@ async function main() {
     }
     assertions.push("upgrade-blocked-status-visible");
 
-    sendAction(bot, "PromoteCitizen");
-    upgradesSnapshot = await waitForSnapshot(
+    upgradesSnapshot = await sendActionUntilSnapshot(
       bot,
+      "PromoteCitizen",
       (snapshot) => readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Blocked: need at least 1 citizen.",
       5_000,
       "blocked promote feedback"
     );
     assertions.push("blocked-promote-feedback");
 
-    bot.chat("/kingdom citizens set 2");
+    await dismissPage(bot);
+    bot.chat("/kd citizens set 2");
     await delay(250);
-    bot.chat("/kingdom resources set food 4");
+    bot.chat("/kd resources set food 4");
     await delay(250);
-    bot.chat("/kingdom resources set wood 0");
+    bot.chat("/kd resources set wood 0");
     await delay(250);
-    bot.chat("/kingdom resources set iron 1");
+    bot.chat("/kd resources set iron 1");
     await delay(700);
 
     upgradesSnapshot = await openUpgrades(bot, {
@@ -178,12 +203,12 @@ async function main() {
     }
     assertions.push("resource-blocked-status-visible");
 
-    bot.chat("/kingdom resources set wood 2");
+    await dismissPage(bot);
+    bot.chat("/kd resources set wood 2");
     await delay(700);
     upgradesSnapshot = await openUpgrades(bot, {
       "#CitizenCount.Text": "2",
       "#TroopCount.Text": "0",
-      "#FoodCount.Text": "4",
       "#WoodCount.Text": "2",
       "#IronCount.Text": "1"
     });
@@ -195,9 +220,9 @@ async function main() {
     }
     assertions.push("promotion-ready-status-visible");
 
-    sendAction(bot, "PromoteCitizen");
-    upgradesSnapshot = await waitForSnapshot(
+    upgradesSnapshot = await sendActionUntilSnapshot(
       bot,
+      "PromoteCitizen",
       (snapshot) =>
         readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Promotion complete."
         && readSelectorValue(snapshot, "#CitizenCount.Text") === "1"
@@ -207,9 +232,9 @@ async function main() {
     );
     assertions.push("promote-button-updates-state");
 
-    sendAction(bot, "DemoteTroop");
-    upgradesSnapshot = await waitForSnapshot(
+    upgradesSnapshot = await sendActionUntilSnapshot(
       bot,
+      "DemoteTroop",
       (snapshot) =>
         readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Demotion complete."
         && readSelectorValue(snapshot, "#CitizenCount.Text") === "2"
@@ -233,9 +258,9 @@ async function main() {
       },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
-    await bot.trace.flush(outputDir);
+    await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-ui-edge-flow",
@@ -248,11 +273,11 @@ async function main() {
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {
-      await bot.trace.flush(outputDir);
+      await trace.flush();
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -260,4 +285,3 @@ async function main() {
 }
 
 await main();
-

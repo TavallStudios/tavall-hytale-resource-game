@@ -47,8 +47,13 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
     }
 
     private void armCastlePlacement(CommandContext context, Player player) {
-        PlacementRequest request = placementModeService.armCastlePlacement(player);
-        context.sendMessage(Message.raw(request.summary() + " armed. Click the ground or use /kd place confirm.").color("green"));
+        placementModeService.armCastlePlacement(player);
+        Vector3i currentBlock = currentStandingBlock(player);
+        if (currentBlock == null) {
+            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
+            return;
+        }
+        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
     }
 
     private void armNodePlacement(CommandContext context, Player player, List<String> tokens) {
@@ -61,8 +66,13 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             context.sendMessage(Message.raw("Unknown resource type.").color("red"));
             return;
         }
-        PlacementRequest request = placementModeService.armNodePlacement(player, resourceType);
-        context.sendMessage(Message.raw(request.summary() + " armed. Click the ground or use /kd place confirm.").color("green"));
+        placementModeService.armNodePlacement(player, resourceType);
+        Vector3i currentBlock = currentStandingBlock(player);
+        if (currentBlock == null) {
+            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
+            return;
+        }
+        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
     }
 
     private void armBuildingPlacement(CommandContext context, Player player, List<String> tokens) {
@@ -75,8 +85,13 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             context.sendMessage(Message.raw("Unknown building type.").color("red"));
             return;
         }
-        PlacementRequest request = placementModeService.armBuildingPlacement(player, buildingType);
-        context.sendMessage(Message.raw(request.summary() + " armed. Click the ground or use /kd place confirm.").color("green"));
+        placementModeService.armBuildingPlacement(player, buildingType);
+        Vector3i currentBlock = currentStandingBlock(player);
+        if (currentBlock == null) {
+            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
+            return;
+        }
+        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
     }
 
     private void sendStatus(CommandContext context, Player player) {

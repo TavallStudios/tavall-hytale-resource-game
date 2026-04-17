@@ -94,7 +94,9 @@ Group {
     }
   }
 
-  Label { Text: "Future: job assignment, productivity medians, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+  Label #FeedbackStatus { Text: "Right-click an interior worker anchor to inspect that worker type."; Style: (FontSize: 14, TextColor: #e2c168); Anchor: (Bottom: 12); }
+
+  Label { Text: "Future: job assignment, productivity medians, task-copy NPCs, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
   Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
 }

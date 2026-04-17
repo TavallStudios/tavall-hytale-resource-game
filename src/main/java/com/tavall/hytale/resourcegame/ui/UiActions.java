@@ -12,6 +12,9 @@ public final class UiActions {
     public static final String OPEN_BUILDINGS = "OpenBuildings";
     public static final String OPEN_CASTLE_MAIN = "OpenCastleMain";
     public static final String OPEN_DEBUG = "OpenDebug";
+    public static final String CASTLE_ATTACK_PLACEHOLDER = "CastleAttackPlaceholder";
+    public static final String CASTLE_FRIEND_PLACEHOLDER = "CastleFriendPlaceholder";
+    public static final String CASTLE_GUILD_PLACEHOLDER = "CastleGuildPlaceholder";
     public static final String ENTER_INTERIOR = "EnterInterior";
     public static final String EXIT_INTERIOR = "ExitInterior";
     public static final String NODE_ASSIGN_ONE = "NodeAssignOne";

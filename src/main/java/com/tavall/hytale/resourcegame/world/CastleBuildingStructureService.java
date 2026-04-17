@@ -1,30 +1,38 @@
-package com.tavall.hytale.resourcegame.world;
+﻿package com.tavall.hytale.resourcegame.world;
 
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.tavall.hytale.resourcegame.domain.BuildingConstructionStage;
 import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingSummary;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
- * Builds simple staged block silhouettes for upgradeable buildings.
+ * Builds block-only staged silhouettes for upgradeable buildings.
  */
 public final class CastleBuildingStructureService {
-    private static final String BLOCK_KEY = "Rock_Stone";
+    private static final String STONE_BLOCK = "Rock_Stone";
+    private static final String BRICK_BLOCK = "Rock_Stone_Brick";
+    private static final String WOOD_BLOCK = "Rock_Shale";
+    private static final String METAL_BLOCK = "Rock_Quartzite";
+    private final StructureBlockPainter blockPainter = new StructureBlockPainter();
 
-    public void ensureBuildingSite(World world, CastleBuildingSummary summary) {
+    public Set<Vector3i> ensureBuildingSite(World world, CastleBuildingSummary summary) {
         int originX = floor(summary.worldX());
         int originY = floor(summary.worldY()) - 1;
         int originZ = floor(summary.worldZ());
         clearVolume(world, originX, originY, originZ);
-        paintPad(world, originX, originY, originZ, 2);
+        Set<Vector3i> placedBlocks = new LinkedHashSet<>();
+        paintPad(world, originX, originY, originZ, 2, foundationBlock(summary.buildingData().buildingType()), placedBlocks);
         if (summary.isUnderConstruction()) {
-            applyConstructionShape(world, summary.buildingData().buildingType(), originX, originY, originZ, summary.constructionStage());
-            return;
+            applyConstructionShape(world, summary.buildingData().buildingType(), originX, originY, originZ, summary.constructionStage(), placedBlocks);
+            return Set.copyOf(placedBlocks);
         }
-        applyCompletedShape(world, summary.buildingData().buildingType(), originX, originY, originZ, summary.completedLevel());
+        applyCompletedShape(world, summary.buildingData().buildingType(), originX, originY, originZ, summary.completedLevel(), placedBlocks);
+        return Set.copyOf(placedBlocks);
     }
 
     public void clearBuildingSite(World world, Vector3d worldPosition) {
@@ -34,71 +42,109 @@ public final class CastleBuildingStructureService {
         clearVolume(world, originX, originY, originZ);
     }
 
-    private void applyConstructionShape(World world, BuildingType buildingType, int originX, int originY, int originZ, BuildingConstructionStage stage) {
+    private void applyConstructionShape(
+            World world,
+            BuildingType buildingType,
+            int originX,
+            int originY,
+            int originZ,
+            BuildingConstructionStage stage,
+            Set<Vector3i> placedBlocks
+    ) {
+        String foundationBlock = foundationBlock(buildingType);
+        String scaffoldBlock = scaffoldBlock(buildingType);
+        String wallBlock = wallBlock(buildingType);
         switch (stage) {
-            case FOUNDATION -> paintPad(world, originX, originY, originZ, 1);
+            case FOUNDATION -> paintPad(world, originX, originY, originZ, 1, foundationBlock, placedBlocks);
             case SCAFFOLDING -> {
-                paintPad(world, originX, originY, originZ, 2);
-                paintPosts(world, originX, originY, originZ, 2, 2);
+                paintPad(world, originX, originY, originZ, 2, foundationBlock, placedBlocks);
+                paintPosts(world, originX, originY, originZ, 2, 2, scaffoldBlock, placedBlocks);
             }
             case SHELL -> {
-                paintPad(world, originX, originY, originZ, 2);
-                paintPosts(world, originX, originY, originZ, 2, 3);
-                paintRoofRim(world, originX, originY + 3, originZ, 2);
+                paintPad(world, originX, originY, originZ, 2, foundationBlock, placedBlocks);
+                paintPosts(world, originX, originY, originZ, 2, 3, scaffoldBlock, placedBlocks);
+                paintRoofRim(world, originX, originY + 3, originZ, 2, wallBlock, placedBlocks);
                 if (buildingType == BuildingType.IRON_WORKS) {
-                    paintColumn(world, originX, originY + 1, originZ, 4);
+                    paintColumn(world, originX, originY + 1, originZ, 4, METAL_BLOCK, placedBlocks);
                 }
             }
-            case COMPLETE -> applyCompletedShape(world, buildingType, originX, originY, originZ, 1);
+            case COMPLETE -> applyCompletedShape(world, buildingType, originX, originY, originZ, 1, placedBlocks);
         }
     }
 
-    private void applyCompletedShape(World world, BuildingType buildingType, int originX, int originY, int originZ, int level) {
+    private void applyCompletedShape(World world, BuildingType buildingType, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
         switch (buildingType) {
-            case FARMSTEAD -> paintBarn(world, originX, originY, originZ, level);
-            case LUMBER_MILL -> paintMill(world, originX, originY, originZ, level);
-            case IRON_WORKS -> paintForge(world, originX, originY, originZ, level);
-            case BARRACKS -> paintBarracks(world, originX, originY, originZ, level);
-            case WORKSHOP -> paintWorkshop(world, originX, originY, originZ, level);
+            case FARMSTEAD -> paintFarmstead(world, originX, originY, originZ, level, placedBlocks);
+            case LUMBER_MILL -> paintLumberMill(world, originX, originY, originZ, level, placedBlocks);
+            case IRON_WORKS -> paintIronWorks(world, originX, originY, originZ, level, placedBlocks);
+            case BARRACKS -> paintBarracks(world, originX, originY, originZ, level, placedBlocks);
+            case WORKSHOP -> paintWorkshop(world, originX, originY, originZ, level, placedBlocks);
         }
     }
 
-    private void paintBarn(World world, int originX, int originY, int originZ, int level) {
+    private void paintFarmstead(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
         int radius = Math.min(3, 1 + level);
-        paintPad(world, originX, originY, originZ, radius);
-        fillRect(world, originX - radius, originY + 1, originZ - 1, originX + radius, originY + level, originZ + 1);
-        paintRoofRim(world, originX, originY + level + 1, originZ, radius);
+        paintPad(world, originX, originY, originZ, radius, WOOD_BLOCK, placedBlocks);
+        fillRect(world, originX - radius, originY + 1, originZ - 1, originX + radius, originY + level, originZ + 1, WOOD_BLOCK, placedBlocks);
+        paintRoofRim(world, originX, originY + level + 1, originZ, radius, BRICK_BLOCK, placedBlocks);
     }
 
-    private void paintMill(World world, int originX, int originY, int originZ, int level) {
-        paintPad(world, originX, originY, originZ, 2);
-        fillRect(world, originX - 2, originY + 1, originZ - 1, originX + 2, originY + Math.max(1, level), originZ + 1);
-        fillRect(world, originX - 1, originY + 1, originZ - (2 + level), originX + 1, originY + 1, originZ + (2 + level));
+    private void paintLumberMill(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
+        paintPad(world, originX, originY, originZ, 2, WOOD_BLOCK, placedBlocks);
+        fillRect(world, originX - 2, originY + 1, originZ - 1, originX + 2, originY + Math.max(1, level), originZ + 1, WOOD_BLOCK, placedBlocks);
+        fillRect(world, originX - 1, originY + 1, originZ - (2 + level), originX + 1, originY + 1, originZ + (2 + level), WOOD_BLOCK, placedBlocks);
+        paintColumn(world, originX + 2, originY + 1, originZ, 1 + level, BRICK_BLOCK, placedBlocks);
     }
 
-    private void paintForge(World world, int originX, int originY, int originZ, int level) {
-        paintPad(world, originX, originY, originZ, 2);
-        fillRect(world, originX - 1, originY + 1, originZ - 1, originX + 1, originY + (1 + level), originZ + 1);
-        paintColumn(world, originX + 2, originY + 1, originZ, 2 + level);
+    private void paintIronWorks(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
+        paintPad(world, originX, originY, originZ, 2, BRICK_BLOCK, placedBlocks);
+        fillRect(world, originX - 1, originY + 1, originZ - 1, originX + 1, originY + (1 + level), originZ + 1, METAL_BLOCK, placedBlocks);
+        paintColumn(world, originX + 2, originY + 1, originZ, 2 + level, BRICK_BLOCK, placedBlocks);
+        paintColumn(world, originX - 2, originY + 1, originZ, 1 + level, METAL_BLOCK, placedBlocks);
     }
 
-    private void paintBarracks(World world, int originX, int originY, int originZ, int level) {
-        paintPad(world, originX, originY, originZ, 2);
-        fillRect(world, originX - 2, originY + 1, originZ - 2, originX + 2, originY + Math.max(1, level), originZ + 2);
+    private void paintBarracks(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
+        paintPad(world, originX, originY, originZ, 2, BRICK_BLOCK, placedBlocks);
+        fillRect(world, originX - 2, originY + 1, originZ - 2, originX + 2, originY + Math.max(1, level), originZ + 2, BRICK_BLOCK, placedBlocks);
         clearDoor(world, originX, originY + 1, originZ - 2, Math.max(2, level));
+        paintRoofRim(world, originX, originY + Math.max(1, level) + 1, originZ, 2, STONE_BLOCK, placedBlocks);
     }
 
-    private void paintWorkshop(World world, int originX, int originY, int originZ, int level) {
-        paintPad(world, originX, originY, originZ, 2);
-        fillRect(world, originX - 1, originY + 1, originZ - 1, originX + 1, originY + level, originZ + 1);
-        paintColumn(world, originX - 2, originY + 1, originZ, 1 + level);
-        paintColumn(world, originX + 2, originY + 1, originZ, 1 + level);
+    private void paintWorkshop(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
+        paintPad(world, originX, originY, originZ, 2, WOOD_BLOCK, placedBlocks);
+        fillRect(world, originX - 1, originY + 1, originZ - 1, originX + 1, originY + level, originZ + 1, WOOD_BLOCK, placedBlocks);
+        paintColumn(world, originX - 2, originY + 1, originZ, 1 + level, BRICK_BLOCK, placedBlocks);
+        paintColumn(world, originX + 2, originY + 1, originZ, 1 + level, BRICK_BLOCK, placedBlocks);
+        paintRoofRim(world, originX, originY + level + 1, originZ, 1, METAL_BLOCK, placedBlocks);
     }
 
-    private void paintPad(World world, int originX, int originY, int originZ, int radius) {
+    private String foundationBlock(BuildingType buildingType) {
+        return switch (buildingType) {
+            case FARMSTEAD, LUMBER_MILL, WORKSHOP -> WOOD_BLOCK;
+            case IRON_WORKS, BARRACKS -> BRICK_BLOCK;
+        };
+    }
+
+    private String scaffoldBlock(BuildingType buildingType) {
+        return switch (buildingType) {
+            case IRON_WORKS -> METAL_BLOCK;
+            case BARRACKS -> BRICK_BLOCK;
+            case FARMSTEAD, LUMBER_MILL, WORKSHOP -> WOOD_BLOCK;
+        };
+    }
+
+    private String wallBlock(BuildingType buildingType) {
+        return switch (buildingType) {
+            case FARMSTEAD, LUMBER_MILL, WORKSHOP -> WOOD_BLOCK;
+            case IRON_WORKS -> METAL_BLOCK;
+            case BARRACKS -> BRICK_BLOCK;
+        };
+    }
+
+    private void paintPad(World world, int originX, int originY, int originZ, int radius, String blockKey, Set<Vector3i> placedBlocks) {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                setBlock(world, originX + dx, originY, originZ + dz, BLOCK_KEY);
+                recordBlock(world, originX + dx, originY, originZ + dz, blockKey, placedBlocks);
                 clearBlock(world, originX + dx, originY + 1, originZ + dz);
                 clearBlock(world, originX + dx, originY + 2, originZ + dz);
                 clearBlock(world, originX + dx, originY + 3, originZ + dz);
@@ -108,35 +154,35 @@ public final class CastleBuildingStructureService {
         }
     }
 
-    private void paintPosts(World world, int originX, int originY, int originZ, int radius, int height) {
-        paintColumn(world, originX - radius, originY + 1, originZ - radius, height);
-        paintColumn(world, originX - radius, originY + 1, originZ + radius, height);
-        paintColumn(world, originX + radius, originY + 1, originZ - radius, height);
-        paintColumn(world, originX + radius, originY + 1, originZ + radius, height);
+    private void paintPosts(World world, int originX, int originY, int originZ, int radius, int height, String blockKey, Set<Vector3i> placedBlocks) {
+        paintColumn(world, originX - radius, originY + 1, originZ - radius, height, blockKey, placedBlocks);
+        paintColumn(world, originX - radius, originY + 1, originZ + radius, height, blockKey, placedBlocks);
+        paintColumn(world, originX + radius, originY + 1, originZ - radius, height, blockKey, placedBlocks);
+        paintColumn(world, originX + radius, originY + 1, originZ + radius, height, blockKey, placedBlocks);
     }
 
-    private void paintRoofRim(World world, int originX, int originY, int originZ, int radius) {
+    private void paintRoofRim(World world, int originX, int originY, int originZ, int radius, String blockKey, Set<Vector3i> placedBlocks) {
         for (int dx = -radius; dx <= radius; dx++) {
-            setBlock(world, originX + dx, originY, originZ - radius, BLOCK_KEY);
-            setBlock(world, originX + dx, originY, originZ + radius, BLOCK_KEY);
+            recordBlock(world, originX + dx, originY, originZ - radius, blockKey, placedBlocks);
+            recordBlock(world, originX + dx, originY, originZ + radius, blockKey, placedBlocks);
         }
         for (int dz = -radius; dz <= radius; dz++) {
-            setBlock(world, originX - radius, originY, originZ + dz, BLOCK_KEY);
-            setBlock(world, originX + radius, originY, originZ + dz, BLOCK_KEY);
+            recordBlock(world, originX - radius, originY, originZ + dz, blockKey, placedBlocks);
+            recordBlock(world, originX + radius, originY, originZ + dz, blockKey, placedBlocks);
         }
     }
 
-    private void paintColumn(World world, int x, int y, int z, int height) {
+    private void paintColumn(World world, int x, int y, int z, int height, String blockKey, Set<Vector3i> placedBlocks) {
         for (int step = 0; step < height; step++) {
-            setBlock(world, x, y + step, z, BLOCK_KEY);
+            recordBlock(world, x, y + step, z, blockKey, placedBlocks);
         }
     }
 
-    private void fillRect(World world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+    private void fillRect(World world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, String blockKey, Set<Vector3i> placedBlocks) {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    setBlock(world, x, y, z, BLOCK_KEY);
+                    recordBlock(world, x, y, z, blockKey, placedBlocks);
                 }
             }
         }
@@ -159,17 +205,16 @@ public final class CastleBuildingStructureService {
     }
 
     private void setBlock(World world, int x, int y, int z, String blockKey) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, blockKey);
-        }
+        blockPainter.placeBlock(world, x, y, z, blockKey);
     }
 
     private void clearBlock(World world, int x, int y, int z) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, 0);
-        }
+        blockPainter.clearBlock(world, x, y, z);
+    }
+
+    private void recordBlock(World world, int x, int y, int z, String blockKey, Set<Vector3i> placedBlocks) {
+        setBlock(world, x, y, z, blockKey);
+        placedBlocks.add(new Vector3i(x, y, z));
     }
 
     private int floor(double value) {

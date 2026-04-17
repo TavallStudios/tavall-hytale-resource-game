@@ -18,4 +18,16 @@ public final class TestKingdomClockService implements IKingdomClockService {
     @Override
     public void applyToWorld(World world) {
     }
+
+    @Override
+    public void applyToAllWorlds() {
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void shutdown() {
+    }
 }

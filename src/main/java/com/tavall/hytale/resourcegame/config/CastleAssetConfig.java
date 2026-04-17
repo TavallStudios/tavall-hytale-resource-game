@@ -6,17 +6,23 @@ package com.tavall.hytale.resourcegame.config;
 public final class CastleAssetConfig {
     private final String npcRoleName;
     private final String displayName;
+    private final String structureAssetType;
+    private final String castleBlockType;
     private final double interactionDistance;
     private final double lookDotThreshold;
 
     public CastleAssetConfig(
             String npcRoleName,
             String displayName,
+            String structureAssetType,
+            String castleBlockType,
             double interactionDistance,
             double lookDotThreshold
     ) {
         this.npcRoleName = npcRoleName;
         this.displayName = displayName;
+        this.structureAssetType = structureAssetType;
+        this.castleBlockType = castleBlockType;
         this.interactionDistance = interactionDistance;
         this.lookDotThreshold = lookDotThreshold;
     }
@@ -29,6 +35,14 @@ public final class CastleAssetConfig {
         return displayName;
     }
 
+    public String structureAssetType() {
+        return structureAssetType;
+    }
+
+    public String castleBlockType() {
+        return castleBlockType;
+    }
+
     public double interactionDistance() {
         return interactionDistance;
     }
@@ -38,6 +52,6 @@ public final class CastleAssetConfig {
     }
 
     public static CastleAssetConfig defaults() {
-        return new CastleAssetConfig("Kweebec_Elder", "Your Castle", 6.0, 0.85);
+        return new CastleAssetConfig("Kweebec_Elder", "Castle", "stone_column_castle", "Rock_Stone_Brick", 7.5, 0.85);
     }
 }

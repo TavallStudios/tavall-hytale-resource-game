@@ -26,6 +26,8 @@ public final class CastleTroopsPage extends BaseUiPage {
     public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
         uiCommandBuilder.append(PAGE_DOCUMENT);
         uiCommandBuilder.set("#TroopCount.Text", String.valueOf(state().populationSummary().troopCount()));
+        uiCommandBuilder.set("#MightCount.Text", String.valueOf(state().populationSummary().might()));
+        uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Right-click the soldier or troop anchor to inspect military status." : context().feedbackMessage());
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 

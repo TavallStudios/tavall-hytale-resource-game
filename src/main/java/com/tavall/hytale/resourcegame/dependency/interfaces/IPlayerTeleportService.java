@@ -14,5 +14,7 @@ public interface IPlayerTeleportService extends IDependencyInjectableInterface {
 
     void teleport(Player player, World targetWorld, Vector3d position);
 
+    void moveWithoutTeleportAck(Player player, Vector3d position);
+
     void orientPlayer(Player player, Vector3d lookTarget);
 }

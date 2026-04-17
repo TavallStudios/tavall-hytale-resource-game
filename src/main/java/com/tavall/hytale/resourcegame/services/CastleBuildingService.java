@@ -490,14 +490,14 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
             }
             return new Vector3d(state.castleLocation().x(), state.castleLocation().y(), state.castleLocation().z());
         }
-        return interiorLayoutService.createLayoutForPlayer(playerId).origin();
+        return interiorLayoutService.createLayoutForCastle(state.castleLocation()).origin();
     }
 
     private String areaWorldName(UUID playerId, PlayerGameState state, BuildingAreaType areaType) {
         if (areaType == BuildingAreaType.CASTLE_SURFACE) {
             return state.castleLocation() == null ? null : state.castleLocation().worldName();
         }
-        return interiorInstanceService.worldNameFor(playerId);
+        return state.castleLocation() == null ? null : state.castleLocation().worldName();
     }
 
     private double progressRatio(CastleBuildingData buildingData, Instant now) {

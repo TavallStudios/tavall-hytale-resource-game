@@ -34,7 +34,8 @@ Own player-placed resource nodes, worker/troop assignment, depletion, regenerati
 - Nodes have a placed pad, stock beacon, anchor label, worker crowd, and supply-lane visuals.
 - Scale is used to reinforce node importance and activity.
 - Assigned troops and assigned workers increase the visible worker presence and convoy route density.
-- Nodes use Hytale block/static structure placeholders for the pad, stock marker, and resource silhouette. The current safe block key is intentionally conservative to avoid client asset load failures.
+- Nodes use 2-3 block high Hytale block/static structure placeholders for the pad, stock marker, and resource silhouette.
+- Resource silhouettes use separate placeholder block keys for Food, Wood, and Iron so nodes read differently in-world while still remaining swappable.
 - Node stock level affects status labels and beacon shape.
 - Prompt lanes provide a deterministic place for players and bots to align with a node before interacting.
 

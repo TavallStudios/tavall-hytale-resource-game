@@ -17,7 +17,8 @@ import java.util.logging.Logger;
 public class PostgresSchemaBootstrap {
     private static final List<String> SCHEMA_RESOURCES = List.of(
             "schema/postgres/001_player_profile.sql",
-            "schema/postgres/002_player_game_state.sql"
+            "schema/postgres/002_player_game_state.sql",
+            "schema/postgres/003_player_game_state_evolution.sql"
     );
 
     private final Logger logger;

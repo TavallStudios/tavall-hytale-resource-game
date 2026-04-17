@@ -23,6 +23,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
@@ -37,6 +38,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerProfileServic
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPopulationService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IProtectedBlockSystemService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
@@ -46,6 +48,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiPageRegistry;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IWorkerNpcInteractionService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.interior.InteriorLayoutService;
@@ -75,6 +78,7 @@ import com.tavall.hytale.resourcegame.services.CastleSiteVisualService;
 import com.tavall.hytale.resourcegame.services.CastleSpawnService;
 import com.tavall.hytale.resourcegame.services.DebugCommandService;
 import com.tavall.hytale.resourcegame.services.FocusedWorldInteractionService;
+import com.tavall.hytale.resourcegame.services.FocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.services.FocusedWorldTargetPlanner;
 import com.tavall.hytale.resourcegame.services.InteriorInstanceService;
 import com.tavall.hytale.resourcegame.services.InteriorTourMarkerService;
@@ -82,7 +86,6 @@ import com.tavall.hytale.resourcegame.services.InteriorWorldService;
 import com.tavall.hytale.resourcegame.services.IpHashService;
 import com.tavall.hytale.resourcegame.services.InfrastructureHealthService;
 import com.tavall.hytale.resourcegame.services.JsonMapperProvider;
-import com.tavall.hytale.resourcegame.services.NpcVisualSpawner;
 import com.tavall.hytale.resourcegame.services.PlacementInteractionService;
 import com.tavall.hytale.resourcegame.services.PlacementModeService;
 import com.tavall.hytale.resourcegame.services.PlacementPreviewService;
@@ -93,6 +96,7 @@ import com.tavall.hytale.resourcegame.services.PlayerSessionStore;
 import com.tavall.hytale.resourcegame.services.PlayerTeleportService;
 import com.tavall.hytale.resourcegame.services.PopulationDisplayGateway;
 import com.tavall.hytale.resourcegame.services.PopulationDisplayService;
+import com.tavall.hytale.resourcegame.services.ProtectedBlockSystemService;
 import com.tavall.hytale.resourcegame.services.PopulationService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.services.ResourceNodePromptLaneService;
@@ -101,6 +105,9 @@ import com.tavall.hytale.resourcegame.services.ResourceNodeService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeVisualPulseService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
+import com.tavall.hytale.resourcegame.services.StructureProtectionService;
+import com.tavall.hytale.resourcegame.services.WorkerNpcInteractionService;
+import com.tavall.hytale.resourcegame.services.WorldLabelService;
 import com.tavall.hytale.resourcegame.ui.CastleCitizensPage;
 import com.tavall.hytale.resourcegame.ui.CastleBuildingsPage;
 import com.tavall.hytale.resourcegame.ui.CastleInfoPage;
@@ -132,7 +139,6 @@ import com.tavall.hytale.resourcegame.commands.KingdomNodeCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomPlacementCommandSupport;
 import org.tavall.abstractcache.semantic.SemanticCache;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -174,15 +180,15 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 mapperProvider.mapper()
         );
 
-        CastleEntityRegistry castleEntityRegistry = new CastleEntityRegistry();
         CastleAssetConfig castleAssetConfig = CastleAssetConfig.defaults();
         PopulationDisplayConfig populationDisplayConfig = PopulationDisplayConfig.defaults();
         InteriorLayoutService interiorLayoutService = new InteriorLayoutService();
         InteriorStructureService interiorStructureService = new InteriorStructureService();
         InfrastructureHealthService infrastructureHealthService = new InfrastructureHealthService(cacheConfig, databaseConfig);
         CastleEconomyPlanner economyPlanner = new CastleEconomyPlanner();
-        CastleSiteScenePlanner castleSiteScenePlanner = new CastleSiteScenePlanner();
-        NpcVisualSpawner npcVisualSpawner = new NpcVisualSpawner();
+        WorldLabelService worldLabelService = new WorldLabelService();
+        StructureProtectionService structureProtectionService = new StructureProtectionService();
+        ProtectedBlockSystemService protectedBlockSystemService = new ProtectedBlockSystemService(structureProtectionService);
         InteriorInstanceService interiorInstanceService = new InteriorInstanceService();
         CastleBuildingService buildingService = new CastleBuildingService(
                 sessionStore,
@@ -192,10 +198,10 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 mapperProvider.mapper()
         );
         CastleBuildingVisualService buildingVisualService = new CastleBuildingVisualService(
-                populationDisplayConfig,
                 buildingService,
                 new CastleBuildingStructureService(),
-                npcVisualSpawner
+                worldLabelService,
+                structureProtectionService
         );
         BuildingPlacementStageStructureService buildingPlacementStageStructureService = new BuildingPlacementStageStructureService();
         BuildingPlacementPlanner buildingPlacementPlanner = new BuildingPlacementPlanner(
@@ -206,30 +212,27 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), economyPlanner);
         ResourceNodeRoutePlanner resourceNodeRoutePlanner = new ResourceNodeRoutePlanner();
         ResourceNodeVisualService resourceNodeVisualService = new ResourceNodeVisualService(
-                populationDisplayConfig,
                 resourceNodeService,
                 new ResourceNodeStructureService(),
-                resourceNodeRoutePlanner,
-                npcVisualSpawner
+                worldLabelService,
+                structureProtectionService
         );
         ResourceNodeVisualPulseService resourceNodeVisualPulseService = new ResourceNodeVisualPulseService(sessionStore, resourceNodeVisualService);
         CastleSiteVisualService castleSiteVisualService = new CastleSiteVisualService(
-                castleEntityRegistry,
                 castleAssetConfig,
-                populationDisplayConfig,
-                economyPlanner,
-                castleSiteScenePlanner,
                 new CastleSiteLayoutService(),
-                new CastleSiteStructureService(),
-                npcVisualSpawner
+                new CastleSiteStructureService(castleAssetConfig),
+                worldLabelService,
+                structureProtectionService,
+                sessionStore
         );
 
-        CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, castleEntityRegistry, sessionStore, castleSiteVisualService);
+        CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, sessionStore, castleSiteVisualService);
         PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
-        InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(populationDisplayConfig);
+        InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(worldLabelService);
         PlayerTeleportService playerTeleportService = new PlayerTeleportService();
         IpHashService ipHashService = new IpHashService();
-        PlacementPreviewService placementPreviewService = new PlacementPreviewService(populationDisplayConfig, npcVisualSpawner);
+        PlacementPreviewService placementPreviewService = new PlacementPreviewService(worldLabelService);
         CastlePromptLaneService castlePromptLaneService = new CastlePromptLaneService(
                 new CastlePromptLaneLayoutService(),
                 new CastlePromptLaneStructureService(),
@@ -242,6 +245,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         );
         UiPageRegistry pageRegistry = new UiPageRegistry();
         UiNavigator uiNavigator = new UiNavigator(pageRegistry);
+        WorkerNpcInteractionService workerNpcInteractionService = new WorkerNpcInteractionService(populationDisplayService, sessionStore, uiNavigator);
         ResourceService resourceService = new ResourceService(sessionStore, gameStateService, castleSiteVisualService, uiNavigator);
         PopulationService populationService = new PopulationService(
                 sessionStore,
@@ -323,23 +327,29 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 uiNavigator
         );
         CastleInteractionService castleInteractionService = new CastleInteractionService(
-                castleEntityRegistry,
                 sessionStore,
                 uiNavigator,
                 castleAssetConfig
         );
+        FocusedWorldOverrideService focusedWorldOverrideService = new FocusedWorldOverrideService();
         FocusedWorldTargetPlanner focusedWorldTargetPlanner = new FocusedWorldTargetPlanner();
         FocusedWorldInteractionService focusedWorldInteractionService = new FocusedWorldInteractionService(
                 sessionStore,
                 buildingService,
                 castleInteractionService,
+                focusedWorldOverrideService,
                 resourceNodeService,
                 uiNavigator,
                 focusedWorldTargetPlanner
         );
         CastleProximityPromptService castleProximityPromptService = new CastleProximityPromptService(castleInteractionService, placementModeService);
-        ResourceNodeInteractionService resourceNodeInteractionService = new ResourceNodeInteractionService(sessionStore, resourceNodeVisualService, uiNavigator);
-        BuildingInteractionService buildingInteractionService = new BuildingInteractionService(sessionStore, buildingVisualService, uiNavigator);
+        ResourceNodeInteractionService resourceNodeInteractionService = new ResourceNodeInteractionService(
+                sessionStore,
+                resourceNodeVisualService,
+                focusedWorldInteractionService,
+                uiNavigator
+        );
+        BuildingInteractionService buildingInteractionService = new BuildingInteractionService(sessionStore, buildingVisualService, focusedWorldInteractionService, uiNavigator);
         KingdomPlacementCommandSupport placementCommandSupport = new KingdomPlacementCommandSupport(placementModeService);
         KingdomBuildingCommandSupport buildingCommandSupport = new KingdomBuildingCommandSupport(
                 buildingService,
@@ -358,7 +368,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 playerTeleportService,
                 placementModeService,
                 resourceNodePromptLaneService,
-                focusedWorldInteractionService
+                focusedWorldInteractionService,
+                focusedWorldOverrideService
         );
         KingdomInteractionCommandSupport interactionCommandSupport = new KingdomInteractionCommandSupport(focusedWorldInteractionService);
         DebugCommandService debugCommandService = new DebugCommandService(
@@ -369,6 +380,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 interiorWorldService,
                 castleSpawnService,
                 castlePromptLaneService,
+                focusedWorldOverrideService,
                 playerDataService,
                 gameStateService,
                 infrastructureHealthService,
@@ -415,6 +427,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IKingdomClockService.class, clockService);
         registerSingleton(IPlayerDataService.class, playerDataService);
         registerSingleton(ICastleInteractionService.class, castleInteractionService);
+        registerSingleton(IFocusedWorldOverrideService.class, focusedWorldOverrideService);
         registerSingleton(IFocusedWorldInteractionService.class, focusedWorldInteractionService);
         registerSingleton(ICastleProximityPromptService.class, castleProximityPromptService);
         registerSingleton(IPlacementPreviewService.class, placementPreviewService);
@@ -422,12 +435,16 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IPlacementInteractionService.class, placementInteractionService);
         registerSingleton(IResourceNodeInteractionService.class, resourceNodeInteractionService);
         registerSingleton(IBuildingInteractionService.class, buildingInteractionService);
+        registerSingleton(IWorkerNpcInteractionService.class, workerNpcInteractionService);
         registerSingleton(KingdomBuildingCommandSupport.class, buildingCommandSupport);
         registerSingleton(KingdomNodeCommandSupport.class, nodeCommandSupport);
         registerSingleton(KingdomPlacementCommandSupport.class, placementCommandSupport);
         registerSingleton(KingdomInteractionCommandSupport.class, interactionCommandSupport);
         registerSingleton(IDebugCommandService.class, debugCommandService);
         registerSingleton(IInfrastructureHealthService.class, infrastructureHealthService);
+        registerSingleton(WorldLabelService.class, worldLabelService);
+        registerSingleton(StructureProtectionService.class, structureProtectionService);
+        registerSingleton(IProtectedBlockSystemService.class, protectedBlockSystemService);
     }
 
     private void registerUiPages(

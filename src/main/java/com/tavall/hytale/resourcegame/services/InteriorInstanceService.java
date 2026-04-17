@@ -105,6 +105,7 @@ public final class InteriorInstanceService implements IInteriorInstanceService, 
         worldConfig.setChunkStorageProvider(new EmptyChunkStorageProvider());
         worldConfig.setResourceStorageProvider(new EmptyResourceStorageProvider());
         worldConfig.setSpawningNPC(false);
+        worldConfig.setIsAllNPCFrozen(true);
         worldConfig.setSavingPlayers(false);
         worldConfig.setSavingConfig(false);
         worldConfig.setCanSaveChunks(false);

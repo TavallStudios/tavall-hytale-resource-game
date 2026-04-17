@@ -69,6 +69,7 @@ final class JacksonCacheCodecTest {
                 7L,
                 42L,
                 UUID.fromString("79c227d1-40f5-4b88-9f64-bc9b02d766ea"),
+                "stone_column_castle",
                 castleLocation,
                 populationSummary,
                 new ResourceInventory(61, 73, 29),
@@ -89,6 +90,7 @@ final class JacksonCacheCodecTest {
         assertEquals(state.id(), decoded.id());
         assertEquals(state.profileId(), decoded.profileId());
         assertEquals(state.castleId(), decoded.castleId());
+        assertEquals(state.castleAssetType(), decoded.castleAssetType());
         assertEquals(state.castleLocation().worldName(), decoded.castleLocation().worldName());
         assertEquals(state.castleLocation().x(), decoded.castleLocation().x());
         assertEquals(state.castleLocation().y(), decoded.castleLocation().y());

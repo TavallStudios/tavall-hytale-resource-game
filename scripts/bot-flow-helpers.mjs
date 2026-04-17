@@ -36,7 +36,62 @@ export function resolveBotClientModuleUrl() {
 
 export async function writeJson(filePath, value) {
   await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await writeFile(filePath, `${formatStructuredText(value)}\n`, "utf8");
+}
+
+export async function writeText(filePath, value) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, value.endsWith("\n") ? value : `${value}\n`, "utf8");
+}
+
+export function formatStructuredText(value, indent = 0) {
+  const prefix = " ".repeat(indent);
+  if (value == null) {
+    return `${prefix}null`;
+  }
+  if (typeof value === "string") {
+    return `${prefix}${value}`;
+  }
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return `${prefix}${String(value)}`;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return `${prefix}[]`;
+    }
+    return value
+      .map((entry) => {
+        if (entry == null || typeof entry !== "object" || Array.isArray(entry)) {
+          return `${prefix}- ${formatStructuredText(entry, 0).trimStart()}`;
+        }
+        return `${prefix}-\n${formatStructuredText(entry, indent + 2)}`;
+      })
+      .join("\n");
+  }
+  const entries = Object.entries(value);
+  if (entries.length === 0) {
+    return `${prefix}{}`;
+  }
+  return entries
+    .map(([key, entry]) => {
+      if (entry == null || typeof entry !== "object") {
+        return `${prefix}${key}: ${formatStructuredText(entry, 0).trimStart()}`;
+      }
+      if (Array.isArray(entry) && entry.length === 0) {
+        return `${prefix}${key}: []`;
+      }
+      return `${prefix}${key}:\n${formatStructuredText(entry, indent + 2)}`;
+    })
+    .join("\n");
+}
+
+export function printStructured(value, useError = false) {
+  const output = `${formatStructuredText(value)}\n`;
+  if (useError) {
+    process.stderr.write(output);
+    return;
+  }
+  process.stdout.write(output);
 }
 
 export async function waitForServerMessage(bot, predicate, timeoutMs, label) {
@@ -48,6 +103,61 @@ export async function aimAtGround(bot, yaw = 0, pitch = 70, roll = 0, settleDela
   if (settleDelayMs > 0) {
     await delay(settleDelayMs);
   }
+}
+
+export async function aimAtPosition(bot, targetPosition, settleDelayMs = 250) {
+  const snapshot = captureWorldSnapshot(bot, 4);
+  if (!snapshot?.position || !targetPosition) {
+    throw new Error("Unable to aim without both player and target positions.");
+  }
+  const dx = targetPosition.x - snapshot.position.x;
+  const dy = targetPosition.y - snapshot.position.y;
+  const dz = targetPosition.z - snapshot.position.z;
+  const horizontalDistance = Math.sqrt((dx * dx) + (dz * dz));
+  const yaw = Math.atan2(-dx, dz) * (180 / Math.PI);
+  const pitch = -Math.atan2(dy, Math.max(horizontalDistance, 0.0001)) * (180 / Math.PI);
+  bot.look(yaw, pitch, 0);
+  if (settleDelayMs > 0) {
+    await delay(settleDelayMs);
+  }
+}
+
+export async function walkToApproxPosition(bot, targetPosition, options = {}) {
+  const {
+    stepSize = 0.9,
+    maxSteps = 48,
+    settleDelayMs = 120
+  } = options;
+  let snapshot = captureWorldSnapshot(bot, 4);
+  if (!snapshot?.position || !targetPosition) {
+    throw new Error("Unable to walk without both player and target positions.");
+  }
+  for (let index = 0; index < maxSteps; index += 1) {
+    const current = snapshot.position;
+    const dx = targetPosition.x - current.x;
+    const dy = targetPosition.y - current.y;
+    const dz = targetPosition.z - current.z;
+    const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+    if (distance <= stepSize) {
+      break;
+    }
+    const ratio = stepSize / distance;
+    const nextPosition = {
+      x: current.x + (dx * ratio),
+      y: current.y + (dy * ratio),
+      z: current.z + (dz * ratio)
+    };
+    await aimAtPosition(bot, targetPosition, 0);
+    bot.move({ absolutePosition: nextPosition });
+    if (settleDelayMs > 0) {
+      await delay(settleDelayMs);
+    }
+    snapshot = captureWorldSnapshot(bot, 4);
+    if (!snapshot?.position) {
+      throw new Error("Lost player position during walk simulation.");
+    }
+  }
+  return snapshot;
 }
 
 export async function focusTargetWithSweep(bot, options) {
@@ -109,12 +219,15 @@ export function createTraceSession(bot, outputDir) {
         await bot.trace.flush(outputDir);
         return;
       }
-      await writeJson(path.join(outputDir, "transcript.json"), {
-        enabled: false,
-        mode,
-        generatedAt: new Date().toISOString(),
-        note: "Full bot transcript disabled by default. Set RESOURCE_GAME_BOT_TRACE=full to capture the raw trace."
-      });
+      await writeText(
+        path.join(outputDir, "transcript.txt"),
+        [
+          `generatedAt=${new Date().toISOString()}`,
+          "enabled=false",
+          `mode=${mode}`,
+          "note=Full bot transcript disabled by default. Set RESOURCE_GAME_BOT_TRACE=full to capture the raw trace."
+        ].join("\n")
+      );
     }
   };
 }
@@ -291,4 +404,3 @@ export async function ensureBotBaseline(bot, assertions, options = {}) {
     snapshot
   };
 }
-

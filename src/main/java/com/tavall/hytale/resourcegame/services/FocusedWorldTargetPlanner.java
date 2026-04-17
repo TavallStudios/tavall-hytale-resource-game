@@ -16,7 +16,7 @@ import java.util.Optional;
  * Resolves the strongest focus candidate from the player's current world-space look direction.
  */
 public final class FocusedWorldTargetPlanner implements IDependencyInjectableConcrete {
-    private static final double CASTLE_MAX_DISTANCE = 6.5D;
+    private static final double CASTLE_MAX_DISTANCE = 7.5D;
     private static final double CASTLE_MIN_DOT = 0.85D;
     private static final double NODE_MAX_DISTANCE = 7.5D;
     private static final double NODE_MIN_DOT = 0.82D;
@@ -136,6 +136,4 @@ public final class FocusedWorldTargetPlanner implements IDependencyInjectableCon
         return new FocusCandidate(target, score);
     }
 
-    private record FocusCandidate(FocusedWorldTarget target, double score) {
-    }
 }

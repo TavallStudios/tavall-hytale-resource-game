@@ -36,6 +36,7 @@ public final class CastleMainPage extends BaseUiPage {
         uiCommandBuilder.append(PAGE_DOCUMENT);
         uiCommandBuilder.set("#CitizenCount.Text", String.valueOf(state().populationSummary().citizenCount()));
         uiCommandBuilder.set("#TroopCount.Text", String.valueOf(state().populationSummary().troopCount()));
+        uiCommandBuilder.set("#MightCount.Text", String.valueOf(state().populationSummary().might()));
         uiCommandBuilder.set("#FoodCount.Text", String.valueOf(state().resources().food()));
         uiCommandBuilder.set("#WoodCount.Text", String.valueOf(state().resources().wood()));
         uiCommandBuilder.set("#IronCount.Text", String.valueOf(state().resources().iron()));
@@ -48,6 +49,9 @@ public final class CastleMainPage extends BaseUiPage {
         bind(uiEventBuilder, "#ResourcesButton", UiActions.OPEN_RESOURCES);
         bind(uiEventBuilder, "#UpgradesButton", UiActions.OPEN_UPGRADES);
         bind(uiEventBuilder, "#BuildingsButton", UiActions.OPEN_BUILDINGS);
+        bind(uiEventBuilder, "#AttackButton", UiActions.CASTLE_ATTACK_PLACEHOLDER);
+        bind(uiEventBuilder, "#FriendButton", UiActions.CASTLE_FRIEND_PLACEHOLDER);
+        bind(uiEventBuilder, "#GuildButton", UiActions.CASTLE_GUILD_PLACEHOLDER);
         bind(uiEventBuilder, "#CloseButton", UiActions.CLOSE);
     }
 

@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
@@ -29,6 +30,7 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
     private final IPlayerSessionStore sessionStore;
     private final ICastleBuildingService buildingService;
     private final ICastleInteractionService castleInteractionService;
+    private final IFocusedWorldOverrideService focusedWorldOverrideService;
     private final IResourceNodeService resourceNodeService;
     private final IUiNavigator uiNavigator;
     private final FocusedWorldTargetPlanner planner;
@@ -37,6 +39,7 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
             IPlayerSessionStore sessionStore,
             ICastleBuildingService buildingService,
             ICastleInteractionService castleInteractionService,
+            IFocusedWorldOverrideService focusedWorldOverrideService,
             IResourceNodeService resourceNodeService,
             IUiNavigator uiNavigator,
             FocusedWorldTargetPlanner planner
@@ -44,6 +47,7 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
         this.castleInteractionService = Objects.requireNonNull(castleInteractionService, "castleInteractionService");
+        this.focusedWorldOverrideService = Objects.requireNonNull(focusedWorldOverrideService, "focusedWorldOverrideService");
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
         this.planner = Objects.requireNonNull(planner, "planner");
@@ -54,6 +58,10 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
         PlayerSession session = sessionStore.get(player.getUuid());
         if (session == null) {
             return Optional.empty();
+        }
+        Optional<FocusedWorldTarget> overrideTarget = focusedWorldOverrideService.peek(player.getUuid());
+        if (overrideTarget.isPresent()) {
+            return overrideTarget;
         }
         TransformComponent transform = player.getTransformComponent();
         if (transform == null || player.getWorld() == null) {
@@ -99,10 +107,11 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
         if (session == null) {
             return Optional.empty();
         }
-        FocusedWorldTarget focusedTarget = target.get();
+        Optional<FocusedWorldTarget> overrideTarget = focusedWorldOverrideService.consume(player.getUuid());
+        FocusedWorldTarget focusedTarget = overrideTarget.orElseGet(target::get);
         if (focusedTarget.type() == FocusedWorldTargetType.CASTLE) {
             castleInteractionService.openCastleUi(player);
-            return target;
+            return Optional.of(focusedTarget);
         }
         if (focusedTarget.type() == FocusedWorldTargetType.BUILDING) {
             uiNavigator.open(
@@ -111,7 +120,7 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
                     new UiNavigationContext(player.getUuid(), player.getDisplayName()).withSelectedBuildingId(focusedTarget.buildingId()),
                     session.gameState()
             );
-            return target;
+            return Optional.of(focusedTarget);
         }
         uiNavigator.open(
                 UiPageType.RESOURCE_NODE_DETAIL,
@@ -119,6 +128,6 @@ public final class FocusedWorldInteractionService implements IFocusedWorldIntera
                 new UiNavigationContext(player.getUuid(), player.getDisplayName()).withSelectedNodeId(focusedTarget.nodeId()),
                 session.gameState()
         );
-        return target;
+        return Optional.of(focusedTarget);
     }
 }

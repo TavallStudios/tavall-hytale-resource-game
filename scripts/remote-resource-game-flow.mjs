@@ -1,5 +1,5 @@
 ﻿import path from "node:path";
-import { delay, ensureBotBaseline, resolveBotClientModuleUrl, waitForPageOrNull, writeJson, captureWorldSnapshot, createTraceSession } from "./bot-flow-helpers.mjs";
+import { delay, ensureBotBaseline, resolveBotClientModuleUrl, waitForPageOrNull, writeJson, printStructured, captureWorldSnapshot, createTraceSession } from "./bot-flow-helpers.mjs";
 
 const PAGE_KEYS = {
   upgrades: "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage",
@@ -14,8 +14,9 @@ async function main() {
   const host = process.argv[2] ?? "127.0.0.1";
   const port = Number.parseInt(process.argv[3] ?? "5520", 10);
   const username = process.argv[4] ?? "ResourceGameBot";
-  const outputDir = process.argv[5] ?? path.resolve(process.cwd(), ".runs", "resource-game-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const uuid = process.argv[5] ?? process.env.HYTALE_BOT_UUID;
+  const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "resource-game-flow");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
 
   const startedAt = new Date().toISOString();
   const assertions = [];
@@ -26,6 +27,7 @@ async function main() {
     host,
     port,
     username,
+    uuid,
     autoConnect: true,
     autoAcknowledgePages: true
   });
@@ -95,7 +97,7 @@ async function main() {
     };
     await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "resource-game-flow",
@@ -114,7 +116,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
@@ -122,5 +124,3 @@ async function main() {
 }
 
 await main();
-
-

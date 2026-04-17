@@ -1,9 +1,7 @@
-package com.tavall.hytale.resourcegame.world;
+﻿package com.tavall.hytale.resourcegame.world;
 
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 
 /**
  * Builds a compact temporary pad so building-stage teleports always land on stable ground.
@@ -12,6 +10,7 @@ public final class BuildingPlacementStageStructureService {
     private static final String FLOOR_BLOCK = "Rock_Stone";
     private static final int HALF_WIDTH = 1;
     private static final int HALF_DEPTH = 1;
+    private final StructureBlockPainter blockPainter = new StructureBlockPainter();
 
     public void ensureStagePad(World world, Vector3d buildAnchor) {
         if (world == null || buildAnchor == null) {
@@ -31,17 +30,11 @@ public final class BuildingPlacementStageStructureService {
     }
 
     private void setBlock(World world, int x, int y, int z, String blockKey) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, blockKey);
-        }
+        blockPainter.placeBlock(world, x, y, z, blockKey);
     }
 
     private void clearBlock(World world, int x, int y, int z) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, 0);
-        }
+        blockPainter.clearBlock(world, x, y, z);
     }
 
     private int floorToInt(double value) {

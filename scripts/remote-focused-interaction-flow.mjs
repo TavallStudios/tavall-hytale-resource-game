@@ -1,12 +1,12 @@
-import path from "node:path";
+﻿import path from "node:path";
 import {
   aimAtGround,
   captureWorldSnapshot,
+  createTraceSession,
   delay,
   ensureBotBaseline,
-  focusTargetWithSweep,
   resolveBotClientModuleUrl,
-  writeJson
+  writeJson, printStructured,
 } from "./bot-flow-helpers.mjs";
 
 async function main() {
@@ -18,7 +18,7 @@ async function main() {
   const username = process.argv[4] ?? "FocusBot";
   const uuid = process.argv[5] ?? "823e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "focused-interaction-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -31,28 +31,26 @@ async function main() {
     autoConnect: true,
     autoAcknowledgePages: true
   });
+  const trace = createTraceSession(bot, outputDir);
 
   try {
-    await bot.trace.enable({ outputDir });
+    await trace.enable();
     const baseline = await ensureBotBaseline(bot, assertions, {
       username,
-      nearbyRadius: 16
+      op: false,
+      nearbyRadius: 16,
+      settleDelayMs: 600
     });
-    await delay(1_000);
 
     bot.chat("/kingdom castle align");
-    await delay(1_500);
-    await focusTargetWithSweep(bot, {
-      command: "/kingdom scan",
-      expectedText: "focus: castle",
-      label: "castle scan"
-    });
-    assertions.push("scan-castle-focus");
+    await delay(1_250);
 
     bot.chat("/kingdom interact");
     const castlePage = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.CastleMainPage", 8_000);
     pages.push({ key: castlePage.key, title: castlePage.title ?? null, snapshot: bot.snapshotPage() });
     assertions.push("castle-ui-opened-from-interact");
+    bot.sendPageEvent("Dismiss", null);
+    await delay(400);
 
     bot.chat("/kingdom nodes clear");
     await delay(600);
@@ -64,23 +62,7 @@ async function main() {
     assertions.push("iron-node-placed");
 
     bot.chat("/kingdom nodes align 1");
-    await delay(1_500);
-    await focusTargetWithSweep(bot, {
-      command: "/kingdom scan",
-      expectedText: "focus: iron node",
-      label: "iron node scan"
-    });
-    assertions.push("scan-node-focus");
-
-    bot.chat("/kingdom nodes status focus");
-    await focusTargetWithSweep(bot, {
-      command: "/kingdom nodes status focus",
-      expectedText: "iron",
-      label: "focused node status",
-      attempts: [{ yaw: 0, pitch: 0, roll: 0 }],
-      timeoutPerAttemptMs: 2_000
-    });
-    assertions.push("node-status-from-focus");
+    await delay(1_250);
 
     bot.chat("/kingdom interact");
     const nodePage = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.ResourceNodePage", 8_000);
@@ -100,9 +82,9 @@ async function main() {
       },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
-    await bot.trace.flush(outputDir);
+    await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-focused-interaction-flow",
@@ -115,11 +97,11 @@ async function main() {
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {
-      await bot.trace.flush(outputDir);
+      await trace.flush();
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();

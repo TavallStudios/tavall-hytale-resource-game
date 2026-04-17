@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import {
   captureWorldSnapshot,
   delay,
@@ -6,7 +6,7 @@ import {
   findNearbyEntityByPosition,
   resolveBotClientModuleUrl,
   waitForWorldSnapshot,
-  writeJson
+  writeJson, printStructured,
 } from "./bot-flow-helpers.mjs";
 
 const INTERIOR_PAGE_KEY = "com.tavall.hytale.resourcegame.ui.InteriorMainPage";
@@ -94,7 +94,7 @@ async function main() {
   const username = process.argv[4] ?? "InteriorTourBot";
   const uuid = process.argv[5] ?? "723e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "interior-tour-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -157,7 +157,7 @@ async function main() {
     };
     await bot.trace.flush(outputDir);
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-interior-tour-flow",
@@ -174,7 +174,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();

@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import {
   captureWorldSnapshot,
   createTraceSession,
@@ -8,7 +8,7 @@ import {
   waitForPageOrNull,
   waitForServerMessage,
   waitForWorldSnapshot,
-  writeJson
+  writeJson, printStructured,
 } from "./bot-flow-helpers.mjs";
 
 const BUILDING_DETAIL_PAGE = "com.tavall.hytale.resourcegame.ui.BuildingDetailPage";
@@ -42,6 +42,30 @@ async function waitForSnapshot(bot, predicate, timeoutMs, label) {
 
 function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
+}
+
+async function openBuildingsOverview(bot, statusSelector, expectedText, timeoutMs = 12_000) {
+  const startedAt = Date.now();
+  let attempt = 0;
+  while ((Date.now() - startedAt) < timeoutMs) {
+    if (attempt % 2 === 0) {
+      sendAction(bot, "OpenBuildings");
+    } else {
+      bot.chat("/kd ui buildings");
+    }
+    attempt += 1;
+
+    const retryUntil = Date.now() + 1_500;
+    while (Date.now() < retryUntil) {
+      const snapshot = bot.snapshotPage();
+      if (snapshot?.key === BUILDINGS_OVERVIEW_PAGE
+          && `${readSelectorValue(snapshot, statusSelector)}`.includes(expectedText)) {
+        return snapshot;
+      }
+      await delay(150);
+    }
+  }
+  throw new Error("Timed out waiting for castle buildings overview");
 }
 
 async function waitForInteriorReady(bot) {
@@ -110,6 +134,14 @@ async function placeBuildingUntilDetail(bot, buildingType, displayName, levelPre
   throw new Error(`Failed to place or open ${displayName} after ${attempts} attempts`);
 }
 
+async function finishAndRefreshBuilding(bot, buildingType) {
+  bot.sendPageEvent("Dismiss", null);
+  await delay(500);
+  bot.chat(`/kd buildings finish ${buildingType}`);
+  await delay(1_500);
+  bot.chat(`/kd buildings select ${buildingType}`);
+}
+
 async function main() {
   const clientModuleUrl = resolveBotClientModuleUrl();
   const { createBot } = await import(clientModuleUrl);
@@ -119,7 +151,7 @@ async function main() {
   const username = process.argv[4] ?? "BuildingBot";
   const uuid = process.argv[5] ?? "a23e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "building-upgrade-flow");
-  const resultPath = path.join(outputDir, "scenario-result.json");
+  const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
   const assertions = [];
   const pages = [];
@@ -167,7 +199,7 @@ async function main() {
     pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: buildingDetailSnapshot });
     assertions.push("building-detail-opened");
 
-    bot.chat("/kingdom tick run 3");
+    await finishAndRefreshBuilding(bot, "farmstead");
     buildingDetailSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
@@ -190,7 +222,7 @@ async function main() {
     );
     assertions.push("farmstead-upgrade-started-from-ui");
 
-    bot.chat("/kingdom tick run 4");
+    await finishAndRefreshBuilding(bot, "farmstead");
     buildingDetailSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
@@ -203,15 +235,10 @@ async function main() {
     pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: buildingDetailSnapshot });
     assertions.push("farmstead-level-two-complete");
 
-    sendAction(bot, "OpenBuildings");
-    const overviewSnapshot = await waitForSnapshot(
-      bot,
-      (snapshot) => snapshot.key === BUILDINGS_OVERVIEW_PAGE
-        && `${readSelectorValue(snapshot, "#FarmsteadStatus.Text")}`.includes("L2")
-        && `${readSelectorValue(snapshot, "#FarmsteadStatus.Text")}`.includes("+4F +0W +0I / tick"),
-      8_000,
-      "castle buildings overview"
-    );
+    const overviewSnapshot = await openBuildingsOverview(bot, "#FarmsteadStatus.Text", "L2");
+    if (!`${readSelectorValue(overviewSnapshot, "#FarmsteadStatus.Text")}`.includes("+4F +0W +0I / tick")) {
+      throw new Error(`Expected upgraded farmstead effect in overview, got ${readSelectorValue(overviewSnapshot, "#FarmsteadStatus.Text")}`);
+    }
     pages.push({ key: BUILDINGS_OVERVIEW_PAGE, title: null, snapshot: overviewSnapshot });
     assertions.push("building-overview-reflects-upgrade");
 
@@ -236,7 +263,7 @@ async function main() {
     pages.push({ key: BUILDING_DETAIL_PAGE, title: null, snapshot: barracksSnapshot });
     assertions.push("barracks-detail-opened");
 
-    bot.chat("/kingdom tick run 4");
+    await finishAndRefreshBuilding(bot, "barracks");
     barracksSnapshot = await waitForSnapshot(
       bot,
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
@@ -269,7 +296,7 @@ async function main() {
     };
     await trace.flush();
     await writeJson(resultPath, result);
-    console.log(JSON.stringify(result, null, 2));
+    printStructured(result);
   } catch (error) {
     const result = {
       name: "remote-building-upgrade-flow",
@@ -286,7 +313,7 @@ async function main() {
       await writeJson(resultPath, result);
     } catch {
     }
-    console.error(JSON.stringify(result, null, 2));
+    printStructured(result, true);
     process.exitCode = 1;
   } finally {
     await bot.disconnect();
