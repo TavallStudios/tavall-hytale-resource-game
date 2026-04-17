@@ -1,8 +1,10 @@
 package com.tavall.hytale.resourcegame.interior;
 
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Coordinates for interior placeholder layout.
@@ -12,6 +14,9 @@ public final class InteriorLayout {
     private final Vector3d entryPoint;
     private final Vector3d citizenAnchor;
     private final Vector3d troopAnchor;
+    private final Vector3d workerPlatformAnchor;
+    private final Vector3d workerPortalAnchor;
+    private final Map<CitizenJobType, Vector3d> workerAnchors;
     private final Vector3d exitPoint;
     private final List<InteriorTourStop> tourStops;
 
@@ -20,6 +25,9 @@ public final class InteriorLayout {
             Vector3d entryPoint,
             Vector3d citizenAnchor,
             Vector3d troopAnchor,
+            Vector3d workerPlatformAnchor,
+            Vector3d workerPortalAnchor,
+            Map<CitizenJobType, Vector3d> workerAnchors,
             Vector3d exitPoint,
             List<InteriorTourStop> tourStops
     ) {
@@ -27,6 +35,9 @@ public final class InteriorLayout {
         this.entryPoint = entryPoint;
         this.citizenAnchor = citizenAnchor;
         this.troopAnchor = troopAnchor;
+        this.workerPlatformAnchor = workerPlatformAnchor;
+        this.workerPortalAnchor = workerPortalAnchor;
+        this.workerAnchors = Map.copyOf(workerAnchors);
         this.exitPoint = exitPoint;
         this.tourStops = List.copyOf(tourStops);
     }
@@ -45,6 +56,18 @@ public final class InteriorLayout {
 
     public Vector3d troopAnchor() {
         return troopAnchor;
+    }
+
+    public Vector3d workerPlatformAnchor() {
+        return workerPlatformAnchor;
+    }
+
+    public Vector3d workerPortalAnchor() {
+        return workerPortalAnchor;
+    }
+
+    public Map<CitizenJobType, Vector3d> workerAnchors() {
+        return workerAnchors;
     }
 
     public Vector3d exitPoint() {

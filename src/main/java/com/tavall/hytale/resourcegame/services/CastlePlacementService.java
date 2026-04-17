@@ -52,6 +52,7 @@ public final class CastlePlacementService implements ICastlePlacementService, ID
         PlayerGameState updatedState = session.gameState().withCastleLocation(
                 castleLocation,
                 session.gameState().castleId() == null ? UUID.randomUUID() : session.gameState().castleId(),
+                session.gameState().castleAssetType(),
                 now
         );
         session.updateGameState(updatedState);

@@ -10,8 +10,10 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.IKingdomClockService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerDataService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IProtectedBlockSystemService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualPulseService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IWorkerNpcInteractionService;
 
 /**
  * Generated-domain equivalent for repo-local DI accessors.
@@ -37,6 +39,10 @@ public interface IResourceGameDomainGenerated {
         return DependencyLoaderAccess.findInstance(IResourceNodeInteractionService.class);
     }
 
+    default IWorkerNpcInteractionService getWorkerNpcInteractionService() {
+        return DependencyLoaderAccess.findInstance(IWorkerNpcInteractionService.class);
+    }
+
     default IBuildingInteractionService getBuildingInteractionService() {
         return DependencyLoaderAccess.findInstance(IBuildingInteractionService.class);
     }
@@ -59,5 +65,9 @@ public interface IResourceGameDomainGenerated {
 
     default IKingdomClockService getKingdomClockService() {
         return DependencyLoaderAccess.findInstance(IKingdomClockService.class);
+    }
+
+    default IProtectedBlockSystemService getProtectedBlockSystemService() {
+        return DependencyLoaderAccess.findInstance(IProtectedBlockSystemService.class);
     }
 }

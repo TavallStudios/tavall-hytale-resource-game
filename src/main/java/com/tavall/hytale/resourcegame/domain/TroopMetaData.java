@@ -26,6 +26,14 @@ public final class TroopMetaData {
         return moraleMedian;
     }
 
+    /**
+     * Returns current aggregate military power. Until per-tier troop counts are persisted,
+     * every stored troop is treated as tier 1 and therefore contributes 1 Might.
+     */
+    public int estimatedMight(int troopCount) {
+        return Math.max(0, troopCount);
+    }
+
     public static TroopMetaData defaults() {
         return new TroopMetaData(0.3, 0.3, 0.6);
     }

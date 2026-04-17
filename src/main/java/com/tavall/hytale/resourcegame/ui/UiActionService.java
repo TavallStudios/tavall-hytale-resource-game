@@ -120,6 +120,18 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             uiNavigator.open(UiPageType.DEBUG_NAVIGATOR, player, context, state);
             return;
         }
+        if (UiActions.CASTLE_ATTACK_PLACEHOLDER.equals(action) && state != null) {
+            uiNavigator.open(UiPageType.CASTLE_INFO, player, context.withFeedback("Attack planning is a placeholder. Castle defense, scouting, and permission rules are tracked in TODO."), state);
+            return;
+        }
+        if (UiActions.CASTLE_FRIEND_PLACEHOLDER.equals(action) && state != null) {
+            uiNavigator.open(UiPageType.CASTLE_INFO, player, context.withFeedback("Friend access is a placeholder. This will become an invite and trust flow."), state);
+            return;
+        }
+        if (UiActions.CASTLE_GUILD_PLACEHOLDER.equals(action) && state != null) {
+            uiNavigator.open(UiPageType.CASTLE_INFO, player, context.withFeedback("Guild access is a placeholder. Guild roles and permission checks are deferred."), state);
+            return;
+        }
         if (UiActions.PROMOTE.equals(action)) {
             boolean promoted = populationService.promoteCitizen(playerId);
             PlayerSession updatedSession = sessionStore.get(playerId);

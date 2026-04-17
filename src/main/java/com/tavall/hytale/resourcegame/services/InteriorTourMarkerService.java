@@ -2,18 +2,11 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.npc.NPCPlugin;
-import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.interior.InteriorLayout;
 import com.tavall.hytale.resourcegame.interior.InteriorTourStop;
-import it.unimi.dsi.fastutil.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,16 +16,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
- * Spawns and clears the first-join interior tour markers.
+ * Spawns and clears first-join interior tour labels without NPC placeholders.
  */
 public final class InteriorTourMarkerService implements IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(InteriorTourMarkerService.class.getName());
 
-    private final PopulationDisplayConfig displayConfig;
+    private final WorldLabelService worldLabelService;
     private final Map<UUID, List<Ref<EntityStore>>> markerRefs = new ConcurrentHashMap<>();
 
-    public InteriorTourMarkerService(PopulationDisplayConfig displayConfig) {
-        this.displayConfig = displayConfig;
+    public InteriorTourMarkerService(WorldLabelService worldLabelService) {
+        this.worldLabelService = worldLabelService;
     }
 
     public void ensureTourMarkers(UUID playerId, World world, InteriorLayout layout, boolean tutorialPending) {
@@ -47,26 +40,16 @@ public final class InteriorTourMarkerService implements IDependencyInjectableCon
         }
 
         clearTourMarkers(playerId);
-        Store<EntityStore> store = world.getEntityStore().getStore();
-        NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
-        if (roleIndex < 0) {
-            LOGGER.warning(() -> "Unable to spawn interior tour markers because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
-            return;
-        }
-
         List<Ref<EntityStore>> refs = new ArrayList<>();
         for (InteriorTourStop stop : layout.tourStops()) {
-            Pair<Ref<EntityStore>, ?> pair = npcPlugin.spawnEntity(store, roleIndex, stop.position(), Vector3f.ZERO, null, null);
-            Ref<EntityStore> ref = pair.first();
+            Ref<EntityStore> ref = worldLabelService.spawnLabel(world, stop.position().add(0.0D, 1.8D, 0.0D), stop.displayLabel());
             if (ref != null && ref.isValid()) {
-                store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(stop.displayLabel())));
                 refs.add(ref);
             }
         }
         markerRefs.put(playerId, List.copyOf(refs));
         LOGGER.info(() -> String.format(
-                "Interior tour markers ready for %s in world %s. stops=%s",
+                "Interior tour labels ready for %s in world %s. stops=%s",
                 playerId,
                 world.getName(),
                 refs.size()

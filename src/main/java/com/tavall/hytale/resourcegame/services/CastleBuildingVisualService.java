@@ -2,55 +2,48 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
-import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.npc.NPCPlugin;
-import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
-import com.tavall.hytale.resourcegame.domain.BuildingAreaType;
-import com.tavall.hytale.resourcegame.domain.BuildingConstructionStage;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingSummary;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
+import com.tavall.hytale.resourcegame.population.PromotionCost;
 import com.tavall.hytale.resourcegame.world.CastleBuildingStructureService;
 import com.tavall.hytale.resourcegame.world.CastleBuildingVisualRefs;
+import com.tavall.hytale.resourcegame.world.ProtectedStructureType;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 /**
- * Renders placed kingdom buildings with staged construction visuals.
+ * Renders placed kingdom buildings as block-only staged structures.
  */
 public final class CastleBuildingVisualService implements ICastleBuildingVisualService, IDependencyInjectableConcrete {
-    private static final Logger LOGGER = Logger.getLogger(CastleBuildingVisualService.class.getName());
-
-    private final PopulationDisplayConfig displayConfig;
     private final ICastleBuildingService buildingService;
     private final CastleBuildingStructureService structureService;
-    private final NpcVisualSpawner npcVisualSpawner;
+    private final WorldLabelService worldLabelService;
+    private final StructureProtectionService protectionService;
     private final Map<UUID, Map<UUID, CastleBuildingVisualRefs>> buildingRefs = new ConcurrentHashMap<>();
 
     public CastleBuildingVisualService(
-            PopulationDisplayConfig displayConfig,
             ICastleBuildingService buildingService,
             CastleBuildingStructureService structureService,
-            NpcVisualSpawner npcVisualSpawner
+            WorldLabelService worldLabelService,
+            StructureProtectionService protectionService
     ) {
-        this.displayConfig = displayConfig;
         this.buildingService = buildingService;
         this.structureService = structureService;
-        this.npcVisualSpawner = npcVisualSpawner;
+        this.worldLabelService = worldLabelService;
+        this.protectionService = protectionService;
     }
 
     @Override
@@ -69,7 +62,9 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
         if (refsByBuilding == null) {
             return;
         }
-        for (CastleBuildingVisualRefs refs : refsByBuilding.values()) {
+        for (Map.Entry<UUID, CastleBuildingVisualRefs> entry : refsByBuilding.entrySet()) {
+            protectionService.clearStructure(structureKey(entry.getKey()));
+            CastleBuildingVisualRefs refs = entry.getValue();
             World world = Universe.get().getWorld(refs.worldName());
             if (world != null) {
                 world.execute(() -> clearRefsOnWorld(world, refs));
@@ -97,7 +92,8 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
     }
 
     private void rebuildBuildings(UUID playerId, PlayerGameState state) {
-        clearBuildings(playerId);
+        Map<UUID, CastleBuildingVisualRefs> previousRefs = buildingRefs.remove(playerId);
+        clearExistingBuildings(previousRefs);
         if (playerId == null || state == null) {
             return;
         }
@@ -113,42 +109,44 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
                 continue;
             }
             world.execute(() -> {
-                Store<EntityStore> store = world.getEntityStore().getStore();
-                int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
-                if (roleIndex < 0) {
-                    LOGGER.warning(() -> "Unable to build kingdom building visuals because NPC role '" + displayConfig.npcRoleName() + "' was not found.");
-                    return;
-                }
-                Vector3d position = new Vector3d(summary.worldX(), summary.worldY(), summary.worldZ());
-                structureService.ensureBuildingSite(world, summary);
-                Ref<EntityStore> anchorRef = npcVisualSpawner.spawnNamed(
-                        store,
-                        roleIndex,
-                        position.add(0.0D, 2.6D, 0.0D),
-                        label(summary),
-                        anchorScale(summary)
-                );
-                List<Ref<EntityStore>> crewRefs = npcVisualSpawner.spawnGroup(
-                        store,
-                        roleIndex,
-                        crewPositions(position, summary),
-                        visibleCrewCount(summary),
-                        crewScale(summary)
-                );
-                List<Ref<EntityStore>> scaffoldRefs = npcVisualSpawner.spawnGroup(
-                        store,
-                        roleIndex,
-                        scaffoldPositions(position, summary.constructionStage()),
-                        visibleScaffoldCount(summary),
-                        scaffoldScale(summary)
+                List<Ref<EntityStore>> labelRefs = spawnLabels(world, summary);
+                protectionService.replaceStructure(
+                        structureKey(building.buildingId()),
+                        playerId,
+                        ProtectedStructureType.BUILDING,
+                        summary.worldName(),
+                        building.buildingType().shortKey(),
+                        structureService.ensureBuildingSite(world, summary)
                 );
                 rebuilt.put(
                         building.buildingId(),
-                        new CastleBuildingVisualRefs(summary.worldName(), position, anchorRef, crewRefs, scaffoldRefs)
+                        new CastleBuildingVisualRefs(
+                                summary.worldName(),
+                                new Vector3d(summary.worldX(), summary.worldY(), summary.worldZ()),
+                                labelRefs
+                        )
                 );
             });
         }
         buildingRefs.put(playerId, rebuilt);
+    }
+
+    private void clearExistingBuildings(Map<UUID, CastleBuildingVisualRefs> refsByBuilding) {
+        if (refsByBuilding == null || refsByBuilding.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<UUID, CastleBuildingVisualRefs> entry : refsByBuilding.entrySet()) {
+            protectionService.clearStructure(structureKey(entry.getKey()));
+            CastleBuildingVisualRefs refs = entry.getValue();
+            World world = Universe.get().getWorld(refs.worldName());
+            if (world != null) {
+                world.execute(() -> clearRefsOnWorld(world, refs));
+                continue;
+            }
+            for (Ref<EntityStore> ref : refs.allRefs()) {
+                removeRef(ref);
+            }
+        }
     }
 
     private void clearRefsOnWorld(World world, CastleBuildingVisualRefs refs) {
@@ -165,79 +163,59 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
         ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
     }
 
-    private String label(CastleBuildingSummary summary) {
-        String effectLine = summary.foodPerTickBonus() > 0 || summary.woodPerTickBonus() > 0 || summary.ironPerTickBonus() > 0
-                ? " | +" + summary.foodPerTickBonus() + "F +" + summary.woodPerTickBonus() + "W +" + summary.ironPerTickBonus() + "I"
-                : summary.constructionSpeedBonus() > 0.0D
-                ? " | Build Speed " + (int) Math.round(summary.constructionSpeedBonus() * 100.0D) + "%"
-                : " | Troop Cost -" + summary.promotionDiscount().foodCost() + "/" + summary.promotionDiscount().woodCost() + "/" + summary.promotionDiscount().ironCost();
-        String stageText = summary.isUnderConstruction()
-                ? " | " + summary.constructionStage().name().toLowerCase()
-                + " " + (int) Math.round(summary.progressRatio() * 100.0D) + "%"
-                + " | " + summary.remainingSeconds() + "s"
-                : " | L" + summary.completedLevel();
-        return summary.buildingData().buildingType().displayName() + stageText + effectLine;
+    private List<Ref<EntityStore>> spawnLabels(World world, CastleBuildingSummary summary) {
+        Vector3d labelPosition = new Vector3d(summary.worldX(), summary.worldY() + 2.6D, summary.worldZ());
+        return worldLabelService.spawnLabelStack(world, labelPosition, buildingLabelLines(summary));
     }
 
-    private float anchorScale(CastleBuildingSummary summary) {
-        return clampScale(summary.isUnderConstruction() ? 1.15F + (float) summary.progressRatio() : 1.3F + (summary.completedLevel() * 0.18F), 1.0F, 2.4F);
-    }
-
-    private float crewScale(CastleBuildingSummary summary) {
-        float areaBonus = summary.buildingData().areaType() == BuildingAreaType.CASTLE_INTERIOR ? 0.1F : 0.0F;
-        return clampScale(0.75F + (summary.displayLevel() * 0.12F) + areaBonus, 0.7F, 1.4F);
-    }
-
-    private float scaffoldScale(CastleBuildingSummary summary) {
-        return clampScale(0.65F + (float) (summary.progressRatio() * 0.4F), 0.65F, 1.2F);
-    }
-
-    private int visibleCrewCount(CastleBuildingSummary summary) {
-        if (summary.isUnderConstruction()) {
-            return Math.min(4, 1 + summary.displayLevel());
+    private List<String> buildingLabelLines(CastleBuildingSummary summary) {
+        StringBuilder bonusBuilder = new StringBuilder();
+        if (summary.foodPerTickBonus() > 0) {
+            appendToken(bonusBuilder, "+" + summary.foodPerTickBonus() + "F/t");
         }
-        return Math.min(5, 1 + summary.completedLevel());
-    }
-
-    private int visibleScaffoldCount(CastleBuildingSummary summary) {
-        return switch (summary.constructionStage()) {
-            case FOUNDATION -> summary.isUnderConstruction() ? 1 : 0;
-            case SCAFFOLDING -> 4;
-            case SHELL -> 3;
-            case COMPLETE -> 0;
-        };
-    }
-
-    private List<Vector3d> crewPositions(Vector3d base, CastleBuildingSummary summary) {
-        double offset = summary.buildingData().areaType() == BuildingAreaType.CASTLE_INTERIOR ? 1.3D : 1.8D;
-        List<Vector3d> positions = new ArrayList<>();
-        positions.add(new Vector3d(base.getX() + offset, base.getY(), base.getZ()));
-        positions.add(new Vector3d(base.getX() - offset, base.getY(), base.getZ()));
-        positions.add(new Vector3d(base.getX(), base.getY(), base.getZ() + offset));
-        positions.add(new Vector3d(base.getX(), base.getY(), base.getZ() - offset));
-        positions.add(new Vector3d(base.getX() + offset, base.getY(), base.getZ() + offset));
-        return positions;
-    }
-
-    private List<Vector3d> scaffoldPositions(Vector3d base, BuildingConstructionStage stage) {
-        if (stage == BuildingConstructionStage.COMPLETE) {
-            return List.of();
+        if (summary.woodPerTickBonus() > 0) {
+            appendToken(bonusBuilder, "+" + summary.woodPerTickBonus() + "W/t");
         }
-        double height = switch (stage) {
-            case FOUNDATION -> 1.2D;
-            case SCAFFOLDING -> 2.0D;
-            case SHELL -> 2.8D;
-            case COMPLETE -> 0.0D;
-        };
+        if (summary.ironPerTickBonus() > 0) {
+            appendToken(bonusBuilder, "+" + summary.ironPerTickBonus() + "I/t");
+        }
+        if (summary.constructionSpeedBonus() > 0.0D) {
+            appendToken(bonusBuilder, "Build +" + (int) Math.round(summary.constructionSpeedBonus() * 100.0D) + "%");
+        }
+        PromotionCost promotionDiscount = summary.promotionDiscount();
+        int totalDiscount = promotionDiscount.foodCost() + promotionDiscount.woodCost() + promotionDiscount.ironCost();
+        if (totalDiscount > 0) {
+            appendToken(
+                    bonusBuilder,
+                    "Promo -" + promotionDiscount.foodCost() + "F/"
+                            + promotionDiscount.woodCost() + "W/"
+                            + promotionDiscount.ironCost() + "I"
+            );
+        }
+        String detailLine = bonusBuilder.length() == 0 ? "No passive bonuses yet" : bonusBuilder.toString();
+        String actionLine = summary.isUnderConstruction()
+                ? summary.remainingSeconds() + "s left"
+                : "Right-click";
         return List.of(
-                new Vector3d(base.getX() + 1.8D, base.getY() + height, base.getZ() + 1.8D),
-                new Vector3d(base.getX() - 1.8D, base.getY() + height, base.getZ() + 1.8D),
-                new Vector3d(base.getX() + 1.8D, base.getY() + height, base.getZ() - 1.8D),
-                new Vector3d(base.getX() - 1.8D, base.getY() + height, base.getZ() - 1.8D)
+                summary.buildingData().buildingType().displayName()
+                        + " | Lv " + summary.displayLevel()
+                        + " | " + summary.statusText(),
+                detailLine,
+                actionLine
         );
     }
 
-    private float clampScale(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
+    private void appendToken(StringBuilder builder, String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        if (!builder.isEmpty()) {
+            builder.append(" | ");
+        }
+        builder.append(token);
+    }
+
+    private String structureKey(UUID buildingId) {
+        return "building:" + buildingId;
     }
 }

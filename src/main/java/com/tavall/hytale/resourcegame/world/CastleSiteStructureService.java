@@ -1,98 +1,68 @@
-package com.tavall.hytale.resourcegame.world;
+﻿package com.tavall.hytale.resourcegame.world;
 
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.tavall.hytale.resourcegame.config.CastleAssetConfig;
 
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
- * Builds low-risk placeholder pads around the castle so the world scene reads cleanly.
+ * Builds the placeholder castle column used for first-pass castle visuals.
  */
 public final class CastleSiteStructureService {
     private static final String FLOOR_BLOCK = "Rock_Stone";
+    private static final int CLEAR_RADIUS = 2;
+    private final CastleAssetConfig castleAssetConfig;
+    private final StructureBlockPainter blockPainter = new StructureBlockPainter();
 
-    public void ensureSite(World world, CastleSiteLayout layout) {
-        paintPad(world, layout.origin(), 2);
-        paintPad(world, layout.stockpileAnchor(), 2);
-        paintPad(world, layout.citizenAnchor(), 1);
-        paintPad(world, layout.troopAnchor(), 1);
-        paintPad(world, layout.foodNodeAnchor(), 1);
-        paintPad(world, layout.woodNodeAnchor(), 1);
-        paintPad(world, layout.ironNodeAnchor(), 1);
-        paintLane(world, layout.origin(), layout.stockpileAnchor());
-        paintLane(world, layout.stockpileAnchor(), layout.foodNodeAnchor());
-        paintLane(world, layout.stockpileAnchor(), layout.woodNodeAnchor());
-        paintLane(world, layout.stockpileAnchor(), layout.ironNodeAnchor());
-        clearAnchorColumns(world, List.of(
-                layout.origin(),
-                layout.stockpileAnchor(),
-                layout.citizenAnchor(),
-                layout.troopAnchor(),
-                layout.foodNodeAnchor(),
-                layout.woodNodeAnchor(),
-                layout.ironNodeAnchor()
-        ));
+    public CastleSiteStructureService(CastleAssetConfig castleAssetConfig) {
+        this.castleAssetConfig = castleAssetConfig;
     }
 
-    private void paintPad(World world, Vector3d center, int radius) {
-        int originX = floorToInt(center.getX());
-        int originY = floorToInt(center.getY()) - 1;
-        int originZ = floorToInt(center.getZ());
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                setBlock(world, originX + dx, originY, originZ + dz, FLOOR_BLOCK);
-                clearBlock(world, originX + dx, originY + 1, originZ + dz);
-                clearBlock(world, originX + dx, originY + 2, originZ + dz);
-                clearBlock(world, originX + dx, originY + 3, originZ + dz);
+    public Set<Vector3i> ensureSite(World world, CastleSiteLayout layout) {
+        clearSite(world, layout);
+        return paintCastleMarker(world, layout.origin());
+    }
+
+    public void clearSite(World world, CastleSiteLayout layout) {
+        int originX = floorToInt(layout.origin().getX());
+        int originY = floorToInt(layout.origin().getY()) - 1;
+        int originZ = floorToInt(layout.origin().getZ());
+        for (int dx = -CLEAR_RADIUS; dx <= CLEAR_RADIUS; dx++) {
+            for (int dz = -CLEAR_RADIUS; dz <= CLEAR_RADIUS; dz++) {
+                for (int dy = 0; dy <= 5; dy++) {
+                    clearBlock(world, originX + dx, originY + dy, originZ + dz);
+                }
             }
         }
     }
 
-    private void paintLane(World world, Vector3d start, Vector3d end) {
-        int startX = floorToInt(start.getX());
-        int startZ = floorToInt(start.getZ());
-        int endX = floorToInt(end.getX());
-        int endZ = floorToInt(end.getZ());
-        int y = floorToInt(Math.min(start.getY(), end.getY())) - 1;
-        int steps = Math.max(Math.abs(endX - startX), Math.abs(endZ - startZ));
-        if (steps <= 0) {
-            return;
-        }
-        for (int step = 0; step <= steps; step++) {
-            double progress = step / (double) steps;
-            int x = floorToInt(startX + ((endX - startX) * progress));
-            int z = floorToInt(startZ + ((endZ - startZ) * progress));
-            setBlock(world, x, y, z, FLOOR_BLOCK);
-            clearBlock(world, x, y + 1, z);
-            clearBlock(world, x, y + 2, z);
-        }
-    }
-
-    private void clearAnchorColumns(World world, List<Vector3d> positions) {
-        for (Vector3d position : positions) {
-            int x = floorToInt(position.getX());
-            int y = floorToInt(position.getY());
-            int z = floorToInt(position.getZ());
-            clearBlock(world, x, y, z);
-            clearBlock(world, x, y + 1, z);
-            clearBlock(world, x, y + 2, z);
-        }
+    private Set<Vector3i> paintCastleMarker(World world, Vector3d center) {
+        int originX = floorToInt(center.getX());
+        int originY = floorToInt(center.getY()) - 1;
+        int originZ = floorToInt(center.getZ());
+        Set<Vector3i> placedBlocks = new LinkedHashSet<>();
+        recordBlock(world, originX, originY, originZ, FLOOR_BLOCK, placedBlocks);
+        recordBlock(world, originX, originY + 1, originZ, castleAssetConfig.castleBlockType(), placedBlocks);
+        recordBlock(world, originX, originY + 2, originZ, castleAssetConfig.castleBlockType(), placedBlocks);
+        recordBlock(world, originX, originY + 3, originZ, castleAssetConfig.castleBlockType(), placedBlocks);
+        clearBlock(world, originX, originY + 4, originZ);
+        return Set.copyOf(placedBlocks);
     }
 
     private void setBlock(World world, int x, int y, int z, String blockKey) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, blockKey);
-        }
+        blockPainter.placeBlock(world, x, y, z, blockKey);
     }
 
     private void clearBlock(World world, int x, int y, int z) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, 0);
-        }
+        blockPainter.clearBlock(world, x, y, z);
+    }
+
+    private void recordBlock(World world, int x, int y, int z, String blockKey, Set<Vector3i> placedBlocks) {
+        setBlock(world, x, y, z, blockKey);
+        placedBlocks.add(new Vector3i(x, y, z));
     }
 
     private int floorToInt(double value) {

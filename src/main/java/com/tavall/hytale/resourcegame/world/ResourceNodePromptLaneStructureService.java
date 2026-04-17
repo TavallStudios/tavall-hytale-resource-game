@@ -1,8 +1,6 @@
-package com.tavall.hytale.resourcegame.world;
+﻿package com.tavall.hytale.resourcegame.world;
 
-import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 
 /**
  * Builds a compact platform under the node prompt lane so alignment teleports land on stable ground.
@@ -27,17 +25,11 @@ public final class ResourceNodePromptLaneStructureService {
     }
 
     private void setBlock(World world, int x, int y, int z, String blockKey) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, blockKey);
-        }
+        world.setBlock(x, y, z, blockKey);
     }
 
     private void clearBlock(World world, int x, int y, int z) {
-        WorldChunk chunk = world.getChunk(ChunkUtil.indexChunkFromBlock(x, z));
-        if (chunk != null) {
-            chunk.setBlock(x, y, z, 0);
-        }
+        world.setBlock(x, y, z, "Empty");
     }
 
     private int floorToInt(double value) {

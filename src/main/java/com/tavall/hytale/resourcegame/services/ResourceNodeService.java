@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 public final class ResourceNodeService implements IResourceNodeService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(ResourceNodeService.class.getName());
     private static final int DEFAULT_ROUTE_DIVISOR = 3;
+    private static final long DEFAULT_NODE_LIFETIME_SECONDS = 14_400L;
 
     private final IPlayerSessionStore sessionStore;
     private final IPlayerGameStateService gameStateService;
@@ -55,8 +56,10 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
 
     @Override
     public List<ResourceNodeData> listNodes(PlayerGameState state) {
-        return metadataOf(state, resolveNow(state)).resourceNodes().stream()
+        Instant now = resolveNow(state);
+        return metadataOf(state, now).resourceNodes().stream()
                 .map(this::normalizeNode)
+                .filter(node -> !node.isExpired(now))
                 .sorted(Comparator.comparing(ResourceNodeData::placedAt).thenComparing(ResourceNodeData::nodeId))
                 .toList();
     }
@@ -152,7 +155,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 stockProfile.maxStock(),
                 stockProfile.maxStock(),
                 stockProfile.regenerationPerTick(),
-                now
+                now,
+                now.plusSeconds(stockProfile.lifetimeSeconds())
         ));
         return persistNodeState(session, nodes, now);
     }
@@ -226,7 +230,12 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 return new ResourceNodePillageResult(state, false, 0, "Node is exhausted. Let it regenerate before pillaging again.");
             }
             ResourceInventory resources = addResource(state.resources(), node.resourceType(), reward);
-            nodes.set(index, node.withCurrentStock(summary.currentStock() - reward));
+            int remainingStock = summary.currentStock() - reward;
+            if (remainingStock <= 0) {
+                nodes.remove(index);
+            } else {
+                nodes.set(index, node.withCurrentStock(remainingStock));
+            }
             PlayerGameState updatedState = rewriteNodes(state.withResources(resources, now), nodes, now);
             session.updateGameState(updatedState);
             gameStateService.cacheState(session.playerId(), updatedState);
@@ -235,7 +244,9 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                     updatedState,
                     true,
                     reward,
-                    "Pillage complete: +" + reward + " " + node.resourceType().name().toLowerCase(Locale.ROOT) + "."
+                    remainingStock <= 0
+                            ? "Pillage complete: +" + reward + " " + node.resourceType().name().toLowerCase(Locale.ROOT) + ". Node depleted and removed."
+                            : "Pillage complete: +" + reward + " " + node.resourceType().name().toLowerCase(Locale.ROOT) + "."
             );
         }
         return new ResourceNodePillageResult(state, false, 0, "Node not found.");
@@ -285,11 +296,11 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 case WOOD -> wood += actualGain;
                 case IRON -> iron += actualGain;
             }
-            int replenishedStock = Math.min(
-                    node.maxStock(),
-                    Math.max(0, node.currentStock() - actualGain) + node.regenerationPerTick()
-            );
-            updatedNodes.add(node.withCurrentStock(replenishedStock));
+            int remainingStock = Math.max(0, node.currentStock() - actualGain);
+            if (remainingStock <= 0) {
+                continue;
+            }
+            updatedNodes.add(node.withCurrentStock(remainingStock));
         }
         return rewriteNodes(
                 normalizedState.withResources(new ResourceInventory(food, wood, iron), now),
@@ -299,6 +310,7 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     }
 
     public String summaryLine(PlayerGameState state, ResourceNodeData node, int index) {
+        Instant now = resolveNow(state);
         ResourceNodeSummary summary = summary(state, node);
         return "#" + index + " " + node.resourceType() + " " + shortId(node.nodeId())
                 + " @ " + node.worldName()
@@ -311,7 +323,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 + " " + summary.stockStatus()
                 + " | pillage +" + summary.pillageReward()
                 + " | regen " + summary.regenerationPerTick()
-                + " | +" + summary.gainPerTick() + "/tick";
+                + " | +" + summary.gainPerTick() + "/tick"
+                + lifetimeSummary(node, now);
     }
 
     private PlayerGameState mutateNodeAssignment(UUID playerId, UUID nodeId, int troopValue, boolean deltaMode, Instant now) {
@@ -454,14 +467,19 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
         int currentStock = node.currentStock() <= 0 && node.maxStock() <= 0
                 ? maxStock
                 : Math.min(maxStock, Math.max(0, node.currentStock()));
-        return node.withStockProfile(currentStock, maxStock, regenerationPerTick);
+        Instant expiresAt = node.expiresAt();
+        if (expiresAt == null && node.placedAt() != null && stockProfile.lifetimeSeconds() > 0L) {
+            expiresAt = node.placedAt().plusSeconds(stockProfile.lifetimeSeconds());
+        }
+        return node.withStockProfile(currentStock, maxStock, regenerationPerTick).withLifetime(expiresAt);
     }
 
     private NodeStockProfile stockProfile(ResourceType resourceType) {
         return switch (resourceType) {
-            case FOOD -> new NodeStockProfile(180, 10);
-            case WOOD -> new NodeStockProfile(150, 7);
-            case IRON -> new NodeStockProfile(120, 5);
+            // Prototype lifetime window. Final node timing remains tunable in gameplay balancing.
+            case FOOD -> new NodeStockProfile(180, 10, DEFAULT_NODE_LIFETIME_SECONDS);
+            case WOOD -> new NodeStockProfile(150, 7, DEFAULT_NODE_LIFETIME_SECONDS);
+            case IRON -> new NodeStockProfile(120, 5, DEFAULT_NODE_LIFETIME_SECONDS);
         };
     }
 
@@ -481,5 +499,14 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
     private String shortId(UUID nodeId) {
         String value = nodeId.toString();
         return value.substring(0, Math.min(8, value.length()));
+    }
+
+    private String lifetimeSummary(ResourceNodeData node, Instant now) {
+        long remainingSeconds = node.remainingLifetimeSeconds(now);
+        if (remainingSeconds < 0L) {
+            return "";
+        }
+        long remainingMinutes = Math.max(1L, Math.round(remainingSeconds / 60.0D));
+        return " | ttl " + remainingMinutes + "m";
     }
 }

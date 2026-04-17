@@ -5,6 +5,8 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.Frozen;
+import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -24,6 +26,8 @@ public final class NpcVisualSpawner implements IDependencyInjectableConcrete {
         Ref<EntityStore> ref = pair.first();
         if (ref != null && ref.isValid()) {
             store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(label)));
+            store.putComponent(ref, Nameplate.getComponentType(), new Nameplate(label));
+            store.ensureComponent(ref, Frozen.getComponentType());
             applyScale(store, ref, scale);
         }
         return ref;
@@ -35,6 +39,7 @@ public final class NpcVisualSpawner implements IDependencyInjectableConcrete {
             Pair<Ref<EntityStore>, ?> pair = NPCPlugin.get().spawnEntity(store, roleIndex, positions.get(index), Vector3f.ZERO, null, null);
             Ref<EntityStore> ref = pair.first();
             if (ref != null && ref.isValid()) {
+                store.ensureComponent(ref, Frozen.getComponentType());
                 applyScale(store, ref, scale);
                 refs.add(ref);
             }

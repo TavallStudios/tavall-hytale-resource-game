@@ -1,5 +1,7 @@
 package com.tavall.hytale.resourcegame.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 
 import java.time.Instant;
@@ -21,6 +23,36 @@ public final class ResourceNodeData {
     private final int maxStock;
     private final int regenerationPerTick;
     private final Instant placedAt;
+    private final Instant expiresAt;
+
+    @JsonCreator
+    public ResourceNodeData(
+            @JsonProperty("nodeId") UUID nodeId,
+            @JsonProperty("resourceType") ResourceType resourceType,
+            @JsonProperty("worldName") String worldName,
+            @JsonProperty("x") double x,
+            @JsonProperty("y") double y,
+            @JsonProperty("z") double z,
+            @JsonProperty("assignedTroops") int assignedTroops,
+            @JsonProperty("currentStock") int currentStock,
+            @JsonProperty("maxStock") int maxStock,
+            @JsonProperty("regenerationPerTick") int regenerationPerTick,
+            @JsonProperty("placedAt") Instant placedAt,
+            @JsonProperty("expiresAt") Instant expiresAt
+    ) {
+        this.nodeId = Objects.requireNonNull(nodeId, "nodeId");
+        this.resourceType = Objects.requireNonNull(resourceType, "resourceType");
+        this.worldName = Objects.requireNonNull(worldName, "worldName");
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.assignedTroops = Math.max(0, assignedTroops);
+        this.maxStock = Math.max(0, maxStock);
+        this.currentStock = Math.max(0, Math.min(currentStock, this.maxStock));
+        this.regenerationPerTick = Math.max(0, regenerationPerTick);
+        this.placedAt = Objects.requireNonNull(placedAt, "placedAt");
+        this.expiresAt = expiresAt;
+    }
 
     public ResourceNodeData(
             UUID nodeId,
@@ -35,17 +67,7 @@ public final class ResourceNodeData {
             int regenerationPerTick,
             Instant placedAt
     ) {
-        this.nodeId = Objects.requireNonNull(nodeId, "nodeId");
-        this.resourceType = Objects.requireNonNull(resourceType, "resourceType");
-        this.worldName = Objects.requireNonNull(worldName, "worldName");
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.assignedTroops = Math.max(0, assignedTroops);
-        this.maxStock = Math.max(0, maxStock);
-        this.currentStock = Math.max(0, Math.min(currentStock, this.maxStock));
-        this.regenerationPerTick = Math.max(0, regenerationPerTick);
-        this.placedAt = Objects.requireNonNull(placedAt, "placedAt");
+        this(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt, null);
     }
 
     public UUID nodeId() {
@@ -92,19 +114,38 @@ public final class ResourceNodeData {
         return placedAt;
     }
 
+    public Instant expiresAt() {
+        return expiresAt;
+    }
+
     public CastleLocationData location() {
         return new CastleLocationData(worldName, x, y, z);
     }
 
     public ResourceNodeData withAssignedTroops(int assignedTroops) {
-        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt, expiresAt);
     }
 
     public ResourceNodeData withCurrentStock(int currentStock) {
-        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt, expiresAt);
     }
 
     public ResourceNodeData withStockProfile(int currentStock, int maxStock, int regenerationPerTick) {
-        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt);
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt, expiresAt);
+    }
+
+    public ResourceNodeData withLifetime(Instant expiresAt) {
+        return new ResourceNodeData(nodeId, resourceType, worldName, x, y, z, assignedTroops, currentStock, maxStock, regenerationPerTick, placedAt, expiresAt);
+    }
+
+    public boolean isExpired(Instant now) {
+        return expiresAt != null && now != null && !expiresAt.isAfter(now);
+    }
+
+    public long remainingLifetimeSeconds(Instant now) {
+        if (expiresAt == null || now == null) {
+            return -1L;
+        }
+        return Math.max(0L, expiresAt.getEpochSecond() - now.getEpochSecond());
     }
 }

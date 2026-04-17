@@ -27,6 +27,13 @@ public final class CastleInfoPage extends BaseUiPage {
         uiCommandBuilder.append(PAGE_DOCUMENT);
         uiCommandBuilder.set("#CastleId.Text", state().castleId() == null ? "Unassigned" : state().castleId().toString());
         uiCommandBuilder.set("#WorldName.Text", state().castleLocation() == null ? "Unknown" : state().castleLocation().worldName());
+        uiCommandBuilder.set("#OwnerName.Text", context().playerName());
+        uiCommandBuilder.set("#TroopCount.Text", String.valueOf(state().populationSummary().troopCount()));
+        uiCommandBuilder.set("#MightCount.Text", String.valueOf(state().populationSummary().might()));
+        uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Right-click the focused castle in-world to reopen this command surface." : context().feedbackMessage());
+        bind(uiEventBuilder, "#AttackButton", UiActions.CASTLE_ATTACK_PLACEHOLDER);
+        bind(uiEventBuilder, "#FriendButton", UiActions.CASTLE_FRIEND_PLACEHOLDER);
+        bind(uiEventBuilder, "#GuildButton", UiActions.CASTLE_GUILD_PLACEHOLDER);
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 

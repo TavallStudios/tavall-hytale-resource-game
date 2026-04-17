@@ -9,6 +9,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IDebugCommandService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
@@ -40,6 +41,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
     private final IInteriorWorldService interiorWorldService;
     private final ICastleSpawnService castleSpawnService;
     private final ICastlePromptLaneService castlePromptLaneService;
+    private final IFocusedWorldOverrideService focusedWorldOverrideService;
     private final IPlayerDataService playerDataService;
     private final IPlayerGameStateService gameStateService;
     private final IInfrastructureHealthService infrastructureHealthService;
@@ -64,6 +66,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
             IInteriorWorldService interiorWorldService,
             ICastleSpawnService castleSpawnService,
             ICastlePromptLaneService castlePromptLaneService,
+            IFocusedWorldOverrideService focusedWorldOverrideService,
             IPlayerDataService playerDataService,
             IPlayerGameStateService gameStateService,
             IInfrastructureHealthService infrastructureHealthService,
@@ -87,6 +90,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
         this.interiorWorldService = Objects.requireNonNull(interiorWorldService, "interiorWorldService");
         this.castleSpawnService = Objects.requireNonNull(castleSpawnService, "castleSpawnService");
         this.castlePromptLaneService = Objects.requireNonNull(castlePromptLaneService, "castlePromptLaneService");
+        this.focusedWorldOverrideService = Objects.requireNonNull(focusedWorldOverrideService, "focusedWorldOverrideService");
         this.playerDataService = Objects.requireNonNull(playerDataService, "playerDataService");
         this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.infrastructureHealthService = Objects.requireNonNull(infrastructureHealthService, "infrastructureHealthService");
@@ -114,6 +118,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
                 interiorWorldService,
                 castleSpawnService,
                 castlePromptLaneService,
+                focusedWorldOverrideService,
                 playerDataService,
                 gameStateService,
                 infrastructureHealthService,

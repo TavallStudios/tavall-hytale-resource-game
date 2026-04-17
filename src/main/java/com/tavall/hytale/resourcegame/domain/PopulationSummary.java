@@ -42,6 +42,13 @@ public final class PopulationSummary {
         return troopMetaData;
     }
 
+    /**
+     * Total military power represented by this aggregate population.
+     */
+    public int might() {
+        return troopMetaData.estimatedMight(troopCount);
+    }
+
     public AgingState agingState() {
         return agingState;
     }

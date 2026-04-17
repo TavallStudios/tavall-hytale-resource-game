@@ -33,7 +33,6 @@ import java.util.logging.Level;
  */
 public final class PlayerDataService implements IPlayerDataService, IDependencyInjectableConcrete {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-    private static final double INITIAL_CASTLE_Z_OFFSET = 4.0;
 
     private final IPlayerProfileService profileService;
     private final IPlayerGameStateService gameStateService;
@@ -108,19 +107,35 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
 
         CastleLocationData spawnLocation = resolveSpawnLocation(player);
         return AsyncTask.supplyAsync(() -> initializeSession(player, spawnLocation))
-                .thenApply(session -> {
+                .thenCompose(session -> {
                     if (session == null) {
-                        return null;
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    CompletableFuture<PlayerSession> readyFuture = new CompletableFuture<>();
+                    if (player.getWorld() == null) {
+                        sessionStore.put(session);
+                        LOGGER.at(Level.WARNING).log(
+                                "Session initialized for %s (%s) without a live world reference.",
+                                player.getDisplayName(),
+                                player.getUuid()
+                        );
+                        readyFuture.complete(session);
+                        return readyFuture;
                     }
                     player.getWorld().execute(() -> {
-                        sessionStore.put(session);
-                        castleSpawnService.ensureCastleSpawned(player, session.gameState().castleLocation());
-                        resourceNodeVisualService.ensureNodes(player.getUuid(), session.gameState());
-                        buildingVisualService.ensureBuildings(player.getUuid(), session.gameState());
-                        clockService.applyToWorld(player.getWorld());
+                        try {
+                            sessionStore.put(session);
+                            castleSpawnService.ensureCastleSpawned(player, session.gameState().castleLocation());
+                            resourceNodeVisualService.ensureNodes(player.getUuid(), session.gameState());
+                            buildingVisualService.ensureBuildings(player.getUuid(), session.gameState());
+                            clockService.applyToWorld(player.getWorld());
+                            LOGGER.at(Level.INFO).log("Session initialized for %s (%s).", player.getDisplayName(), player.getUuid());
+                            readyFuture.complete(session);
+                        } catch (Throwable throwable) {
+                            readyFuture.completeExceptionally(throwable);
+                        }
                     });
-                    LOGGER.at(Level.INFO).log("Session initialized for %s (%s).", player.getDisplayName(), player.getUuid());
-                    return session;
+                    return readyFuture;
                 });
     }
 
@@ -140,7 +155,7 @@ public final class PlayerDataService implements IPlayerDataService, IDependencyI
                 player.getWorld().getName(),
                 spawnPosition.getX(),
                 spawnPosition.getY() + 1.0D,
-                spawnPosition.getZ() + INITIAL_CASTLE_Z_OFFSET
+                spawnPosition.getZ()
         );
     }
 }

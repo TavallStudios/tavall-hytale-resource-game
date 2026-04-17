@@ -8,4 +8,10 @@ public interface IKingdomClockService extends IDependencyInjectableInterface {
     KingdomClockState snapshot();
 
     void applyToWorld(World world);
+
+    void applyToAllWorlds();
+
+    void start();
+
+    void shutdown();
 }

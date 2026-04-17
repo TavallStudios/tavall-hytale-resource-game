@@ -15,6 +15,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisua
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSiteVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleSpawnService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorWorldService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
@@ -59,6 +60,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private final IInteriorWorldService interiorWorldService;
     private final ICastleSpawnService castleSpawnService;
     private final ICastlePromptLaneService castlePromptLaneService;
+    private final IFocusedWorldOverrideService focusedWorldOverrideService;
     private final IPlayerDataService playerDataService;
     private final IPlayerGameStateService gameStateService;
     private final IInfrastructureHealthService infrastructureHealthService;
@@ -82,6 +84,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             IInteriorWorldService interiorWorldService,
             ICastleSpawnService castleSpawnService,
             ICastlePromptLaneService castlePromptLaneService,
+            IFocusedWorldOverrideService focusedWorldOverrideService,
             IPlayerDataService playerDataService,
             IPlayerGameStateService gameStateService,
             IInfrastructureHealthService infrastructureHealthService,
@@ -106,6 +109,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         this.interiorWorldService = interiorWorldService;
         this.castleSpawnService = castleSpawnService;
         this.castlePromptLaneService = castlePromptLaneService;
+        this.focusedWorldOverrideService = focusedWorldOverrideService;
         this.playerDataService = playerDataService;
         this.gameStateService = gameStateService;
         this.infrastructureHealthService = infrastructureHealthService;
@@ -222,6 +226,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         }
         context.sendMessage(Message.raw("Citizens: " + state.populationSummary().citizenCount()).color("yellow"));
         context.sendMessage(Message.raw("Troops: " + state.populationSummary().troopCount()).color("yellow"));
+        context.sendMessage(Message.raw("Might: " + state.populationSummary().might()).color("yellow"));
         context.sendMessage(Message.raw("Food: " + state.resources().food()).color("yellow"));
         context.sendMessage(Message.raw("Wood: " + state.resources().wood()).color("yellow"));
         context.sendMessage(Message.raw("Iron: " + state.resources().iron()).color("yellow"));
@@ -237,8 +242,27 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private void handleCastle(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
         PlayerGameState state = session.gameState();
         if (tokens.size() == 1) {
-            castleSpawnService.ensureCastleSpawned(player, state.castleLocation());
-            context.sendMessage(Message.raw("Castle spawn requested.").color("green"));
+            if (state.castleLocation() == null) {
+                context.sendMessage(Message.raw("Castle data not available yet.").color("red"));
+                return;
+            }
+            context.sendMessage(Message.raw(
+                    "Castle | "
+                            + state.castleLocation().worldName()
+                            + " "
+                            + (int) state.castleLocation().x()
+                            + ", "
+                            + (int) state.castleLocation().y()
+                            + ", "
+                            + (int) state.castleLocation().z()
+                            + " | asset "
+                            + state.castleAssetType()
+                            + " | troops "
+                            + state.populationSummary().troopCount()
+                            + " | might "
+                            + state.populationSummary().might()
+            ).color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd castle [align|move|open|goto|refresh]").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
@@ -249,6 +273,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                     return;
                 }
                 castlePromptLaneService.alignPlayer(player, state.castleLocation());
+                focusedWorldOverrideService.markCastle(player.getUuid());
                 context.sendMessage(Message.raw("Aligned player with castle prompt lane.").color("green"));
             }
             case "move" -> placementCommandSupport.handle(context, player, List.of("place", "castle"));
@@ -264,7 +289,12 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                 playerTeleportService.teleport(player, playerTeleportService.standingPosition(player, state.castleLocation().standingBaseVector()));
                 context.sendMessage(Message.raw("Teleported to castle.").color("green"));
             }
-            default -> context.sendMessage(Message.raw("Usage: /kd castle [align|move|open|goto]").color("yellow"));
+            case "refresh" -> {
+                castleSpawnService.ensureCastleSpawned(player, state.castleLocation());
+                castleSiteVisualService.refreshSite(session.playerId(), state);
+                context.sendMessage(Message.raw("Castle visuals refreshed.").color("green"));
+            }
+            default -> context.sendMessage(Message.raw("Usage: /kd castle [align|move|open|goto|refresh]").color("yellow"));
         }
     }
 

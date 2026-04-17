@@ -47,7 +47,7 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
     }
 
     public void teleport(Player player, Vector3d position) {
-        teleport(player, player.getWorld(), position);
+        teleport(player, null, position);
     }
 
     public void teleport(Player player, World targetWorld, Vector3d position) {
@@ -80,6 +80,30 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
             }
         }
         applyTeleport.run();
+    }
+
+    public void moveWithoutTeleportAck(Player player, Vector3d position) {
+        Ref<EntityStore> ref = player.getPlayerRef().getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Runnable applyMove = () -> {
+            TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
+            if (transform == null) {
+                return;
+            }
+            transform.teleportPosition(position);
+            store.putComponent(ref, TransformComponent.getComponentType(), transform);
+        };
+        if (store.getExternalData() instanceof EntityStore entityStore) {
+            World currentWorld = entityStore.getWorld();
+            if (currentWorld != null) {
+                currentWorld.execute(applyMove);
+                return;
+            }
+        }
+        applyMove.run();
     }
 
     public void orientPlayer(Player player, Vector3d lookTarget) {

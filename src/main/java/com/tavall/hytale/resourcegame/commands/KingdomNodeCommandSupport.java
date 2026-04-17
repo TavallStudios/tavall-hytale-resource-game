@@ -1,10 +1,14 @@
 package com.tavall.hytale.resourcegame.commands;
 
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldInteractionService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IFocusedWorldOverrideService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodePromptLaneService;
@@ -38,6 +42,7 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
     private final IPlacementModeService placementModeService;
     private final IResourceNodePromptLaneService promptLaneService;
     private final IFocusedWorldInteractionService focusedWorldInteractionService;
+    private final IFocusedWorldOverrideService focusedWorldOverrideService;
 
     public KingdomNodeCommandSupport(
             IResourceNodeService resourceNodeService,
@@ -46,7 +51,8 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
             IPlayerTeleportService playerTeleportService,
             IPlacementModeService placementModeService,
             IResourceNodePromptLaneService promptLaneService,
-            IFocusedWorldInteractionService focusedWorldInteractionService
+            IFocusedWorldInteractionService focusedWorldInteractionService,
+            IFocusedWorldOverrideService focusedWorldOverrideService
     ) {
         this.resourceNodeService = Objects.requireNonNull(resourceNodeService, "resourceNodeService");
         this.resourceNodeVisualService = Objects.requireNonNull(resourceNodeVisualService, "resourceNodeVisualService");
@@ -55,6 +61,7 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
         this.placementModeService = Objects.requireNonNull(placementModeService, "placementModeService");
         this.promptLaneService = Objects.requireNonNull(promptLaneService, "promptLaneService");
         this.focusedWorldInteractionService = Objects.requireNonNull(focusedWorldInteractionService, "focusedWorldInteractionService");
+        this.focusedWorldOverrideService = Objects.requireNonNull(focusedWorldOverrideService, "focusedWorldOverrideService");
     }
 
     public void handle(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
@@ -92,7 +99,13 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
             return;
         }
         placementModeService.armNodePlacement(player, resourceType);
-        context.sendMessage(Message.raw(resourceType + " node placement armed. Click the ground or use /kd place confirm.").color("green"));
+        Vector3i currentBlock = currentStandingBlock(player);
+        if (currentBlock == null) {
+            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
+            return;
+        }
+        var result = placementModeService.confirmPlacement(player, currentBlock);
+        context.sendMessage(Message.raw(result.message()).color(result.success() ? "green" : "red"));
     }
 
     private void handleNodeList(CommandContext context, PlayerGameState state) {
@@ -145,6 +158,7 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
             return;
         }
         promptLaneService.alignPlayer(player, node.get());
+        focusedWorldOverrideService.markNode(session.playerId(), node.get().nodeId());
         context.sendMessage(Message.raw("Aligned player with node prompt lane for " + node.get().resourceType() + ".").color("green"));
     }
 
@@ -319,5 +333,18 @@ public final class KingdomNodeCommandSupport implements IDependencyInjectableCon
             context.sendMessage(Message.raw("Node not found.").color("red"));
         }
         return node;
+    }
+
+    private Vector3i currentStandingBlock(Player player) {
+        TransformComponent transform = player.getTransformComponent();
+        if (transform == null || transform.getPosition() == null) {
+            return null;
+        }
+        Vector3d position = transform.getPosition();
+        return new Vector3i(
+                (int) Math.floor(position.getX()),
+                (int) Math.floor(position.getY()) - 1,
+                (int) Math.floor(position.getZ())
+        );
     }
 }

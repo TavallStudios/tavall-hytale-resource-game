@@ -5,6 +5,7 @@ import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
@@ -95,7 +96,13 @@ public final class KingdomBuildingCommandSupport implements IDependencyInjectabl
             return;
         }
         placementModeService.armBuildingPlacement(player, buildingType);
-        context.sendMessage(Message.raw(buildingType.displayName() + " placement armed. Click ground or use /kd place confirm.").color("green"));
+        Vector3i currentBlock = currentStandingBlock(player);
+        if (currentBlock == null) {
+            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
+            return;
+        }
+        var result = placementModeService.confirmPlacement(player, currentBlock);
+        context.sendMessage(Message.raw(result.message()).color(result.success() ? "green" : "red"));
     }
 
     private void handleStage(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
@@ -292,6 +299,19 @@ public final class KingdomBuildingCommandSupport implements IDependencyInjectabl
                 (int) Math.floor(anchor.getX()),
                 (int) Math.floor(anchor.getY()) - 1,
                 (int) Math.floor(anchor.getZ())
+        );
+    }
+
+    private Vector3i currentStandingBlock(Player player) {
+        TransformComponent transform = player.getTransformComponent();
+        if (transform == null || transform.getPosition() == null) {
+            return null;
+        }
+        Vector3d position = transform.getPosition();
+        return new Vector3i(
+                (int) Math.floor(position.getX()),
+                (int) Math.floor(position.getY()) - 1,
+                (int) Math.floor(position.getZ())
         );
     }
 }

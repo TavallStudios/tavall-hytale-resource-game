@@ -43,7 +43,7 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
         }
         return switch (buildingType.areaType()) {
             case CASTLE_SURFACE -> state.castleLocation() == null ? null : state.castleLocation().worldName();
-            case CASTLE_INTERIOR -> interiorInstanceService.worldNameFor(playerId);
+            case CASTLE_INTERIOR -> state.castleLocation() == null ? null : state.castleLocation().worldName();
         };
     }
 
@@ -60,8 +60,8 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
             case FARMSTEAD -> surfaceOffset(state, 8.0D, 0.0D, 8.0D);
             case LUMBER_MILL -> surfaceOffset(state, -8.0D, 0.0D, 8.0D);
             case IRON_WORKS -> surfaceOffset(state, 8.0D, 0.0D, -8.0D);
-            case BARRACKS -> interiorOffset(playerId, -5.0D, 0.0D, 0.0D);
-            case WORKSHOP -> interiorOffset(playerId, 5.0D, 0.0D, 0.0D);
+            case BARRACKS -> interiorOffset(state, -5.0D, 0.0D, 0.0D);
+            case WORKSHOP -> interiorOffset(state, 5.0D, 0.0D, 0.0D);
         };
     }
 
@@ -76,8 +76,8 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
         );
     }
 
-    private Vector3d interiorOffset(UUID playerId, double offsetX, double offsetY, double offsetZ) {
-        Vector3d origin = interiorLayoutService.originFor(playerId);
+    private Vector3d interiorOffset(PlayerGameState state, double offsetX, double offsetY, double offsetZ) {
+        Vector3d origin = interiorLayoutService.originForCastle(state.castleLocation());
         return new Vector3d(
                 origin.getX() + offsetX,
                 origin.getY() + offsetY,
