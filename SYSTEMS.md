@@ -27,6 +27,7 @@ This repo is split into explicit gameplay and infrastructure systems. `SYSTEMS.m
 ## Main cross-system flows
 - Player join: persistence -> session bootstrap -> castle spawn -> castle/node visuals -> clock apply.
 - Castle or node interaction: prompt-lane alignment -> focus planner -> interaction service -> UI navigator -> page model -> UI action service.
+- Worker anchor interaction: interior anchor ref -> worker NPC interaction service -> citizens/troops UI with worker-specific feedback.
 - Placement: command arms placement -> preview markers -> interact or aim-confirm -> placement service -> visuals/persistence refresh.
 - Economy tick: planner -> population/resource updates -> node depletion/regeneration -> castle/node visual refresh -> async persist.
 - Interior: command/UI -> interior world service -> teleport -> interior visuals/tutorial -> exit back to castle world.
@@ -35,3 +36,4 @@ This repo is split into explicit gameplay and infrastructure systems. `SYSTEMS.m
 - Native world-click bot input is still limited by the shared bot client surface, so placement bots use align -> look -> focus -> interact or aim-confirm instead of direct click packets.
 - Placement is now explicit for castles and nodes. Future build stations, castle props, and upgrade pads should be routed through the same placement stack instead of adding one-off commands.
 - Placeholder NPC visuals are still doing a lot of explanatory work. The system boundaries are intended to make replacing those with better assets straightforward.
+- Castle and node world visuals now prefer simple block markers first and entity/NPC labels second, so a player can read ownership, resources, troops, and Might before opening menus.
