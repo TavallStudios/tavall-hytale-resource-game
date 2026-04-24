@@ -33,7 +33,7 @@ public final class ProtectedBlockPlaceSystem extends EntityEventSystem<EntitySto
         if (world == null) {
             return;
         }
-        if (protectionService.isProtected(world.getName(), event.getTargetBlock())) {
+        if (protectionService.isPlacementRestricted(world.getName(), event.getTargetBlock())) {
             event.setCancelled(true);
         }
     }

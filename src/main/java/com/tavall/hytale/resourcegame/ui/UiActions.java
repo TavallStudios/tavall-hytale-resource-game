@@ -25,9 +25,11 @@ public final class UiActions {
     public static final String NODE_RECALL_ALL = "NodeRecallAll";
     public static final String NODE_PILLAGE = "NodePillage";
     public static final String BUILDING_START_UPGRADE = "BuildingStartUpgrade";
+    public static final String BUILDING_CANCEL_UPGRADE = "BuildingCancelUpgrade";
     public static final String BUILDING_OPEN_DETAIL = "BuildingOpenDetail";
     public static final String PROMOTE = "PromoteCitizen";
     public static final String DEMOTE = "DemoteTroop";
+    public static final String RUN_COMMAND = "RunCommand";
     public static final String CLOSE = "Close";
 
     private UiActions() {

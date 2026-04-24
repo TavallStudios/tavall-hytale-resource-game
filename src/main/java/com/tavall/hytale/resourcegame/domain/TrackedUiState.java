@@ -10,10 +10,12 @@ import java.util.Objects;
 public final class TrackedUiState {
     private final UiPageType pageType;
     private final UiNavigationContext navigationContext;
+    private final String stateFingerprint;
 
-    public TrackedUiState(UiPageType pageType, UiNavigationContext navigationContext) {
+    public TrackedUiState(UiPageType pageType, UiNavigationContext navigationContext, String stateFingerprint) {
         this.pageType = Objects.requireNonNull(pageType, "pageType");
         this.navigationContext = Objects.requireNonNull(navigationContext, "navigationContext");
+        this.stateFingerprint = stateFingerprint == null ? "" : stateFingerprint;
     }
 
     public UiPageType pageType() {
@@ -22,5 +24,9 @@ public final class TrackedUiState {
 
     public UiNavigationContext navigationContext() {
         return navigationContext;
+    }
+
+    public String stateFingerprint() {
+        return stateFingerprint;
     }
 }

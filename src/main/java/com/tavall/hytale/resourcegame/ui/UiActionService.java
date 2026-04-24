@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.ui;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.command.system.CommandManager;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
@@ -120,6 +121,21 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
             uiNavigator.open(UiPageType.DEBUG_NAVIGATOR, player, context, state);
             return;
         }
+        if (UiActions.RUN_COMMAND.equals(action)) {
+            String payload = eventData.payload();
+            if (payload == null || payload.isBlank()) {
+                if (state != null) {
+                    uiNavigator.open(UiPageType.DEBUG_NAVIGATOR, player, context.withFeedback("No command payload provided."), state);
+                }
+                return;
+            }
+            String commandLine = payload.startsWith("/") ? payload : ("/" + payload);
+            CommandManager.get().handleCommand(player, commandLine);
+            if (state != null) {
+                uiNavigator.open(UiPageType.DEBUG_NAVIGATOR, player, context.withFeedback("Queued: " + commandLine), state);
+            }
+            return;
+        }
         if (UiActions.CASTLE_ATTACK_PLACEHOLDER.equals(action) && state != null) {
             uiNavigator.open(UiPageType.CASTLE_INFO, player, context.withFeedback("Attack planning is a placeholder. Castle defense, scouting, and permission rules are tracked in TODO."), state);
             return;
@@ -168,6 +184,13 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
         }
         if (context.selectedBuildingId() != null) {
             handleBuildingAction(player, context, action, playerId, context.selectedBuildingId());
+        }
+    }
+
+    @Override
+    public void handleClose(Player player, UiNavigationContext context) {
+        if (context != null && context.playerId() != null) {
+            uiNavigator.clearTrackedPage(context.playerId());
         }
     }
 
@@ -264,10 +287,14 @@ public final class UiActionService implements IUiActionService, IDependencyInjec
     }
 
     private void handleBuildingAction(Player player, UiNavigationContext context, String action, UUID playerId, UUID buildingId) {
-        if (!UiActions.BUILDING_START_UPGRADE.equals(action)) {
+        BuildingMutationResult mutationResult = switch (action) {
+            case UiActions.BUILDING_START_UPGRADE -> buildingService.startUpgrade(playerId, buildingId, Instant.now());
+            case UiActions.BUILDING_CANCEL_UPGRADE -> buildingService.cancelUpgrade(playerId, buildingId, Instant.now());
+            default -> null;
+        };
+        if (mutationResult == null) {
             return;
         }
-        BuildingMutationResult mutationResult = buildingService.startUpgrade(playerId, buildingId, Instant.now());
         PlayerGameState updatedState = mutationResult.state();
         if (updatedState == null) {
             return;

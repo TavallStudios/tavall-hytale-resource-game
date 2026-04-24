@@ -6,6 +6,7 @@ import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastlePromptLaneService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayout;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneLayoutService;
 import com.tavall.hytale.resourcegame.world.CastlePromptLaneStructureService;
@@ -33,7 +34,10 @@ public final class CastlePromptLaneService implements ICastlePromptLaneService, 
     public void alignPlayer(Player player, CastleLocationData castleLocation) {
         CastlePromptLaneLayout layout = layoutService.createLayout(castleLocation);
         Vector3d lookTarget = castleLocation.toVector();
-        player.getWorld().execute(() -> {
+        if (player == null || player.getWorld() == null) {
+            return;
+        }
+        WorldTasks.executeSafe(player.getWorld(), "CastlePromptLaneService.alignPlayer", () -> {
             structureService.ensurePromptLane(player.getWorld(), layout);
             playerTeleportService.orientPlayer(player, lookTarget);
         });

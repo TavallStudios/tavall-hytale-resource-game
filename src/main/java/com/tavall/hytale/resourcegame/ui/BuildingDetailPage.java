@@ -74,6 +74,7 @@ public final class BuildingDetailPage extends BaseUiPage {
             uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Use the button below to start the next upgrade when resources allow." : context().feedbackMessage());
         }
         bind(uiEventBuilder, "#StartUpgradeButton", UiActions.BUILDING_START_UPGRADE);
+        bind(uiEventBuilder, "#CancelUpgradeButton", UiActions.BUILDING_CANCEL_UPGRADE);
         bind(uiEventBuilder, "#OverviewButton", UiActions.OPEN_BUILDINGS);
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }

@@ -9,6 +9,7 @@ import com.tavall.hytale.resourcegame.domain.KingdomClockState;
 import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -46,7 +47,7 @@ public final class KingdomClockService implements IKingdomClockService, IDepende
         if (world == null) {
             return;
         }
-        world.execute(() -> applyToWorldConfig(world));
+        WorldTasks.executeSafe(world, "KingdomClockService.applyToWorldConfig", () -> applyToWorldConfig(world));
     }
 
     private void applyToWorldConfig(World world) {

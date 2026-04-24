@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,7 +41,16 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
 
     public void teleportAfterDelay(Player player, Vector3d position, long delayMillis) {
         HytaleServer.SCHEDULED_EXECUTOR.schedule(
-                () -> player.getWorld().execute(() -> teleport(player, position)),
+                () -> {
+                    if (player == null || position == null) {
+                        return;
+                    }
+                    World world = player.getWorld();
+                    if (world == null) {
+                        return;
+                    }
+                    WorldTasks.executeSafe(world, "PlayerTeleportService.teleportAfterDelay", () -> teleport(player, position));
+                },
                 delayMillis,
                 TimeUnit.MILLISECONDS
         );
@@ -62,7 +72,9 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
                 return;
             }
             HeadRotation headRotation = store.getComponent(ref, HeadRotation.getComponentType());
-            Vector3f bodyRotation = transform.getRotation().clone();
+            Vector3f bodyRotation = transform.getRotation() == null
+                    ? new Vector3f(0.0F, 0.0F, 0.0F)
+                    : transform.getRotation().clone();
             Vector3f headRotationValue = headRotation != null
                     ? headRotation.getRotation().clone()
                     : bodyRotation.clone();
@@ -70,12 +82,13 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
             Teleport teleport = targetWorld == null
                     ? Teleport.createForPlayer(targetTransform)
                     : Teleport.createForPlayer(targetWorld, targetTransform);
-            store.putComponent(ref, Teleport.getComponentType(), teleport.setHeadRotation(headRotationValue));
+            store.removeComponentIfExists(ref, Teleport.getComponentType());
+            store.addComponent(ref, Teleport.getComponentType(), teleport.setHeadRotation(headRotationValue));
         };
         if (store.getExternalData() instanceof EntityStore entityStore) {
             World currentWorld = entityStore.getWorld();
             if (currentWorld != null) {
-                currentWorld.execute(applyTeleport);
+                WorldTasks.executeSafe(currentWorld, "PlayerTeleportService.teleport", applyTeleport);
                 return;
             }
         }
@@ -99,7 +112,7 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
         if (store.getExternalData() instanceof EntityStore entityStore) {
             World currentWorld = entityStore.getWorld();
             if (currentWorld != null) {
-                currentWorld.execute(applyMove);
+                WorldTasks.executeSafe(currentWorld, "PlayerTeleportService.moveWithoutTeleportAck", applyMove);
                 return;
             }
         }
@@ -146,10 +159,11 @@ public final class PlayerTeleportService implements IPlayerTeleportService, IDep
         if (store.getExternalData() instanceof EntityStore entityStore) {
             World currentWorld = entityStore.getWorld();
             if (currentWorld != null) {
-                currentWorld.execute(applyOrientation);
+                WorldTasks.executeSafe(currentWorld, "PlayerTeleportService.orientPlayer", applyOrientation);
                 return;
             }
         }
         applyOrientation.run();
     }
+
 }

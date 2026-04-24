@@ -30,7 +30,7 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
 
     public void handle(CommandContext context, Player player, List<String> tokens) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd place castle|node <type>|building <type>|confirm [here]|cancel|status|preview").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd place castle|node <type>|building <type>|confirm [here]|move <dx> [dy] <dz>|cancel|status|preview").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
@@ -39,6 +39,7 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             case "node" -> armNodePlacement(context, player, tokens);
             case "building" -> armBuildingPlacement(context, player, tokens);
             case "confirm" -> sendResult(context, confirmPlacement(context, player, tokens));
+            case "move" -> sendResult(context, handleMove(context, player, tokens));
             case "cancel" -> sendResult(context, placementModeService.cancelPlacement(player.getUuid()));
             case "status" -> sendStatus(context, player);
             case "preview" -> sendResult(context, placementModeService.refreshPreview(player));
@@ -48,12 +49,7 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
 
     private void armCastlePlacement(CommandContext context, Player player) {
         placementModeService.armCastlePlacement(player);
-        Vector3i currentBlock = currentStandingBlock(player);
-        if (currentBlock == null) {
-            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
-            return;
-        }
-        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
+        context.sendMessage(Message.raw("Castle placement armed. Look at the ground and click, or use /kd place confirm.").color("green"));
     }
 
     private void armNodePlacement(CommandContext context, Player player, List<String> tokens) {
@@ -67,12 +63,7 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             return;
         }
         placementModeService.armNodePlacement(player, resourceType);
-        Vector3i currentBlock = currentStandingBlock(player);
-        if (currentBlock == null) {
-            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
-            return;
-        }
-        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
+        context.sendMessage(Message.raw(resourceType + " node placement armed. Look at the ground and click, or use /kd place confirm.").color("green"));
     }
 
     private void armBuildingPlacement(CommandContext context, Player player, List<String> tokens) {
@@ -86,12 +77,7 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             return;
         }
         placementModeService.armBuildingPlacement(player, buildingType);
-        Vector3i currentBlock = currentStandingBlock(player);
-        if (currentBlock == null) {
-            context.sendMessage(Message.raw("Unable to resolve current standing block.").color("red"));
-            return;
-        }
-        sendResult(context, placementModeService.confirmPlacement(player, currentBlock));
+        context.sendMessage(Message.raw(buildingType.displayName() + " placement armed. Look at the ground and click, or use /kd place confirm.").color("green"));
     }
 
     private void sendStatus(CommandContext context, Player player) {
@@ -130,6 +116,29 @@ public final class KingdomPlacementCommandSupport implements IDependencyInjectab
             return placementModeService.confirmPlacement(player, currentBlock);
         }
         return placementModeService.confirmPlacementFromAim(player);
+    }
+
+    private PlacementResult handleMove(CommandContext context, Player player, List<String> tokens) {
+        if (tokens.size() < 4) {
+            context.sendMessage(Message.raw("Usage: /kd place move <dx> [dy] <dz>").color("yellow"));
+            return PlacementResult.failure("Missing move arguments.");
+        }
+        try {
+            int dx = Integer.parseInt(tokens.get(2));
+            int dy;
+            int dz;
+            if (tokens.size() >= 5) {
+                dy = Integer.parseInt(tokens.get(3));
+                dz = Integer.parseInt(tokens.get(4));
+            } else {
+                dy = 0;
+                dz = Integer.parseInt(tokens.get(3));
+            }
+            return placementModeService.moveStagedPlacement(player, new Vector3i(dx, dy, dz));
+        } catch (NumberFormatException ex) {
+            context.sendMessage(Message.raw("Move values must be whole numbers.").color("red"));
+            return PlacementResult.failure("Move values must be whole numbers.");
+        }
     }
 
     private Vector3i currentStandingBlock(Player player) {

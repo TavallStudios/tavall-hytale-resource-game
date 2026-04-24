@@ -9,6 +9,7 @@ import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleEconomySimulationService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingVisualService;
@@ -74,6 +75,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     private final KingdomNodeCommandSupport nodeCommandSupport;
     private final KingdomPlacementCommandSupport placementCommandSupport;
     private final KingdomInteractionCommandSupport interactionCommandSupport;
+    private final KingdomHologramCommandSupport hologramCommandSupport;
 
     public KingdomCommand(
             String name,
@@ -99,7 +101,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             KingdomBuildingCommandSupport buildingCommandSupport,
             KingdomNodeCommandSupport nodeCommandSupport,
             KingdomPlacementCommandSupport placementCommandSupport,
-            KingdomInteractionCommandSupport interactionCommandSupport
+            KingdomInteractionCommandSupport interactionCommandSupport,
+            KingdomHologramCommandSupport hologramCommandSupport
     ) {
         super(name, "Kingdom debug command");
         this.sessionStore = sessionStore;
@@ -123,6 +126,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         this.nodeCommandSupport = nodeCommandSupport;
         this.placementCommandSupport = placementCommandSupport;
         this.interactionCommandSupport = interactionCommandSupport;
+        this.hologramCommandSupport = hologramCommandSupport;
         addAliases("kd");
         setPermissionGroup(GameMode.Adventure);
         setAllowsExtraArguments(true);
@@ -166,6 +170,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                         case "focus" -> interactionCommandSupport.handleFocus(context, player);
                         case "interact" -> interactionCommandSupport.handleInteract(context, player);
                         case "scan" -> handleScan(context, player);
+                        case "hologram", "holo" -> hologramCommandSupport.handle(context, player, tokens);
                         case "scene" -> handleScene(context, player, tokens, session);
                         case "bootstrap" -> handleBootstrap(context, player, session);
                         case "tick" -> handleTick(context, tokens);
@@ -299,11 +304,68 @@ public final class KingdomCommand extends AbstractAsyncCommand {
     }
 
     private void handleInterior(Player player, List<String> tokens) {
-        if (tokens.size() > 1 && "exit".equalsIgnoreCase(tokens.get(1))) {
-            interiorWorldService.exitInterior(player);
-        } else {
+        if (tokens.size() == 1) {
             interiorWorldService.enterInterior(player);
+            return;
         }
+        String action = tokens.get(1).toLowerCase(Locale.ROOT);
+        switch (action) {
+            case "exit" -> interiorWorldService.exitInterior(player);
+            case "rebuild", "regen" -> {
+                Player target = player;
+                if (tokens.size() > 2) {
+                    target = resolveOnlinePlayer(tokens.get(2));
+                    if (target == null) {
+                        player.sendMessage(Message.raw("Player not found for interior rebuild.").color("red"));
+                        return;
+                    }
+                }
+                interiorWorldService.rebuildInterior(target);
+                if (!target.getUuid().equals(player.getUuid())) {
+                    player.sendMessage(Message.raw("Interior rebuild queued for " + target.getDisplayName() + ".").color("green"));
+                }
+            }
+            case "move" -> {
+                Player target = player;
+                if (tokens.size() > 2) {
+                    target = resolveOnlinePlayer(tokens.get(2));
+                    if (target == null) {
+                        player.sendMessage(Message.raw("Player not found for interior move.").color("red"));
+                        return;
+                    }
+                }
+                interiorWorldService.moveInterior(target);
+                if (!target.getUuid().equals(player.getUuid())) {
+                    player.sendMessage(Message.raw("Interior move queued for " + target.getDisplayName() + ".").color("green"));
+                }
+            }
+            default -> interiorWorldService.enterInterior(player);
+        }
+    }
+
+    private Player resolveOnlinePlayer(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        String normalized = token.trim();
+        for (var playerRef : Universe.get().getPlayers()) {
+            var ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                continue;
+            }
+            var store = ref.getStore();
+            Player candidate = store.getComponent(ref, Player.getComponentType());
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate.getDisplayName() != null && candidate.getDisplayName().equalsIgnoreCase(normalized)) {
+                return candidate;
+            }
+            if (candidate.getUuid() != null && candidate.getUuid().toString().startsWith(normalized)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     private void handleCitizens(CommandContext context, List<String> tokens, UUID playerId) {
@@ -443,7 +505,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd ui [ui_type]").color("yellow"));
         context.sendMessage(Message.raw("/kd data").color("yellow"));
         context.sendMessage(Message.raw("/kd castle [align|move|open|goto]").color("yellow"));
-        context.sendMessage(Message.raw("/kd interior [exit]").color("yellow"));
+        context.sendMessage(Message.raw("/kd interior [exit|rebuild|move] [player_name|uuid_prefix]").color("yellow"));
         context.sendMessage(Message.raw("/kd citizens add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd troops add|set <amount>").color("yellow"));
         context.sendMessage(Message.raw("/kd resources add|set <type> <amount>").color("yellow"));
@@ -453,6 +515,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd focus").color("yellow"));
         context.sendMessage(Message.raw("/kd interact").color("yellow"));
         context.sendMessage(Message.raw("/kd scan").color("yellow"));
+        context.sendMessage(Message.raw("/kd hologram spawn <text>|stack <line1|line2|...>|clear").color("yellow"));
         context.sendMessage(Message.raw("/kd bootstrap").color("yellow"));
         context.sendMessage(Message.raw("/kd scene refresh").color("yellow"));
         context.sendMessage(Message.raw("/kd tick run [count]").color("yellow"));

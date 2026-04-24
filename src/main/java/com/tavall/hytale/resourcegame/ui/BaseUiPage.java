@@ -67,6 +67,7 @@ public abstract class BaseUiPage extends InteractiveCustomUIPage<UiActionEventDa
                 getClass().getSimpleName()
         );
         if (UiActions.CLOSE.equals(action)) {
+            actionService.handleClose(player, context);
             close();
             return;
         }

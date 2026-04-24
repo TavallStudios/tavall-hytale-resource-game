@@ -137,6 +137,7 @@ import com.tavall.hytale.resourcegame.commands.KingdomInteractionCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomBuildingCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomNodeCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomPlacementCommandSupport;
+import com.tavall.hytale.resourcegame.commands.KingdomHologramCommandSupport;
 import org.tavall.abstractcache.semantic.SemanticCache;
 
 import java.util.logging.Logger;
@@ -207,6 +208,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         BuildingPlacementPlanner buildingPlacementPlanner = new BuildingPlacementPlanner(
                 buildingService,
                 interiorInstanceService,
+                gameStateService,
                 interiorLayoutService
         );
         ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), economyPlanner);
@@ -228,7 +230,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         );
 
         CastleSpawnService castleSpawnService = new CastleSpawnService(castleAssetConfig, sessionStore, castleSiteVisualService);
-        PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig);
+        PopulationDisplayService populationDisplayService = new PopulationDisplayService(populationDisplayConfig, worldLabelService);
         InteriorTourMarkerService interiorTourMarkerService = new InteriorTourMarkerService(worldLabelService);
         PlayerTeleportService playerTeleportService = new PlayerTeleportService();
         IpHashService ipHashService = new IpHashService();
@@ -324,6 +326,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 clockService,
                 resourceNodeVisualService,
                 buildingVisualService,
+                populationDisplayService,
+                interiorTourMarkerService,
                 uiNavigator
         );
         CastleInteractionService castleInteractionService = new CastleInteractionService(
@@ -372,6 +376,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 focusedWorldOverrideService
         );
         KingdomInteractionCommandSupport interactionCommandSupport = new KingdomInteractionCommandSupport(focusedWorldInteractionService);
+        KingdomHologramCommandSupport hologramCommandSupport = new KingdomHologramCommandSupport(worldLabelService);
         DebugCommandService debugCommandService = new DebugCommandService(
                 sessionStore,
                 uiNavigator,
@@ -395,7 +400,8 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 buildingCommandSupport,
                 nodeCommandSupport,
                 placementCommandSupport,
-                interactionCommandSupport
+                interactionCommandSupport,
+                hologramCommandSupport
         );
 
         registerSingleton(IPlayerProfileService.class, profileService);
@@ -440,6 +446,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(KingdomNodeCommandSupport.class, nodeCommandSupport);
         registerSingleton(KingdomPlacementCommandSupport.class, placementCommandSupport);
         registerSingleton(KingdomInteractionCommandSupport.class, interactionCommandSupport);
+        registerSingleton(KingdomHologramCommandSupport.class, hologramCommandSupport);
         registerSingleton(IDebugCommandService.class, debugCommandService);
         registerSingleton(IInfrastructureHealthService.class, infrastructureHealthService);
         registerSingleton(WorldLabelService.class, worldLabelService);

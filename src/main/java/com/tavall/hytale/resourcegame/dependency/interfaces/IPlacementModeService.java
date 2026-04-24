@@ -32,6 +32,8 @@ public interface IPlacementModeService extends IDependencyInjectableInterface {
 
     PlacementResult refreshPreview(Player player);
 
+    PlacementResult moveStagedPlacement(Player player, Vector3i delta);
+
     PlacementResult confirmPlacement(Player player, Vector3i targetBlock);
 
     PlacementResult confirmPlacementFromAim(Player player);

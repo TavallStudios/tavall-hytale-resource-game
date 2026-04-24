@@ -10,6 +10,9 @@ import com.tavall.hytale.resourcegame.ui.UpgradeActionState;
 public interface IUiActionService extends IDependencyInjectableInterface {
     void handle(Player player, UiNavigationContext context, UiActionEventData eventData);
 
+    default void handleClose(Player player, UiNavigationContext context) {
+    }
+
     UpgradeActionState promoteActionState(PlayerGameState state);
 
     UpgradeActionState demoteActionState(PlayerGameState state);

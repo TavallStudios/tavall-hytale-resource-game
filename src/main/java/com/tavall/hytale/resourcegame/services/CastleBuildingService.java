@@ -215,6 +215,64 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
     }
 
     @Override
+    public BuildingMutationResult spawnBuilding(UUID playerId, BuildingType buildingType, int level, String worldName, Vector3d worldPosition, Instant now) {
+        PlayerSession session = sessionStore.get(playerId);
+        if (session == null) {
+            return new BuildingMutationResult(null, false, "No active session.");
+        }
+        if (buildingType == null || worldName == null || worldPosition == null) {
+            return BuildingMutationResult.unchanged(session.gameState(), "Building spawn data is incomplete.");
+        }
+        int safeLevel = Math.max(1, Math.min(buildingType.maxLevel(), level));
+        PlayerGameState state = session.gameState();
+        String blockedReason = validatePlacement(playerId, state, buildingType, worldName, worldPosition);
+        if (blockedReason != null) {
+            return BuildingMutationResult.unchanged(state, blockedReason);
+        }
+        Vector3d origin = areaOrigin(playerId, state, buildingType.areaType());
+        List<CastleBuildingData> updatedBuildings = new ArrayList<>(listBuildings(state));
+        for (int index = 0; index < updatedBuildings.size(); index++) {
+            CastleBuildingData candidate = updatedBuildings.get(index);
+            if (candidate.buildingType() != buildingType) {
+                continue;
+            }
+            CastleBuildingData updatedBuilding = new CastleBuildingData(
+                    candidate.buildingId(),
+                    buildingType,
+                    worldPosition.getX() - origin.getX(),
+                    worldPosition.getY() - origin.getY(),
+                    worldPosition.getZ() - origin.getZ(),
+                    safeLevel,
+                    safeLevel,
+                    candidate.placedAt(),
+                    null,
+                    null
+            );
+            updatedBuildings.set(index, updatedBuilding);
+            PlayerGameState updatedState = rewriteBuildings(state, updatedBuildings, now);
+            persistSessionState(session, updatedState, now);
+            return BuildingMutationResult.changed(updatedState, buildingType.displayName() + " set to level " + safeLevel + '.');
+        }
+
+        CastleBuildingData newBuilding = new CastleBuildingData(
+                UUID.randomUUID(),
+                buildingType,
+                worldPosition.getX() - origin.getX(),
+                worldPosition.getY() - origin.getY(),
+                worldPosition.getZ() - origin.getZ(),
+                safeLevel,
+                safeLevel,
+                now,
+                null,
+                null
+        );
+        updatedBuildings.add(newBuilding);
+        PlayerGameState updatedState = rewriteBuildings(state, updatedBuildings, now);
+        persistSessionState(session, updatedState, now);
+        return BuildingMutationResult.changed(updatedState, buildingType.displayName() + " spawned at level " + safeLevel + '.');
+    }
+
+    @Override
     public BuildingMutationResult startUpgrade(UUID playerId, UUID buildingId, Instant now) {
         PlayerSession session = sessionStore.get(playerId);
         if (session == null) {
@@ -257,6 +315,42 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
             );
             persistSessionState(session, updatedState, now);
             return BuildingMutationResult.changed(updatedState, building.buildingType().displayName() + " upgrade started.");
+        }
+        return BuildingMutationResult.unchanged(state, "Building not found.");
+    }
+
+    @Override
+    public BuildingMutationResult cancelUpgrade(UUID playerId, UUID buildingId, Instant now) {
+        PlayerSession session = sessionStore.get(playerId);
+        if (session == null) {
+            return new BuildingMutationResult(null, false, "No active session.");
+        }
+        PlayerGameState state = session.gameState();
+        List<CastleBuildingData> updatedBuildings = new ArrayList<>(listBuildings(state));
+        for (int index = 0; index < updatedBuildings.size(); index++) {
+            CastleBuildingData building = updatedBuildings.get(index);
+            if (!building.buildingId().equals(buildingId)) {
+                continue;
+            }
+            if (!building.isUnderConstruction()) {
+                return BuildingMutationResult.unchanged(state, building.buildingType().displayName() + " has no active upgrade.");
+            }
+            BuildingLevelProfile targetProfile = building.buildingType().levelProfile(building.targetLevel());
+            ResourceInventory refunded = state.resources()
+                    .withFood(state.resources().food() + targetProfile.foodCost())
+                    .withWood(state.resources().wood() + targetProfile.woodCost())
+                    .withIron(state.resources().iron() + targetProfile.ironCost());
+            updatedBuildings.set(index, building.cancelConstruction());
+            PlayerGameState refundedState = state.withResources(refunded, now);
+            PlayerGameState updatedState = rewriteBuildings(refundedState, updatedBuildings, now);
+            persistSessionState(session, updatedState, now);
+            return BuildingMutationResult.changed(
+                    updatedState,
+                    building.buildingType().displayName() + " upgrade canceled. Refunded "
+                            + targetProfile.foodCost() + "F "
+                            + targetProfile.woodCost() + "W "
+                            + targetProfile.ironCost() + "I."
+            );
         }
         return BuildingMutationResult.unchanged(state, "Building not found.");
     }
@@ -457,7 +551,8 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
                     metadata.jobCounts(),
                     metadata.onboardingProgress(),
                     metadata.resourceNodes(),
-                    metadata.castleBuildings()
+                    metadata.castleBuildings(),
+                    metadata.interiorInstanceIndex()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode building metadata. Falling back to empty buildings. " + ex.getMessage());
@@ -474,7 +569,8 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
                 metadata.jobCounts(),
                 metadata.onboardingProgress(),
                 metadata.resourceNodes(),
-                buildings
+                buildings,
+                metadata.interiorInstanceIndex()
         );
         try {
             return state.withMetadataJson(objectMapper.writeValueAsString(updatedMetadata), now);
@@ -490,14 +586,15 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
             }
             return new Vector3d(state.castleLocation().x(), state.castleLocation().y(), state.castleLocation().z());
         }
-        return interiorLayoutService.createLayoutForCastle(state.castleLocation()).origin();
+        int interiorIndex = gameStateService.interiorInstanceIndex(state);
+        return interiorLayoutService.createLayoutForCastle(state.castleLocation(), interiorIndex).origin();
     }
 
     private String areaWorldName(UUID playerId, PlayerGameState state, BuildingAreaType areaType) {
         if (areaType == BuildingAreaType.CASTLE_SURFACE) {
             return state.castleLocation() == null ? null : state.castleLocation().worldName();
         }
-        return state.castleLocation() == null ? null : state.castleLocation().worldName();
+        return playerId == null ? null : interiorInstanceService.worldNameFor(playerId);
     }
 
     private double progressRatio(CastleBuildingData buildingData, Instant now) {

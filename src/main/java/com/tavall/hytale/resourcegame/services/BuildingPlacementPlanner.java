@@ -4,6 +4,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleBuildingService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceService;
+import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingSummary;
@@ -21,15 +22,18 @@ import java.util.UUID;
 public final class BuildingPlacementPlanner implements IDependencyInjectableConcrete {
     private final ICastleBuildingService buildingService;
     private final IInteriorInstanceService interiorInstanceService;
+    private final IPlayerGameStateService gameStateService;
     private final InteriorLayoutService interiorLayoutService;
 
     public BuildingPlacementPlanner(
             ICastleBuildingService buildingService,
             IInteriorInstanceService interiorInstanceService,
+            IPlayerGameStateService gameStateService,
             InteriorLayoutService interiorLayoutService
     ) {
         this.buildingService = Objects.requireNonNull(buildingService, "buildingService");
         this.interiorInstanceService = Objects.requireNonNull(interiorInstanceService, "interiorInstanceService");
+        this.gameStateService = Objects.requireNonNull(gameStateService, "gameStateService");
         this.interiorLayoutService = Objects.requireNonNull(interiorLayoutService, "interiorLayoutService");
     }
 
@@ -43,7 +47,7 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
         }
         return switch (buildingType.areaType()) {
             case CASTLE_SURFACE -> state.castleLocation() == null ? null : state.castleLocation().worldName();
-            case CASTLE_INTERIOR -> state.castleLocation() == null ? null : state.castleLocation().worldName();
+            case CASTLE_INTERIOR -> interiorInstanceService.worldNameFor(playerId);
         };
     }
 
@@ -77,7 +81,8 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
     }
 
     private Vector3d interiorOffset(PlayerGameState state, double offsetX, double offsetY, double offsetZ) {
-        Vector3d origin = interiorLayoutService.originForCastle(state.castleLocation());
+        int interiorIndex = gameStateService.interiorInstanceIndex(state);
+        Vector3d origin = interiorLayoutService.originForCastle(state.castleLocation(), interiorIndex);
         return new Vector3d(
                 origin.getX() + offsetX,
                 origin.getY() + offsetY,

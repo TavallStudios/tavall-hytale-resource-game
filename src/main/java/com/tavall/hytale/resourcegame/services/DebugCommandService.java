@@ -25,6 +25,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
 import com.tavall.hytale.resourcegame.commands.KingdomInteractionCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomBuildingCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomCommand;
+import com.tavall.hytale.resourcegame.commands.KingdomHologramCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomNodeCommandSupport;
 import com.tavall.hytale.resourcegame.commands.KingdomPlacementCommandSupport;
 import java.util.List;
@@ -57,6 +58,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
     private final KingdomNodeCommandSupport nodeCommandSupport;
     private final KingdomPlacementCommandSupport placementCommandSupport;
     private final KingdomInteractionCommandSupport interactionCommandSupport;
+    private final KingdomHologramCommandSupport hologramCommandSupport;
 
     public DebugCommandService(
             IPlayerSessionStore sessionStore,
@@ -81,7 +83,8 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
             KingdomBuildingCommandSupport buildingCommandSupport,
             KingdomNodeCommandSupport nodeCommandSupport,
             KingdomPlacementCommandSupport placementCommandSupport,
-            KingdomInteractionCommandSupport interactionCommandSupport
+            KingdomInteractionCommandSupport interactionCommandSupport,
+            KingdomHologramCommandSupport hologramCommandSupport
     ) {
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore");
         this.uiNavigator = Objects.requireNonNull(uiNavigator, "uiNavigator");
@@ -106,6 +109,7 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
         this.nodeCommandSupport = Objects.requireNonNull(nodeCommandSupport, "nodeCommandSupport");
         this.placementCommandSupport = Objects.requireNonNull(placementCommandSupport, "placementCommandSupport");
         this.interactionCommandSupport = Objects.requireNonNull(interactionCommandSupport, "interactionCommandSupport");
+        this.hologramCommandSupport = Objects.requireNonNull(hologramCommandSupport, "hologramCommandSupport");
     }
 
     public List<AbstractAsyncCommand> commands() {
@@ -133,7 +137,8 @@ public final class DebugCommandService implements IDebugCommandService, IDepende
                 buildingCommandSupport,
                 nodeCommandSupport,
                 placementCommandSupport,
-                interactionCommandSupport
+                interactionCommandSupport,
+                hologramCommandSupport
         );
         return List.of(kingdom);
  }

@@ -1,29 +1,20 @@
 package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.entity.Frozen;
-import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
-import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.AudioComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
-import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
-import com.hypixel.hytale.server.core.modules.entity.component.MovementAudioComponent;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.npc.NPCPlugin;
-import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import com.tavall.hytale.resourcegame.config.PopulationDisplayConfig;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import com.tavall.hytale.resourcegame.interior.InteriorLayout;
 import com.tavall.hytale.resourcegame.population.PopulationDisplayRefs;
 import com.tavall.hytale.resourcegame.domain.PopulationSummary;
-import it.unimi.dsi.fastutil.Pair;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,55 +27,108 @@ import java.util.logging.Logger;
 public final class PopulationDisplayService implements PopulationDisplayGateway {
     private static final Logger LOGGER = Logger.getLogger(PopulationDisplayService.class.getName());
     private final PopulationDisplayConfig displayConfig;
+    private final WorldLabelService worldLabelService;
     private final Map<UUID, PopulationDisplayRefs> displayRefs = new ConcurrentHashMap<>();
 
-    public PopulationDisplayService(PopulationDisplayConfig displayConfig) {
+    public PopulationDisplayService(PopulationDisplayConfig displayConfig, WorldLabelService worldLabelService) {
         this.displayConfig = displayConfig;
+        this.worldLabelService = worldLabelService;
     }
 
     @Override
     public void ensureDisplays(UUID playerId, World world, InteriorLayout layout, PopulationSummary summary) {
-        PopulationDisplayRefs existing = displayRefs.get(playerId);
-        if (existing != null && hasCompleteAnchors(existing, layout)) {
-            updateDisplays(playerId, summary);
+        if (playerId == null || world == null || layout == null || summary == null) {
             return;
         }
-        Store<EntityStore> store = world.getEntityStore().getStore();
-        EnumMap<CitizenJobType, Ref<EntityStore>> workerRefs = new EnumMap<>(CitizenJobType.class);
-        for (CitizenJobType jobType : CitizenJobType.values()) {
-            Vector3d position = layout.workerAnchors().get(jobType);
-            if (position == null) {
-                continue;
-            }
-            workerRefs.put(jobType, spawnAnchor(store, position, workerDisplayLabel(summary, jobType)));
+        PopulationDisplayRefs existing = displayRefs.get(playerId);
+        DisplaySnapshot snapshot = buildSnapshot(layout, summary);
+        if (canReuse(existing, world, snapshot)) {
+            return;
         }
-        Ref<EntityStore> troops = workerRefs.get(CitizenJobType.SOLDIER);
-        displayRefs.put(playerId, new PopulationDisplayRefs(workerRefs, troops));
-        LOGGER.info(() -> String.format(
-                "Population displays ready for %s in world %s. citizens=%s troops=%s",
-                playerId,
-                world.getName(),
-                summary.citizenCount(),
-                summary.troopCount()
-        ));
+        clearDisplays(playerId);
+        spawnDisplays(playerId, world, snapshot);
     }
 
     @Override
     public void updateDisplays(UUID playerId, PopulationSummary summary) {
-        PopulationDisplayRefs refs = displayRefs.get(playerId);
+        if (playerId == null || summary == null) {
+            return;
+        }
+        PopulationDisplayRefs existing = displayRefs.get(playerId);
+        if (existing == null) {
+            return;
+        }
+        World world = resolveWorld(existing.worldName());
+        if (world == null) {
+            clearDisplays(playerId);
+            return;
+        }
+        DisplaySnapshot snapshot = buildSnapshot(existing.workerPositions(), summary);
+        if (canReuse(existing, world, snapshot)) {
+            return;
+        }
+        clearDisplays(playerId);
+        spawnDisplays(playerId, world, snapshot);
+    }
+
+    private void spawnDisplays(UUID playerId, World world, DisplaySnapshot snapshot) {
+        if (playerId == null || world == null || snapshot == null) {
+            return;
+        }
+        EnumMap<CitizenJobType, Ref<EntityStore>> workerRefs = new EnumMap<>(CitizenJobType.class);
+        for (Map.Entry<CitizenJobType, Vector3d> entry : snapshot.workerPositions().entrySet()) {
+            CitizenJobType jobType = entry.getKey();
+            Vector3d position = entry.getValue();
+            if (position == null) {
+                continue;
+            }
+            workerRefs.put(jobType, spawnAnchor(world, position, snapshot.workerLabels().get(jobType)));
+        }
+        Ref<EntityStore> troopsRef = workerRefs.get(CitizenJobType.SOLDIER);
+        displayRefs.put(playerId, new PopulationDisplayRefs(
+                world.getName(),
+                snapshot.workerPositions(),
+                snapshot.workerLabels(),
+                workerRefs,
+                troopsRef,
+                snapshot.troopLabel()
+        ));
+        LOGGER.info(() -> String.format(
+                "Population displays ready for %s in world %s. citizens=%s troops=%s",
+                playerId,
+                world.getName(),
+                snapshot.citizenCount(),
+                snapshot.troopCount()
+        ));
+    }
+
+    @Override
+    public void clearDisplays(UUID playerId) {
+        PopulationDisplayRefs refs = displayRefs.remove(playerId);
         if (refs == null) {
             return;
         }
-        for (Map.Entry<CitizenJobType, Ref<EntityStore>> entry : refs.workerRefs().entrySet()) {
-            updateDisplay(entry.getValue(), workerDisplayLabel(summary, entry.getKey()));
+        refs.allRefs().forEach(this::removeSafely);
+    }
+
+    private void removeSafely(Ref<EntityStore> ref) {
+        if (ref == null || !ref.isValid()) {
+            return;
         }
-        updateDisplay(refs.troopsRef(), troopDisplayLabel(summary));
-        LOGGER.info(() -> String.format(
-                "Population displays updated for %s. citizens=%s troops=%s",
-                playerId,
-                summary.citizenCount(),
-                summary.troopCount()
-        ));
+        Store<EntityStore> store = ref.getStore();
+        Runnable remove = () -> {
+            if (ref.isValid()) {
+                store.removeEntity(ref, RemoveReason.REMOVE);
+            }
+        };
+        if (store.getExternalData() instanceof EntityStore entityStore) {
+            World world = entityStore.getWorld();
+            if (world != null) {
+                WorldTasks.executeSafe(world, "PopulationDisplayService.removeSafely", remove);
+                return;
+            }
+        }
+        remove.run();
     }
 
     public Optional<CitizenJobType> resolveWorkerType(UUID playerId, Ref<EntityStore> targetRef) {
@@ -111,6 +155,64 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
             }
         }
         return true;
+    }
+
+    private boolean canReuse(PopulationDisplayRefs refs, World world, DisplaySnapshot snapshot) {
+        if (refs == null || world == null || snapshot == null) {
+            return false;
+        }
+        if (!world.getName().equals(refs.worldName())) {
+            return false;
+        }
+        if (!snapshot.workerLabels().equals(refs.workerLabels())) {
+            return false;
+        }
+        if (!snapshot.troopLabel().equals(refs.troopLabel())) {
+            return false;
+        }
+        return hasCompleteAnchors(refs, snapshot.workerPositions().keySet());
+    }
+
+    private boolean hasCompleteAnchors(PopulationDisplayRefs refs, Iterable<CitizenJobType> requiredJobTypes) {
+        if (refs == null || refs.troopsRef() == null || !refs.troopsRef().isValid()) {
+            return false;
+        }
+        for (CitizenJobType jobType : requiredJobTypes) {
+            Ref<EntityStore> ref = refs.workerRefs().get(jobType);
+            if (ref == null || !ref.isValid()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private DisplaySnapshot buildSnapshot(InteriorLayout layout, PopulationSummary summary) {
+        return buildSnapshot(layout.workerAnchors(), summary);
+    }
+
+    private DisplaySnapshot buildSnapshot(Map<CitizenJobType, Vector3d> workerPositions, PopulationSummary summary) {
+        EnumMap<CitizenJobType, Vector3d> positions = new EnumMap<>(CitizenJobType.class);
+        if (workerPositions != null) {
+            positions.putAll(workerPositions);
+        }
+        EnumMap<CitizenJobType, String> labels = new EnumMap<>(CitizenJobType.class);
+        for (Map.Entry<CitizenJobType, Vector3d> entry : positions.entrySet()) {
+            labels.put(entry.getKey(), workerDisplayLabel(summary, entry.getKey()));
+        }
+        return new DisplaySnapshot(
+                positions,
+                labels,
+                troopDisplayLabel(summary),
+                summary.citizenCount(),
+                summary.troopCount()
+        );
+    }
+
+    private World resolveWorld(String worldName) {
+        if (worldName == null || worldName.isBlank()) {
+            return null;
+        }
+        return com.hypixel.hytale.server.core.universe.Universe.get().getWorld(worldName);
     }
 
     private int workerCount(PopulationSummary summary, CitizenJobType jobType) {
@@ -147,41 +249,12 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
         };
     }
 
-    private Ref<EntityStore> spawnAnchor(Store<EntityStore> store, Vector3d position, String label) {
-        NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = new NpcRoleResolver().resolveRoleIndex(displayConfig.npcRoleName());
-        if (roleIndex < 0) {
+    private Ref<EntityStore> spawnAnchor(World world, Vector3d position, String label) {
+        if (world == null || position == null || label == null || label.isBlank() || worldLabelService == null) {
             return null;
         }
-        Pair<Ref<EntityStore>, NPCEntity> pair = npcPlugin.spawnEntity(store, roleIndex, position, Vector3f.ZERO, null, null);
-        Ref<EntityStore> ref = pair.first();
-        if (ref != null && ref.isValid()) {
-            store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(label)));
-            store.putComponent(ref, Nameplate.getComponentType(), new Nameplate(label));
-            store.ensureComponent(ref, Frozen.getComponentType());
-            store.ensureComponent(ref, Intangible.getComponentType());
-            store.ensureComponent(ref, Invulnerable.getComponentType());
-            silenceAnchor(store, ref);
-        }
-        return ref;
-    }
-
-    private void updateDisplay(Ref<EntityStore> ref, String label) {
-        if (ref == null || !ref.isValid()) {
-            return;
-        }
-        Store<EntityStore> store = ref.getStore();
-        store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(label)));
-        store.putComponent(ref, Nameplate.getComponentType(), new Nameplate(label));
-        store.ensureComponent(ref, Frozen.getComponentType());
-        store.ensureComponent(ref, Intangible.getComponentType());
-        store.ensureComponent(ref, Invulnerable.getComponentType());
-        silenceAnchor(store, ref);
-    }
-
-    private void silenceAnchor(Store<EntityStore> store, Ref<EntityStore> ref) {
-        store.removeComponent(ref, AudioComponent.getComponentType());
-        store.removeComponent(ref, MovementAudioComponent.getComponentType());
+        Vector3d labelPosition = new Vector3d(position.getX(), position.getY() + 1.15D, position.getZ());
+        return worldLabelService.spawnLabel(world, labelPosition, label);
     }
 
     private String workerDisplayLabel(PopulationSummary summary, CitizenJobType jobType) {
@@ -207,5 +280,18 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
 
     private int percent(double ratio) {
         return (int) Math.round(Math.max(0.0D, Math.min(1.0D, ratio)) * 100.0D);
+    }
+
+    private record DisplaySnapshot(
+            Map<CitizenJobType, Vector3d> workerPositions,
+            Map<CitizenJobType, String> workerLabels,
+            String troopLabel,
+            int citizenCount,
+            int troopCount
+    ) {
+        private DisplaySnapshot {
+            workerPositions = Map.copyOf(new LinkedHashMap<>(workerPositions));
+            workerLabels = Map.copyOf(new LinkedHashMap<>(workerLabels));
+        }
     }
 }

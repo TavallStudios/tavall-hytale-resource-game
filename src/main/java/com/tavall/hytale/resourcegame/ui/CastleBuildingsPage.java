@@ -51,6 +51,11 @@ public final class CastleBuildingsPage extends BaseUiPage {
                         ? "Place buildings with /kd buildings place <type>, then interact with them in-world to open detail and start upgrades."
                         : context().feedbackMessage()
         );
+        bindCommand(uiEventBuilder, "#StageFarmsteadButton", "/kd buildings stage farmstead");
+        bindCommand(uiEventBuilder, "#StageLumberMillButton", "/kd buildings stage lumber_mill");
+        bindCommand(uiEventBuilder, "#StageIronWorksButton", "/kd buildings stage iron_works");
+        bindCommand(uiEventBuilder, "#StageBarracksButton", "/kd buildings stage barracks");
+        bindCommand(uiEventBuilder, "#StageWorkshopButton", "/kd buildings stage workshop");
         bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
     }
 
@@ -89,6 +94,17 @@ public final class CastleBuildingsPage extends BaseUiPage {
                 CustomUIEventBindingType.Activating,
                 selector,
                 EventData.of(UiActionEventData.KEY_ACTION, action),
+                false
+        );
+    }
+
+    private void bindCommand(UIEventBuilder uiEventBuilder, String selector, String commandLine) {
+        uiEventBuilder.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                selector,
+                new EventData()
+                        .put(UiActionEventData.KEY_ACTION, UiActions.RUN_COMMAND)
+                        .put(UiActionEventData.KEY_PAYLOAD, commandLine),
                 false
         );
     }

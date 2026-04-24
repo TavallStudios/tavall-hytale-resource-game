@@ -17,6 +17,7 @@ import java.util.List;
 
 public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomain {
     private final IDependencyInjectorHelper injectorHelper = new DependencyInjectorHelper();
+    private static volatile boolean uncaughtHandlerInstalled = false;
 
     public ResourceGamePlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -30,6 +31,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
 
     @Override
     protected void start() {
+        installUncaughtExceptionHandler();
         getEventRegistry().registerGlobal(PlayerReadyEvent.class, getPlayerDataService()::handlePlayerReady);
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, getPlayerDataService()::handlePlayerDisconnect);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getPlacementInteractionService()::handleInteract);
@@ -38,6 +40,15 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getBuildingInteractionService()::handleInteract);
         getEventRegistry().registerGlobal(PlayerInteractEvent.class, getWorkerNpcInteractionService()::handleInteract);
         getInteriorInstanceService().pruneTransientWorlds();
+        getInteriorInstanceService().warmInteriorWorld().whenComplete((world, throwable) -> {
+            if (throwable != null) {
+                getLogger().atWarning().withCause(throwable).log("Failed to warm interior world during plugin startup.");
+                return;
+            }
+            if (world != null) {
+                getLogger().atInfo().log("Interior world warmed during plugin startup: %s", world.getName());
+            }
+        });
         getKingdomClockService().start();
         getCastleProximityPromptService().start();
         getCastleEconomySimulationService().start();
@@ -48,6 +59,42 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         for (AbstractAsyncCommand command : commands) {
             getCommandRegistry().registerCommand(command);
             getLogger().atInfo().log("Registered command /%s aliases=%s", command.getName(), command.getAliases());
+        }
+    }
+
+    private void installUncaughtExceptionHandler() {
+        if (uncaughtHandlerInstalled) {
+            return;
+        }
+        uncaughtHandlerInstalled = true;
+        Thread.UncaughtExceptionHandler existing = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.UncaughtExceptionHandler handler = (thread, throwable) -> {
+            try {
+                getLogger().atSevere().withCause(throwable).log("Uncaught exception on thread %s", thread.getName());
+                System.err.println("[ResourceGamePlugin] Uncaught exception on thread " + thread.getName());
+                throwable.printStackTrace(System.err);
+            } catch (Throwable ignored) {
+            }
+            if (existing != null) {
+                try {
+                    existing.uncaughtException(thread, throwable);
+                } catch (Throwable ignored) {
+                }
+            }
+        };
+        Thread.setDefaultUncaughtExceptionHandler(handler);
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread == null || thread == Thread.currentThread()) {
+                continue;
+            }
+            String threadName = thread.getName();
+            if (threadName == null || (!threadName.startsWith("WorldThread") && !"main".equals(threadName))) {
+                continue;
+            }
+            try {
+                thread.setUncaughtExceptionHandler(handler);
+            } catch (Throwable ignored) {
+            }
         }
     }
 

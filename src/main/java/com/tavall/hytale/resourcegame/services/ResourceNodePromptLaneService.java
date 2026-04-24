@@ -6,6 +6,7 @@ import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerTeleportService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodePromptLaneService;
 import com.tavall.hytale.resourcegame.domain.ResourceNodeData;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneLayout;
 import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneLayoutService;
 import com.tavall.hytale.resourcegame.world.ResourceNodePromptLaneStructureService;
@@ -34,7 +35,10 @@ public final class ResourceNodePromptLaneService implements IResourceNodePromptL
     public void alignPlayer(Player player, ResourceNodeData node) {
         ResourceNodePromptLaneLayout layout = layoutService.createLayout(node);
         Vector3d lookTarget = node.location().toVector();
-        player.getWorld().execute(() -> {
+        if (player == null || player.getWorld() == null) {
+            return;
+        }
+        WorldTasks.executeSafe(player.getWorld(), "ResourceNodePromptLaneService.alignPlayer", () -> {
             structureService.ensurePromptLane(player.getWorld(), layout);
             playerTeleportService.orientPlayer(player, lookTarget);
         });

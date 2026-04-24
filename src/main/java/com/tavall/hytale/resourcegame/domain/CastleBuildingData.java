@@ -130,6 +130,21 @@ public final class CastleBuildingData {
         );
     }
 
+    public CastleBuildingData cancelConstruction() {
+        return new CastleBuildingData(
+                buildingId,
+                buildingType,
+                relativeX,
+                relativeY,
+                relativeZ,
+                currentLevel,
+                currentLevel,
+                placedAt,
+                null,
+                null
+        );
+    }
+
     public CastleBuildingData withRelativePosition(double relativeX, double relativeY, double relativeZ) {
         return new CastleBuildingData(
                 buildingId,
