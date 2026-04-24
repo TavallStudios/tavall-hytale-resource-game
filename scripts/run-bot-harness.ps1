@@ -32,6 +32,15 @@ function Write-LogLine {
     Write-Host $Message
 }
 
+function Write-ConsoleBlock {
+    param([string[]]$Lines)
+    foreach ($line in $Lines) {
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            Write-Host $line
+        }
+    }
+}
+
 function Invoke-LoggedCommand {
     param(
         [string]$FilePath,
@@ -40,6 +49,8 @@ function Invoke-LoggedCommand {
 
     $stdoutPath = [System.IO.Path]::GetTempFileName()
     $stderrPath = [System.IO.Path]::GetTempFileName()
+    $stdoutLines = [System.Collections.Generic.List[string]]::new()
+    $stderrLines = [System.Collections.Generic.List[string]]::new()
     try {
         $process = Start-Process -FilePath $FilePath `
             -ArgumentList $Arguments `
@@ -56,11 +67,19 @@ function Invoke-LoggedCommand {
 
             Get-Content -Path $path | ForEach-Object {
                 Add-Content -Path $logPath -Value $_ -Encoding utf8
-                Write-Host $_
+                if ($path -eq $stdoutPath) {
+                    $stdoutLines.Add($_)
+                } else {
+                    $stderrLines.Add($_)
+                }
             }
         }
 
-        return [int]$process.ExitCode
+        return [pscustomobject]@{
+            ExitCode = [int]$process.ExitCode
+            StdoutLines = $stdoutLines.ToArray()
+            StderrLines = $stderrLines.ToArray()
+        }
     } finally {
         foreach ($path in @($stdoutPath, $stderrPath)) {
             if (Test-Path $path) {
@@ -101,7 +120,10 @@ $completedAt = $null
 
 Push-Location $HarnessDir
 try {
-    $exitCode = Invoke-LoggedCommand -FilePath "node.exe" -Arguments @($scriptPath, $Version)
+    $result = Invoke-LoggedCommand -FilePath "node.exe" -Arguments @($scriptPath, $Version)
+    $exitCode = $result.ExitCode
+    $tail = @($result.StdoutLines + $result.StderrLines | Select-Object -Last 20)
+    Write-ConsoleBlock -Lines $tail
 } finally {
     $completedAt = (Get-Date).ToString("o")
     Pop-Location

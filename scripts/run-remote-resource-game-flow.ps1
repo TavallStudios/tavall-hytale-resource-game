@@ -100,7 +100,8 @@ Ensure-RemoteQuicBridge `
     -ServerHost $ServerHost `
     -ServerPort $Port
 
-$remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=${HYTALE_AUTH_DOMAIN:-auth.sanasol.ws} && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $remoteOutputDir"
+$authDomain = if (-not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) { $env:HYTALE_AUTH_DOMAIN } else { "auth.sanasol.ws" }
+$remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=$authDomain && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $remoteOutputDir"
 $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $SshAlias,

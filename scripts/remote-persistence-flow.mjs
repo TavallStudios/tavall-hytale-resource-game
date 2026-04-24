@@ -108,6 +108,9 @@ async function main() {
     port,
     username,
     uuid,
+    quic: {
+      readyTimeoutMs: Number.parseInt(process.env.RESOURCE_GAME_QUIC_READY_TIMEOUT_MS ?? "30000", 10)
+    },
     autoConnect: true,
     autoAcknowledgePages: true
   });

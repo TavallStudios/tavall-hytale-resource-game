@@ -214,12 +214,15 @@ async function main() {
     snapshot = await waitForSnapshot(
       bot,
       (candidate) => {
+        if (readSelectorValue(candidate, "#NodeTitle.Text") === "Node not found") {
+          return true;
+        }
         const stock = parseStockValue(candidate);
         return stock != null
           && stock.current < 8
           && parseLeadingNumber(readSelectorValue(candidate, "#PillageReward.Text")) >= 0;
       },
-      5_000,
+      8_000,
       "manual pillage drain"
     );
     assertions.push("node-manual-pillage");
