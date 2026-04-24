@@ -61,7 +61,17 @@ public final class NoopCastleBuildingService implements ICastleBuildingService {
     }
 
     @Override
+    public BuildingMutationResult spawnBuilding(UUID playerId, BuildingType buildingType, int level, String worldName, Vector3d worldPosition, Instant now) {
+        return BuildingMutationResult.unchanged(null, "noop");
+    }
+
+    @Override
     public BuildingMutationResult startUpgrade(UUID playerId, UUID buildingId, Instant now) {
+        return BuildingMutationResult.unchanged(null, "noop");
+    }
+
+    @Override
+    public BuildingMutationResult cancelUpgrade(UUID playerId, UUID buildingId, Instant now) {
         return BuildingMutationResult.unchanged(null, "noop");
     }
 

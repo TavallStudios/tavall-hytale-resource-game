@@ -35,6 +35,7 @@ public final class BuildingPlacementPlannerTest {
         BuildingPlacementPlanner planner = new BuildingPlacementPlanner(
                 buildingService,
                 interiorInstanceService,
+                gameStateService,
                 layoutService
         );
 
@@ -44,7 +45,7 @@ public final class BuildingPlacementPlannerTest {
         assertEquals("overworld", planner.recommendedWorldName(playerId, state, BuildingType.FARMSTEAD));
         assertVector(planner.recommendedPosition(playerId, state, BuildingType.FARMSTEAD), 18.0D, 72.0D, 18.0D);
 
-        assertEquals("overworld", planner.recommendedWorldName(playerId, state, BuildingType.BARRACKS));
+        assertEquals(interiorInstanceService.worldNameFor(playerId), planner.recommendedWorldName(playerId, state, BuildingType.BARRACKS));
         Vector3d interiorOrigin = layoutService.originForCastle(state.castleLocation());
         assertVector(planner.recommendedPosition(playerId, state, BuildingType.BARRACKS), interiorOrigin.getX() - 5.0D, interiorOrigin.getY(), interiorOrigin.getZ());
     }
@@ -65,6 +66,7 @@ public final class BuildingPlacementPlannerTest {
         BuildingPlacementPlanner planner = new BuildingPlacementPlanner(
                 buildingService,
                 interiorInstanceService,
+                gameStateService,
                 layoutService
         );
 

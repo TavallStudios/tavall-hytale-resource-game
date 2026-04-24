@@ -136,4 +136,32 @@ public final class PlayerGameStateMetadataTest {
         assertEquals(completed.populationSummary().citizenCount(), reset.populationSummary().citizenCount());
         assertEquals(completed.populationSummary().troopCount(), reset.populationSummary().troopCount());
     }
+
+    @Test
+    void interiorInstanceIndexPersistsAcrossMetadataRewrites() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        PlayerGameStateService service = new PlayerGameStateService(
+                new InMemoryPlayerGameStateStore(),
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("metadata-interior-index"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "metadata-interior-index"),
+                mapperProvider.mapper()
+        );
+
+        Instant now = Instant.parse("2026-04-16T06:00:00Z");
+        PlayerGameState state = service.loadOrCreate(
+                66L,
+                UUID.randomUUID(),
+                new CastleLocationData("overworld", 6.0, 68.0, 6.0),
+                now
+        );
+
+        PlayerGameState bumped = service.bumpInteriorInstanceIndex(state, now.plusSeconds(1));
+        assertEquals(1, service.interiorInstanceIndex(bumped));
+
+        PlayerGameState tutorialRewrite = service.markInteriorTutorialSeen(bumped, now.plusSeconds(2));
+        assertEquals(1, service.interiorInstanceIndex(tutorialRewrite));
+
+        PlayerGameState bumpedAgain = service.bumpInteriorInstanceIndex(tutorialRewrite, now.plusSeconds(3));
+        assertEquals(2, service.interiorInstanceIndex(bumpedAgain));
+    }
 }
