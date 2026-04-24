@@ -1,0 +1,103 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Group #Header {
+    LayoutMode: Top;
+    Anchor: (Bottom: 12);
+
+    Label #Title {
+      Text: "Your Castle";
+      Style: (FontSize: 26, RenderBold: true, RenderUppercase: true);
+      Anchor: (Bottom: 4);
+    }
+
+    Label #Subtitle {
+      Text: "Citizen to army pipeline preview";
+      Style: (FontSize: 14, TextColor: #a7b0ba);
+    }
+  }
+
+  Group #Stats {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16, Height: 60);
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Citizens"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
+      Label #CitizenCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Troops"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
+      Label #TroopCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 100);
+      LayoutMode: Top;
+      Label { Text: "Might"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
+      Label #MightCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Resources"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); }
+      Label { Text: "Food:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #FoodCount { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 100);
+      LayoutMode: Top;
+      Label { Text: "Wood:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #WoodCount { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 100);
+      LayoutMode: Top;
+      Label { Text: "Iron:"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #IronCount { Style: (FontSize: 18); }
+    }
+  }
+
+  Label {
+    Text: "Outside the menu: the castle is a 3-block stone marker with owner, troop, and Might text. Right-click while focused to interact.";
+    Style: (FontSize: 14, TextColor: #a7b0ba);
+    Anchor: (Bottom: 16);
+  }
+
+  Group #Actions {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #EnterInteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "View Castle Info"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); }
+    TextButton #BuildingsButton { Text: "Buildings"; Padding: (Full: 6); Anchor: (Left: 8); }
+  }
+
+  Group #WorldActions {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #AttackButton { Text: "Attack Castle (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #FriendButton { Text: "Add Friend (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #GuildButton { Text: "Guild Access (Future)"; Padding: (Full: 6); }
+  }
+
+  Group #Footer {
+    LayoutMode: Right;
+    TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); }
+  }
+}

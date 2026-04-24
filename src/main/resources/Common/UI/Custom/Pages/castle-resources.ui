@@ -1,0 +1,29 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Resources"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Top;
+    Anchor: (Bottom: 16);
+
+    Label { Text: "Food"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #FoodCount { Style: (FontSize: 22); Anchor: (Bottom: 8); }
+    Label #FoodNodeStatus { Style: (FontSize: 13, TextColor: #8ec3a8); Anchor: (Bottom: 12); }
+
+    Label { Text: "Wood"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #WoodCount { Style: (FontSize: 22); Anchor: (Bottom: 8); }
+    Label #WoodNodeStatus { Style: (FontSize: 13, TextColor: #b8a07c); Anchor: (Bottom: 12); }
+
+    Label { Text: "Iron"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #IronCount { Style: (FontSize: 22); }
+    Label #IronNodeStatus { Style: (FontSize: 13, TextColor: #a6b5c8); }
+  }
+
+  Label { Text: "Future: storage buildings, hauling routes, and production chains."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+}

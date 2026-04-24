@@ -1,0 +1,102 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Citizens"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Label { Text: "Total Citizens"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+  Label #CitizenCount { Style: (FontSize: 22); Anchor: (Bottom: 16); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Idle"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #IdleCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Gatherers"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #GathererCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Hunters"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #HunterCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Cooks"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #CookCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Miners"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #MinerCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Builder Team"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #BuilderCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Blacksmiths"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #BlacksmithCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Architects"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #ArchitectCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Grunt Builders"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #GruntBuilderCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Trainees"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #TraineeCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Label #FeedbackStatus { Text: "Right-click an interior worker anchor to inspect that worker type."; Style: (FontSize: 14, TextColor: #e2c168); Anchor: (Bottom: 12); }
+
+  Label { Text: "Future: job assignment, productivity medians, task-copy NPCs, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+}

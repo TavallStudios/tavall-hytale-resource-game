@@ -1,0 +1,70 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Citizen to Troop Upgrades"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
+  Label { Text: "Use the world anchors outside and the interior displays together. This page only drives the prototype rules."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 12);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Citizens"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #CitizenCount { Style: (FontSize: 20); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Troops"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #TroopCount { Style: (FontSize: 20); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Food"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #FoodCount { Style: (FontSize: 18); }
+    }
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Wood"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #WoodCount { Style: (FontSize: 18); }
+    }
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Iron"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+      Label #IronCount { Style: (FontSize: 18); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #PromoteButton { Text: "Promote Citizen"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #DemoteButton { Text: "Demote Troop"; Padding: (Full: 6); }
+  }
+
+  Label #PromotionCost { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 8); }
+  Label #TutorialStatus { Style: (FontSize: 15, RenderBold: true); Anchor: (Bottom: 8); }
+  Label #PromoteStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 4); }
+  Label #DemoteStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 12); }
+  Label #FeedbackStatus { Style: (FontSize: 16, RenderBold: true); Anchor: (Bottom: 16); }
+
+  Label { Text: "Future: branching upgrade paths, training buildings, equipment, and role-specific promotions."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+}

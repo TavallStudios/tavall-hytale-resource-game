@@ -1,0 +1,43 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Castle Info"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Top;
+    Anchor: (Bottom: 16);
+
+    Label { Text: "Owner"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #OwnerName { Style: (FontSize: 16); Anchor: (Bottom: 10); }
+
+    Label { Text: "Castle ID"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #CastleId { Style: (FontSize: 16); Anchor: (Bottom: 10); }
+
+    Label { Text: "World"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #WorldName { Style: (FontSize: 16); Anchor: (Bottom: 10); }
+
+    Label { Text: "Troops"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #TroopCount { Style: (FontSize: 16); Anchor: (Bottom: 10); }
+
+    Label { Text: "Might"; Style: (FontSize: 14, TextColor: #a7b0ba); }
+    Label #MightCount { Style: (FontSize: 16); }
+  }
+
+  Label #FeedbackStatus { Text: "Right-click the focused castle in-world to reopen this command surface."; Style: (FontSize: 14, TextColor: #e2c168); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #AttackButton { Text: "Attack (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #FriendButton { Text: "Add Friend (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #GuildButton { Text: "Guild Access (Future)"; Padding: (Full: 6); }
+  }
+
+  Label { Text: "Future: defenses, scouting, friend trust, guild permissions, banners, and dedicated castle assets."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+}

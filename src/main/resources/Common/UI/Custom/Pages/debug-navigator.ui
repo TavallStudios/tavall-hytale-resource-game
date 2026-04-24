@@ -1,0 +1,84 @@
+Group {
+  Anchor: (Width: 880, Height: 620);
+  Background: (Color: #0e141c(0.88));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label { Text: "Debug UI Navigator"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
+  Label { Text: "Infra Status"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 8); }
+  Label #CacheStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 4); }
+  Label #PersistenceStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 12); }
+  Label { Text: "Onboarding Status"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 8); }
+  Label #InteriorTutorialStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 4); }
+  Label #InteriorTourStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 4); }
+  Label #UpgradeTutorialStatus { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
+
+  Label { Text: "Command Runner"; Style: (FontSize: 18, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 8); }
+  Label #CommandFeedback { Style: (FontSize: 14, TextColor: #cfd8e1); Anchor: (Bottom: 12); }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 12);
+
+    TextButton #PlaceCastleButton { Text: "Place Castle"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #PlaceFoodNodeButton { Text: "Place Food Node"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #PlaceWoodNodeButton { Text: "Place Wood Node"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #PlaceIronNodeButton { Text: "Place Iron Node"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #ConfirmPlacementButton { Text: "Confirm Placement"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CancelPlacementButton { Text: "Cancel Placement"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #MoveNegXButton { Text: "Move -X"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #MovePosXButton { Text: "Move +X"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #MoveNegZButton { Text: "Move -Z"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #MovePosZButton { Text: "Move +Z"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #InteriorRebuildButton { Text: "Rebuild Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #InteriorMoveButton { Text: "Move Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #InteriorExitButton { Text: "Exit Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #SceneRefreshButton { Text: "Scene Refresh"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #HologramTestButton { Text: "Hologram Test"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #TutorialResetButton { Text: "Reset Tutorial"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #NodesClearButton { Text: "Clear Nodes"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #NodesListButton { Text: "List Nodes"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #BuildingsListButton { Text: "List Buildings"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #FocusButton { Text: "Focus"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #InteractButton { Text: "Interact"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #StageFarmsteadButton { Text: "Stage Farmstead"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageLumberMillButton { Text: "Stage Lumber Mill"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageIronWorksButton { Text: "Stage Iron Works"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageBarracksButton { Text: "Stage Barracks"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageWorkshopButton { Text: "Stage Workshop"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 16);
+
+    TextButton #CastleMainButton { Text: "Castle Main"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "Castle Info"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); }
+  }
+
+  Group { LayoutMode: Left; Anchor: (Bottom: 16); TextButton #InteriorButton { Text: "Enter Interior"; Padding: (Full: 6); } }
+
+  Group { LayoutMode: Right; TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); } }
+}

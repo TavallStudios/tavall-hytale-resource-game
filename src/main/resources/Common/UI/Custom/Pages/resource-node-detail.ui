@@ -1,0 +1,119 @@
+Group {
+  Anchor: (Width: 820, Height: 520);
+  Background: (Color: #10161d(0.9));
+  Padding: (Full: 16);
+  LayoutMode: Top;
+
+  Label #NodeTitle {
+    Text: "Resource Node";
+    Style: (FontSize: 24, RenderBold: true, RenderUppercase: true);
+    Anchor: (Bottom: 6);
+  }
+
+  Label #NodeSummary {
+    Text: "world | x, y, z";
+    Style: (FontSize: 14, TextColor: #9eb0bf);
+    Anchor: (Bottom: 16);
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 18);
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Assigned Troops"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #AssignedTroops { Style: (FontSize: 22); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Auto Workers"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #AssignedWorkers { Style: (FontSize: 22); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Reserve Troops"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #AvailableTroops { Style: (FontSize: 22); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Yield"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #GainPerTick { Style: (FontSize: 22); }
+    }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 18);
+
+    Group {
+      Anchor: (Width: 240);
+      LayoutMode: Top;
+      Label { Text: "Node Stock"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #StockStatus { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 180);
+      LayoutMode: Top;
+      Label { Text: "Regeneration"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #RegenStatus { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Status"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #StatusText { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 220);
+      LayoutMode: Top;
+      Label { Text: "Supply Lane"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #RouteStatus { Style: (FontSize: 18); }
+    }
+
+    Group {
+      Anchor: (Width: 140);
+      LayoutMode: Top;
+      Label { Text: "Pillage"; Style: (FontSize: 14, TextColor: #9eb0bf); }
+      Label #PillageReward { Style: (FontSize: 18); }
+    }
+  }
+
+  Label #FeedbackStatus {
+    Text: "Select how many troops to send.";
+    Style: (FontSize: 14, TextColor: #cfd8e1);
+    Anchor: (Bottom: 20);
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 12);
+    TextButton #AssignOneButton { Text: "Send 1"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignThreeButton { Text: "Send 3"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignFiveButton { Text: "Send 5"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignAllButton { Text: "Send All"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 20);
+    TextButton #RecallOneButton { Text: "Recall 1"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); Anchor: (Right: 12); }
+    TextButton #PillageButton { Text: "Pillage Node"; Padding: (Full: 6); }
+  }
+
+  Group {
+    LayoutMode: Right;
+    TextButton #BackButton { Text: "Back"; Padding: (Full: 6); }
+  }
+}
