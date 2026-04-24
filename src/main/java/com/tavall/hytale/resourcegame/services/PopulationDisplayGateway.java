@@ -13,4 +13,6 @@ public interface PopulationDisplayGateway {
     void ensureDisplays(UUID playerId, World world, InteriorLayout layout, PopulationSummary summary);
 
     void updateDisplays(UUID playerId, PopulationSummary summary);
+
+    void clearDisplays(UUID playerId);
 }

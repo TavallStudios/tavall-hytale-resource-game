@@ -84,6 +84,30 @@ public final class ResourceNodeServiceTest {
     }
 
     @Test
+    void nodeMutationsPreserveInteriorInstanceIndex() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("node-interior-index"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "node-interior-index"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        ResourceNodeService resourceNodeService = new ResourceNodeService(sessionStore, gameStateService, mapperProvider.mapper(), new CastleEconomyPlanner());
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-16T06:10:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(31L, playerId, new CastleLocationData("default", 0.0, 72.0, 0.0), now);
+        PlayerGameState indexed = gameStateService.bumpInteriorInstanceIndex(initialState, now.plusSeconds(1));
+        sessionStore.put(new PlayerSession(playerId, new PlayerProfile(31L, playerId, "NodeIndexBot", "UTC", "hash", now, now, now), indexed));
+
+        assertEquals(1, gameStateService.interiorInstanceIndex(indexed));
+        PlayerGameState afterPlacement = resourceNodeService.placeNode(playerId, ResourceType.FOOD, "default", new Vector3d(9.0, 72.0, 9.0), now.plusSeconds(2));
+        assertEquals(1, gameStateService.interiorInstanceIndex(afterPlacement));
+    }
+
+    @Test
     void pillageAddsImmediateRewardAndDrainsNodeStock() {
         JsonMapperProvider mapperProvider = new JsonMapperProvider();
         InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();

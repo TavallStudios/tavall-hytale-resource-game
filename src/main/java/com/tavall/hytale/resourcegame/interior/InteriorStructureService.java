@@ -1,4 +1,4 @@
-﻿package com.tavall.hytale.resourcegame.interior;
+package com.tavall.hytale.resourcegame.interior;
 
 import com.hypixel.hytale.server.core.universe.world.World;
 
@@ -38,6 +38,27 @@ public final class InteriorStructureService {
         ensureWorkerPlatform(world, layout);
     }
 
+    public void clearStructure(World world, InteriorLayout layout) {
+        if (world == null || layout == null) {
+            return;
+        }
+        clearMainRoom(world, layout);
+        clearWorkerPlatform(world, layout);
+    }
+
+    private void clearMainRoom(World world, InteriorLayout layout) {
+        int originX = floorToInt(layout.origin().getX());
+        int originY = floorToInt(layout.origin().getY());
+        int originZ = floorToInt(layout.origin().getZ());
+        for (int dx = -HALF_SIZE; dx <= HALF_SIZE; dx++) {
+            for (int dz = -HALF_SIZE; dz <= HALF_SIZE; dz++) {
+                for (int dy = 0; dy <= WALL_HEIGHT + 1; dy++) {
+                    clearBlock(world, originX + dx, originY + dy, originZ + dz);
+                }
+            }
+        }
+    }
+
     private void ensureWorkerPlatform(World world, InteriorLayout layout) {
         int originX = floorToInt(layout.workerPlatformAnchor().getX());
         int originY = floorToInt(layout.origin().getY());
@@ -54,6 +75,26 @@ public final class InteriorStructureService {
             setBlock(world, floorToInt(layout.origin().getX()), originY, floorToInt(layout.origin().getZ()) + dz, FLOOR_BLOCK);
         }
         ensurePortal(world, layout);
+    }
+
+    private void clearWorkerPlatform(World world, InteriorLayout layout) {
+        int platformX = floorToInt(layout.workerPlatformAnchor().getX());
+        int originY = floorToInt(layout.origin().getY());
+        int platformZ = floorToInt(layout.workerPlatformAnchor().getZ());
+        for (int dx = -5; dx <= 5; dx++) {
+            for (int dz = -3; dz <= 4; dz++) {
+                for (int dy = 0; dy <= 4; dy++) {
+                    clearBlock(world, platformX + dx, originY + dy, platformZ + dz);
+                }
+            }
+        }
+        int originX = floorToInt(layout.origin().getX());
+        int originZ = floorToInt(layout.origin().getZ());
+        for (int dz = HALF_SIZE; dz <= 6; dz++) {
+            for (int dy = 0; dy <= 1; dy++) {
+                clearBlock(world, originX, originY + dy, originZ + dz);
+            }
+        }
     }
 
     private void ensurePortal(World world, InteriorLayout layout) {

@@ -19,5 +19,17 @@ Group {
   Label { Text: "Interaction: place with /kd buildings place <type>, then look at the finished or in-progress structure and interact with it to open the detail page."; Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 16); }
   Label #FooterStatus { Style: (FontSize: 15, RenderBold: true); Anchor: (Bottom: 16); }
 
+  Label { Text: "Quick Stage"; Style: (FontSize: 18, RenderBold: true); Anchor: (Bottom: 8); }
+  Group {
+    LayoutMode: Left;
+    Anchor: (Bottom: 10);
+
+    TextButton #StageFarmsteadButton { Text: "Stage Farmstead"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageLumberMillButton { Text: "Stage Lumber Mill"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageIronWorksButton { Text: "Stage Iron Works"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageBarracksButton { Text: "Stage Barracks"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #StageWorkshopButton { Text: "Stage Workshop"; Padding: (Full: 6); }
+  }
+
   Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
 }

@@ -35,6 +35,7 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
     TextButton #StartUpgradeButton { Text: "Start Upgrade"; Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CancelUpgradeButton { Text: "Cancel Upgrade"; Padding: (Full: 6); Anchor: (Right: 8); }
     TextButton #OverviewButton { Text: "Building Overview"; Padding: (Full: 6); Anchor: (Right: 8); }
     TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); }
   }

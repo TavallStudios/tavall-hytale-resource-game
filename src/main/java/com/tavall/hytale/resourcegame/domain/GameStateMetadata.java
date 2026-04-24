@@ -14,6 +14,7 @@ public final class GameStateMetadata {
     private final OnboardingProgress onboardingProgress;
     private final List<ResourceNodeData> resourceNodes;
     private final List<CastleBuildingData> castleBuildings;
+    private final int interiorInstanceIndex;
 
     public GameStateMetadata(
             CitizenMetaData citizenMetaData,
@@ -22,7 +23,8 @@ public final class GameStateMetadata {
             Map<CitizenJobType, Integer> jobCounts,
             OnboardingProgress onboardingProgress,
             List<ResourceNodeData> resourceNodes,
-            List<CastleBuildingData> castleBuildings
+            List<CastleBuildingData> castleBuildings,
+            Integer interiorInstanceIndex
     ) {
         this.citizenMetaData = citizenMetaData;
         this.troopMetaData = troopMetaData;
@@ -31,6 +33,7 @@ public final class GameStateMetadata {
         this.onboardingProgress = onboardingProgress == null ? OnboardingProgress.defaults() : onboardingProgress;
         this.resourceNodes = resourceNodes == null ? List.of() : List.copyOf(resourceNodes);
         this.castleBuildings = castleBuildings == null ? List.of() : List.copyOf(castleBuildings);
+        this.interiorInstanceIndex = interiorInstanceIndex == null ? 0 : Math.max(0, interiorInstanceIndex);
     }
 
     public CitizenMetaData citizenMetaData() {
@@ -61,12 +64,16 @@ public final class GameStateMetadata {
         return castleBuildings;
     }
 
+    public int interiorInstanceIndex() {
+        return interiorInstanceIndex;
+    }
+
     public static GameStateMetadata fromPopulation(PopulationSummary populationSummary) {
-        return fromPopulation(populationSummary, OnboardingProgress.defaults(), List.of(), List.of());
+        return fromPopulation(populationSummary, OnboardingProgress.defaults(), List.of(), List.of(), 0);
     }
 
     public static GameStateMetadata fromPopulation(PopulationSummary populationSummary, OnboardingProgress onboardingProgress) {
-        return fromPopulation(populationSummary, onboardingProgress, List.of(), List.of());
+        return fromPopulation(populationSummary, onboardingProgress, List.of(), List.of(), 0);
     }
 
     public static GameStateMetadata fromPopulation(
@@ -74,7 +81,7 @@ public final class GameStateMetadata {
             OnboardingProgress onboardingProgress,
             List<ResourceNodeData> resourceNodes
     ) {
-        return fromPopulation(populationSummary, onboardingProgress, resourceNodes, List.of());
+        return fromPopulation(populationSummary, onboardingProgress, resourceNodes, List.of(), 0);
     }
 
     public static GameStateMetadata fromPopulation(
@@ -83,6 +90,16 @@ public final class GameStateMetadata {
             List<ResourceNodeData> resourceNodes,
             List<CastleBuildingData> castleBuildings
     ) {
+        return fromPopulation(populationSummary, onboardingProgress, resourceNodes, castleBuildings, 0);
+    }
+
+    public static GameStateMetadata fromPopulation(
+            PopulationSummary populationSummary,
+            OnboardingProgress onboardingProgress,
+            List<ResourceNodeData> resourceNodes,
+            List<CastleBuildingData> castleBuildings,
+            int interiorInstanceIndex
+    ) {
         return new GameStateMetadata(
                 populationSummary.citizenMetaData(),
                 populationSummary.troopMetaData(),
@@ -90,7 +107,8 @@ public final class GameStateMetadata {
                 populationSummary.citizenMetaData().jobCounts(),
                 onboardingProgress,
                 resourceNodes,
-                castleBuildings
+                castleBuildings,
+                interiorInstanceIndex
         );
     }
 }

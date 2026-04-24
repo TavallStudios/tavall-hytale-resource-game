@@ -1,4 +1,4 @@
-﻿package com.tavall.hytale.resourcegame.world;
+package com.tavall.hytale.resourcegame.world;
 
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3i;
@@ -73,13 +73,25 @@ public final class CastleBuildingStructureService {
     }
 
     private void applyCompletedShape(World world, BuildingType buildingType, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {
+        int visualLevel = visualLevel(buildingType, level);
         switch (buildingType) {
-            case FARMSTEAD -> paintFarmstead(world, originX, originY, originZ, level, placedBlocks);
-            case LUMBER_MILL -> paintLumberMill(world, originX, originY, originZ, level, placedBlocks);
-            case IRON_WORKS -> paintIronWorks(world, originX, originY, originZ, level, placedBlocks);
-            case BARRACKS -> paintBarracks(world, originX, originY, originZ, level, placedBlocks);
-            case WORKSHOP -> paintWorkshop(world, originX, originY, originZ, level, placedBlocks);
+            case FARMSTEAD -> paintFarmstead(world, originX, originY, originZ, visualLevel, placedBlocks);
+            case LUMBER_MILL -> paintLumberMill(world, originX, originY, originZ, visualLevel, placedBlocks);
+            case IRON_WORKS -> paintIronWorks(world, originX, originY, originZ, visualLevel, placedBlocks);
+            case BARRACKS -> paintBarracks(world, originX, originY, originZ, visualLevel, placedBlocks);
+            case WORKSHOP -> paintWorkshop(world, originX, originY, originZ, visualLevel, placedBlocks);
         }
+    }
+
+    private int visualLevel(BuildingType buildingType, int level) {
+        int safeLevel = Math.max(1, level);
+        if (buildingType == null) {
+            return Math.min(3, safeLevel);
+        }
+        if (buildingType.areaType() == com.tavall.hytale.resourcegame.domain.BuildingAreaType.CASTLE_SURFACE) {
+            return Math.min(3, safeLevel);
+        }
+        return Math.min(4, safeLevel);
     }
 
     private void paintFarmstead(World world, int originX, int originY, int originZ, int level, Set<Vector3i> placedBlocks) {

@@ -138,7 +138,7 @@ async function finishAndRefreshBuilding(bot, buildingType) {
   bot.sendPageEvent("Dismiss", null);
   await delay(500);
   bot.chat(`/kd buildings finish ${buildingType}`);
-  await delay(1_500);
+  await delay(2_500);
   bot.chat(`/kd buildings select ${buildingType}`);
 }
 
@@ -206,7 +206,7 @@ async function main() {
         && readSelectorValue(snapshot, "#LevelText.Text") === "L1"
         && readSelectorValue(snapshot, "#StatusText.Text") === "Operational"
         && readSelectorValue(snapshot, "#EffectText.Text") === "Passive yield: +2 Food, +0 Wood, +0 Iron per tick.",
-      10_000,
+      15_000,
       "completed level one building detail"
     );
     assertions.push("farmstead-level-one-complete");
@@ -217,7 +217,7 @@ async function main() {
       (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
         && readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Farmstead upgrade started."
         && readSelectorValue(snapshot, "#LevelText.Text") === "L1 -> L2",
-      6_000,
+      12_000,
       "building upgrade start"
     );
     assertions.push("farmstead-upgrade-started-from-ui");

@@ -131,7 +131,7 @@ public final class CastleBuildingServiceTest {
                 seededState
         ));
 
-        String interiorWorld = seededState.castleLocation().worldName();
+        String interiorWorld = interiorInstanceService.worldNameFor(playerId);
         Vector3d interiorOrigin = layoutService.originForCastle(seededState.castleLocation());
         BuildingMutationResult workshopPlacement = buildingService.placeBuilding(
                 playerId,
@@ -218,5 +218,52 @@ public final class CastleBuildingServiceTest {
         assertFalse(blocked.changed());
         assertEquals("Place Farmstead between 5 and 18 blocks from the castle center.", blocked.message());
         assertTrue(buildingService.listBuildings(sessionStore.get(playerId).gameState()).isEmpty());
+    }
+
+    @Test
+    void buildingMutationsPreserveInteriorInstanceIndex() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("building-interior-index"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "building-interior-index"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        StubInteriorInstanceService interiorInstanceService = new StubInteriorInstanceService();
+        CastleBuildingService buildingService = new CastleBuildingService(
+                sessionStore,
+                gameStateService,
+                interiorInstanceService,
+                new com.tavall.hytale.resourcegame.interior.InteriorLayoutService(),
+                mapperProvider.mapper()
+        );
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-16T06:20:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(
+                511L,
+                playerId,
+                new CastleLocationData("overworld", 10.0, 72.0, 10.0),
+                now
+        ).withResources(new ResourceInventory(200, 200, 200), now);
+        PlayerGameState indexed = gameStateService.bumpInteriorInstanceIndex(initialState, now.plusSeconds(1));
+        sessionStore.put(new PlayerSession(
+                playerId,
+                new PlayerProfile(511L, playerId, "IndexBuilder", "UTC", "hash", now, now, now),
+                indexed
+        ));
+
+        assertEquals(1, gameStateService.interiorInstanceIndex(indexed));
+        BuildingMutationResult placement = buildingService.placeBuilding(
+                playerId,
+                BuildingType.FARMSTEAD,
+                "overworld",
+                new Vector3d(18.0, 73.0, 18.0),
+                now.plusSeconds(2)
+        );
+        assertTrue(placement.changed());
+        assertEquals(1, gameStateService.interiorInstanceIndex(placement.state()));
     }
 }

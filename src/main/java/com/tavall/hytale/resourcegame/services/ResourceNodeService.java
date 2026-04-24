@@ -366,7 +366,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 metadata.jobCounts(),
                 metadata.onboardingProgress(),
                 nodes,
-                metadata.castleBuildings()
+                metadata.castleBuildings(),
+                metadata.interiorInstanceIndex()
         );
         try {
             return state.withMetadataJson(objectMapper.writeValueAsString(updatedMetadata), now);
@@ -388,7 +389,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                     metadata.jobCounts(),
                     metadata.onboardingProgress(),
                     metadata.resourceNodes(),
-                    metadata.castleBuildings()
+                    metadata.castleBuildings(),
+                    metadata.interiorInstanceIndex()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode resource node metadata. Falling back to empty nodes. " + ex.getMessage());

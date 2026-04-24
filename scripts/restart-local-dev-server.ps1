@@ -3,6 +3,7 @@ param(
     [switch]$BuildPlugin,
     [switch]$DeployPlugin = $true,
     [switch]$RequireLiveDatabases,
+    [switch]$ResetProblemRegions,
     [int]$Port = 5520,
     [int]$StartupTimeoutSeconds = 180
 )
@@ -73,6 +74,22 @@ do {
     }
     Start-Sleep -Milliseconds 250
 } while ((Get-Date) -lt $deadline)
+
+if ($ResetProblemRegions) {
+    $chunksDir = Join-Path $ServerRoot "universe\\worlds\\default\\chunks"
+    $regionFiles = @(
+        Join-Path $chunksDir "-2.0.region.bin"
+    )
+    $suffix = Get-Date -Format "yyyyMMdd-HHmmss"
+    foreach ($regionPath in $regionFiles) {
+        if (-not (Test-Path $regionPath)) {
+            continue
+        }
+        $backupPath = "$regionPath.corrupt.$suffix"
+        Move-Item -LiteralPath $regionPath -Destination $backupPath -Force
+        Write-Host ("Renamed corrupt region file: {0} -> {1}" -f $regionPath, $backupPath)
+    }
+}
 
 $launchProcess = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$startScript`"" -WorkingDirectory $ServerRoot -PassThru
 

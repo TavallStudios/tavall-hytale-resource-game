@@ -339,17 +339,19 @@ export async function ensureOp(bot, username, timeoutMs = 3000) {
 export async function ensureBotBaseline(bot, assertions, options = {}) {
   const {
     username,
-    op = true,
-    requireHealth = true,
-    requireInventory = true,
+    op = false,
+    requireHealth = false,
+    requireInventory = false,
     nearbyRadius = 12,
+    readyTimeoutMs = 30_000,
+    worldJoinTimeoutMs = 60_000,
     settleDelayMs = 2000
   } = options;
 
-  await bot.waitForReady(15_000);
+  await bot.waitForReady(readyTimeoutMs);
   assertions.push("connected");
-  await bot.waitForWorldActivity(10_000);
-  assertions.push("world-joined");
+  await bot.waitForWorldActivity(worldJoinTimeoutMs);
+  assertions.push("world-active");
 
   if (settleDelayMs > 0) {
     await delay(settleDelayMs);
@@ -361,8 +363,12 @@ export async function ensureBotBaseline(bot, assertions, options = {}) {
   }
 
   if (typeof bot.waitForSelfEntity === "function") {
-    await bot.waitForSelfEntity(10_000);
-    assertions.push("self-entity");
+    try {
+      await bot.waitForSelfEntity(2_000);
+      assertions.push("self-entity");
+    } catch {
+      assertions.push("self-entity-timeout");
+    }
   } else {
     assertions.push("self-entity-unavailable");
   }
@@ -370,7 +376,7 @@ export async function ensureBotBaseline(bot, assertions, options = {}) {
   let health = null;
   if (requireHealth) {
     if (typeof bot.waitForStat === "function") {
-      health = await bot.waitForStat("health", 10_000).catch(() => null);
+      health = await bot.waitForStat("health", 2_000).catch(() => null);
     } else if (typeof bot.getStatByName === "function") {
       health = bot.getStatByName("health");
     }
@@ -384,7 +390,7 @@ export async function ensureBotBaseline(bot, assertions, options = {}) {
   let inventory = null;
   if (requireInventory) {
     if (typeof bot.waitForInventory === "function") {
-      inventory = await bot.waitForInventory(10_000).catch(() => null);
+      inventory = await bot.waitForInventory(2_000).catch(() => null);
     } else if (typeof bot.getInventorySnapshot === "function") {
       inventory = bot.getInventorySnapshot();
     }

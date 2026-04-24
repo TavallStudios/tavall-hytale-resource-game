@@ -27,7 +27,11 @@ public interface ICastleBuildingService extends IDependencyInjectableInterface {
 
     BuildingMutationResult placeBuilding(UUID playerId, BuildingType buildingType, String worldName, Vector3d worldPosition, Instant now);
 
+    BuildingMutationResult spawnBuilding(UUID playerId, BuildingType buildingType, int level, String worldName, Vector3d worldPosition, Instant now);
+
     BuildingMutationResult startUpgrade(UUID playerId, UUID buildingId, Instant now);
+
+    BuildingMutationResult cancelUpgrade(UUID playerId, UUID buildingId, Instant now);
 
     BuildingMutationResult forceComplete(UUID playerId, UUID buildingId, Instant now);
 

@@ -155,6 +155,39 @@ public final class PlacementModeService implements IPlacementModeService, IDepen
     }
 
     @Override
+    public PlacementResult moveStagedPlacement(Player player, Vector3i delta) {
+        if (player == null || delta == null) {
+            return PlacementResult.failure("Placement move data is missing.");
+        }
+        UUID playerId = player.getUuid();
+        PlacementRequest request = activeRequests.get(playerId);
+        if (request == null) {
+            return PlacementResult.failure("No active placement.");
+        }
+        Vector3i staged = request.stagedTargetBlock();
+        if (staged == null) {
+            return PlacementResult.failure("Move is only available for staged placements.");
+        }
+        Vector3i moved = new Vector3i(
+                staged.getX() + delta.getX(),
+                staged.getY() + delta.getY(),
+                staged.getZ() + delta.getZ()
+        );
+        PlacementRequest updatedRequest = new PlacementRequest(
+                request.modeType(),
+                request.resourceType(),
+                request.buildingType(),
+                request.armedWorldName(),
+                request.armedAt(),
+                moved
+        );
+        activeRequests.put(playerId, updatedRequest);
+        previewService.showPreview(player, updatedRequest, moved);
+        recentPlacementActivity.put(playerId, Instant.now());
+        return PlacementResult.success("Moved placement to " + moved.getX() + ", " + moved.getY() + ", " + moved.getZ() + ".", null);
+    }
+
+    @Override
     public PlacementResult confirmPlacement(Player player, Vector3i targetBlock) {
         PlacementRequest request = activeRequests.get(player.getUuid());
         if (request == null) {

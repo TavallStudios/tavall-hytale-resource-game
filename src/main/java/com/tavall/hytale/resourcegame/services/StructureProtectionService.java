@@ -3,6 +3,7 @@ package com.tavall.hytale.resourcegame.services;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.world.ProtectedBlockMetadata;
+import com.tavall.hytale.resourcegame.world.ProtectedPlacementZone;
 import com.tavall.hytale.resourcegame.world.ProtectedStructureType;
 import com.tavall.hytale.resourcegame.world.WorldBlockKey;
 
@@ -19,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class StructureProtectionService implements IDependencyInjectableConcrete {
     private final Map<WorldBlockKey, ProtectedBlockMetadata> protectedBlocks = new ConcurrentHashMap<>();
     private final Map<String, Set<WorldBlockKey>> structureBlocks = new ConcurrentHashMap<>();
+    private final Map<String, ProtectedPlacementZone> placementZones = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> placementZonesByWorld = new ConcurrentHashMap<>();
 
     public void replaceStructure(
             String structureKey,
@@ -50,6 +53,37 @@ public final class StructureProtectionService implements IDependencyInjectableCo
         }
     }
 
+    public void replacePlacementZone(
+            String structureKey,
+            ProtectedStructureType structureType,
+            String worldName,
+            Vector3i centerBlock,
+            int radiusBlocks
+    ) {
+        if (structureKey == null || structureKey.isBlank() || structureType == null || worldName == null || centerBlock == null) {
+            return;
+        }
+        clearPlacementZone(structureKey);
+        if (radiusBlocks <= 0) {
+            return;
+        }
+        ProtectedPlacementZone zone = new ProtectedPlacementZone(
+                structureKey,
+                structureType,
+                worldName,
+                centerBlock.getX(),
+                centerBlock.getY(),
+                centerBlock.getZ(),
+                radiusBlocks
+        );
+        placementZones.put(structureKey, zone);
+        placementZonesByWorld.compute(worldName, (key, existing) -> {
+            Set<String> updated = existing == null ? new HashSet<>() : new HashSet<>(existing);
+            updated.add(structureKey);
+            return Set.copyOf(updated);
+        });
+    }
+
     public void clearStructure(String structureKey) {
         if (structureKey == null || structureKey.isBlank()) {
             return;
@@ -61,10 +95,31 @@ public final class StructureProtectionService implements IDependencyInjectableCo
         for (WorldBlockKey key : keys) {
             protectedBlocks.remove(key);
         }
+        clearPlacementZone(structureKey);
     }
 
     public boolean isProtected(String worldName, Vector3i blockPosition) {
         return metadata(worldName, blockPosition).isPresent();
+    }
+
+    public boolean isPlacementRestricted(String worldName, Vector3i blockPosition) {
+        if (isProtected(worldName, blockPosition)) {
+            return true;
+        }
+        if (worldName == null || blockPosition == null) {
+            return false;
+        }
+        Set<String> zoneKeys = placementZonesByWorld.get(worldName);
+        if (zoneKeys == null || zoneKeys.isEmpty()) {
+            return false;
+        }
+        for (String structureKey : zoneKeys) {
+            ProtectedPlacementZone zone = placementZones.get(structureKey);
+            if (zone != null && zone.contains(blockPosition)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Optional<ProtectedBlockMetadata> metadata(String worldName, Vector3i blockPosition) {
@@ -72,5 +127,20 @@ public final class StructureProtectionService implements IDependencyInjectableCo
             return Optional.empty();
         }
         return Optional.ofNullable(protectedBlocks.get(WorldBlockKey.of(worldName, blockPosition)));
+    }
+
+    private void clearPlacementZone(String structureKey) {
+        ProtectedPlacementZone removed = placementZones.remove(structureKey);
+        if (removed == null) {
+            return;
+        }
+        placementZonesByWorld.computeIfPresent(removed.worldName(), (world, existing) -> {
+            if (existing == null || existing.isEmpty() || !existing.contains(structureKey)) {
+                return existing;
+            }
+            Set<String> updated = new HashSet<>(existing);
+            updated.remove(structureKey);
+            return updated.isEmpty() ? null : Set.copyOf(updated);
+        });
     }
 }

@@ -14,6 +14,10 @@ import java.util.UUID;
  */
 public final class InteriorLayoutService {
     private static final double DEFAULT_Y = 120.0D;
+    private static final double INTERIOR_INSTANCE_SPACING = 32.0D;
+    private static final double INTERIOR_SLOT_SPACING = 1024.0D;
+    private static final int INTERIOR_SLOT_GRID_WIDTH = 8;
+    private static final double INTERIOR_SLOT_ORIGIN = 32.5D;
 
     public Vector3d defaultOrigin() {
         return new Vector3d(0.5D, DEFAULT_Y, 0.5D);
@@ -27,10 +31,26 @@ public final class InteriorLayoutService {
         if (castleLocation == null) {
             return defaultOrigin();
         }
+        long slot = stableInteriorSlot(castleLocation);
+        int column = (int) Math.floorMod(slot, INTERIOR_SLOT_GRID_WIDTH);
+        int row = (int) (slot / INTERIOR_SLOT_GRID_WIDTH);
         return new Vector3d(
-                Math.floor(castleLocation.x()) + 0.5D,
-                Math.floor(castleLocation.y()) - 1.0D,
-                Math.floor(castleLocation.z()) + 10.5D
+                INTERIOR_SLOT_ORIGIN + (column * INTERIOR_SLOT_SPACING),
+                DEFAULT_Y,
+                INTERIOR_SLOT_ORIGIN + (row * INTERIOR_SLOT_SPACING)
+        );
+    }
+
+    public Vector3d originForCastle(CastleLocationData castleLocation, int interiorInstanceIndex) {
+        Vector3d base = originForCastle(castleLocation);
+        int safeIndex = Math.max(0, interiorInstanceIndex);
+        if (safeIndex == 0) {
+            return base;
+        }
+        return new Vector3d(
+                base.getX() + (INTERIOR_INSTANCE_SPACING * safeIndex),
+                base.getY(),
+                base.getZ()
         );
     }
 
@@ -40,6 +60,10 @@ public final class InteriorLayoutService {
 
     public InteriorLayout createLayoutForCastle(CastleLocationData castleLocation) {
         return createLayout(originForCastle(castleLocation));
+    }
+
+    public InteriorLayout createLayoutForCastle(CastleLocationData castleLocation, int interiorInstanceIndex) {
+        return createLayout(originForCastle(castleLocation, interiorInstanceIndex));
     }
 
     public InteriorLayout createLayout(Vector3d origin) {
@@ -102,5 +126,32 @@ public final class InteriorLayoutService {
         anchors.put(CitizenJobType.TRAINEE, new Vector3d(x + 4.0, y, z + 1.5));
         anchors.put(CitizenJobType.SOLDIER, new Vector3d(x, y, z + 3.5));
         return anchors;
+    }
+
+    private long stableInteriorSlot(CastleLocationData castleLocation) {
+        long hash = 1469598103934665603L;
+        hash = mix(hash, castleLocation.worldName());
+        hash = mix(hash, (long) Math.floor(castleLocation.x()));
+        hash = mix(hash, (long) Math.floor(castleLocation.y()));
+        hash = mix(hash, (long) Math.floor(castleLocation.z()));
+        return Math.floorMod(hash, (long) INTERIOR_SLOT_GRID_WIDTH * INTERIOR_SLOT_GRID_WIDTH);
+    }
+
+    private long mix(long current, String value) {
+        long hash = current;
+        if (value == null) {
+            return mix(hash, 0L);
+        }
+        for (int index = 0; index < value.length(); index++) {
+            hash ^= value.charAt(index);
+            hash *= 1099511628211L;
+        }
+        return hash;
+    }
+
+    private long mix(long current, long value) {
+        long hash = current ^ value;
+        hash *= 1099511628211L;
+        return hash;
     }
 }

@@ -2,11 +2,13 @@ package com.tavall.hytale.resourcegame.services;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.interior.InteriorLayout;
 import com.tavall.hytale.resourcegame.interior.InteriorTourStop;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,9 +64,27 @@ public final class InteriorTourMarkerService implements IDependencyInjectableCon
             return;
         }
         for (Ref<EntityStore> ref : refs) {
-            if (ref != null && ref.isValid()) {
-                ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
+            removeSafely(ref);
+        }
+    }
+
+    private void removeSafely(Ref<EntityStore> ref) {
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Runnable remove = () -> {
+            if (ref.isValid()) {
+                store.removeEntity(ref, RemoveReason.REMOVE);
+            }
+        };
+        if (store.getExternalData() instanceof EntityStore entityStore) {
+            World world = entityStore.getWorld();
+            if (world != null) {
+                WorldTasks.executeSafe(world, "InteriorTourMarkerService.removeSafely", remove);
+                return;
             }
         }
+        remove.run();
     }
 }

@@ -99,7 +99,7 @@ async function main() {
   const host = process.argv[2] ?? "127.0.0.1";
   const port = Number.parseInt(process.argv[3] ?? "5520", 10);
   const username = process.argv[4] ?? "HealthBot";
-  const uuid = process.argv[5] ?? "623e4567-e89b-12d3-a456-426614174000";
+  const uuid = process.argv[5] ?? "523e4567-e89b-12d3-a456-426614174000";
   const outputDir = process.argv[6] ?? path.resolve(process.cwd(), ".runs", "data-health-flow");
   const resultPath = path.join(outputDir, "scenario-result.txt");
   const startedAt = new Date().toISOString();
@@ -122,6 +122,8 @@ async function main() {
       nearbyRadius: 12
     });
     await delay(1_500);
+    bot.chat("/kd tutorial reset");
+    await delay(750);
 
     const debugSnapshot = await openDebug(bot, 15_000);
     assertInfraValue("#CacheStatus.Text", readSelectorValue(debugSnapshot, "#CacheStatus.Text"), [

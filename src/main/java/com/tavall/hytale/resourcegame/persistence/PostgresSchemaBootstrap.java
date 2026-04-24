@@ -62,7 +62,11 @@ public class PostgresSchemaBootstrap {
             if (inputStream == null) {
                 throw new IOException("Schema resource not found: " + resourcePath);
             }
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            String script = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            if (!script.isEmpty() && script.charAt(0) == '\uFEFF') {
+                return script.substring(1);
+            }
+            return script;
         }
     }
 

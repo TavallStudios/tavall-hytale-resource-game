@@ -1,22 +1,53 @@
 package com.tavall.hytale.resourcegame.population;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Holds anchor entity references for population displays.
  */
 public final class PopulationDisplayRefs {
+    private final String worldName;
+    private final Map<CitizenJobType, Vector3d> workerPositions;
+    private final Map<CitizenJobType, String> workerLabels;
     private final Map<CitizenJobType, Ref<EntityStore>> workerRefs;
     private final Ref<EntityStore> troopsRef;
+    private final String troopLabel;
 
-    public PopulationDisplayRefs(Map<CitizenJobType, Ref<EntityStore>> workerRefs, Ref<EntityStore> troopsRef) {
+    public PopulationDisplayRefs(
+            String worldName,
+            Map<CitizenJobType, Vector3d> workerPositions,
+            Map<CitizenJobType, String> workerLabels,
+            Map<CitizenJobType, Ref<EntityStore>> workerRefs,
+            Ref<EntityStore> troopsRef,
+            String troopLabel
+    ) {
+        this.worldName = worldName;
+        this.workerPositions = Map.copyOf(new EnumMap<>(workerPositions));
+        this.workerLabels = Map.copyOf(new EnumMap<>(workerLabels));
         this.workerRefs = Map.copyOf(workerRefs);
         this.troopsRef = troopsRef;
+        this.troopLabel = troopLabel;
+    }
+
+    public String worldName() {
+        return worldName;
+    }
+
+    public Map<CitizenJobType, Vector3d> workerPositions() {
+        return workerPositions;
+    }
+
+    public Map<CitizenJobType, String> workerLabels() {
+        return workerLabels;
     }
 
     public Ref<EntityStore> citizensRef() {
@@ -27,8 +58,18 @@ public final class PopulationDisplayRefs {
         return troopsRef;
     }
 
+    public String troopLabel() {
+        return troopLabel;
+    }
+
     public Map<CitizenJobType, Ref<EntityStore>> workerRefs() {
         return workerRefs;
+    }
+
+    public List<Ref<EntityStore>> allRefs() {
+        List<Ref<EntityStore>> refs = new ArrayList<>(workerRefs.values());
+        refs.add(troopsRef);
+        return List.copyOf(refs);
     }
 
     public Optional<CitizenJobType> resolveWorkerType(Ref<EntityStore> targetRef) {

@@ -5,11 +5,13 @@ import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleInteractionService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.ICastleProximityPromptService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlacementModeService;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.util.Objects;
 import java.util.Set;
@@ -58,28 +60,49 @@ public final class CastleProximityPromptService implements ICastleProximityPromp
     }
 
     private void scanPlayers() {
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            Ref<EntityStore> ref = playerRef.getReference();
-            if (ref == null || !ref.isValid()) {
-                focusedPlayers.remove(playerRef.getUuid());
-                continue;
+        try {
+            for (PlayerRef playerRef : Universe.get().getPlayers()) {
+                UUID playerId = playerRef.getUuid();
+                Ref<EntityStore> ref = playerRef.getReference();
+                if (ref == null || !ref.isValid()) {
+                    focusedPlayers.remove(playerId);
+                    continue;
+                }
+                var store = ref.getStore();
+                if (!(store.getExternalData() instanceof EntityStore entityStore)) {
+                    focusedPlayers.remove(playerId);
+                    continue;
+                }
+                World world = entityStore.getWorld();
+                if (world == null) {
+                    focusedPlayers.remove(playerId);
+                    continue;
+                }
+                WorldTasks.executeSafe(world, "CastleProximityPromptService.evaluateFocus", () -> evaluateFocus(ref, playerId));
             }
-            ref.getStore().getExternalData().getWorld().execute(() -> evaluateFocus(playerRef));
+        } catch (Throwable throwable) {
+            // Never let proximity scanning crash the scheduler thread or a world thread.
         }
     }
 
-    private void evaluateFocus(PlayerRef playerRef) {
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) {
-            focusedPlayers.remove(playerRef.getUuid());
+    private void evaluateFocus(Ref<EntityStore> ref, UUID playerId) {
+        if (playerId == null || ref == null || !ref.isValid()) {
+            if (playerId != null) {
+                focusedPlayers.remove(playerId);
+            }
             return;
         }
-        Player player = ref.getStore().getComponent(ref, Player.getComponentType());
+        Player player;
+        try {
+            player = ref.getStore().getComponent(ref, Player.getComponentType());
+        } catch (Throwable throwable) {
+            focusedPlayers.remove(playerId);
+            return;
+        }
         if (player == null) {
-            focusedPlayers.remove(playerRef.getUuid());
+            focusedPlayers.remove(playerId);
             return;
         }
-        UUID playerId = player.getUuid();
         if (placementModeService.shouldSuppressPrompts(playerId, java.time.Instant.now())) {
             focusedPlayers.remove(playerId);
             return;

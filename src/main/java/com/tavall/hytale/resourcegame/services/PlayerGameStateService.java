@@ -190,7 +190,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                 state.populationSummary(),
                 progress,
                 existingMetadata.resourceNodes(),
-                existingMetadata.castleBuildings()
+                existingMetadata.castleBuildings(),
+                existingMetadata.interiorInstanceIndex()
         );
         String json = objectMapper.writeValueAsString(metadata);
         return state.withMetadataJson(json, state.updatedAt() == null ? Instant.now() : state.updatedAt());
@@ -207,7 +208,14 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         PopulationSummary summary = rehydratePopulation(state.populationSummary(), metadata, now);
         PlayerGameState hydrated = state.withPopulation(summary, state.updatedAt() == null ? now : state.updatedAt());
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return rewriteMetadata(hydrated, metadata.onboardingProgress(), metadata.resourceNodes(), metadata.castleBuildings(), now);
+            return rewriteMetadata(
+                    hydrated,
+                    metadata.onboardingProgress(),
+                    metadata.resourceNodes(),
+                    metadata.castleBuildings(),
+                    metadata.interiorInstanceIndex(),
+                    now
+            );
         }
         return hydrated;
     }
@@ -233,7 +241,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
 
     private GameStateMetadata metadataOf(PlayerGameState state, Instant now) {
         if (state.metadataJson() == null || state.metadataJson().isBlank()) {
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of(), 0);
         }
         try {
             GameStateMetadata decoded = objectMapper.readValue(state.metadataJson(), GameStateMetadata.class);
@@ -247,17 +255,25 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                     resolveJobCounts(decoded),
                     onboarding,
                     decoded.resourceNodes(),
-                    decoded.castleBuildings()
+                    decoded.castleBuildings(),
+                    decoded.interiorInstanceIndex()
             );
         } catch (Exception ex) {
             LOGGER.warning(() -> "Failed to decode game state metadata. Falling back to defaults. " + ex.getMessage());
-            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of());
+            return GameStateMetadata.fromPopulation(state.populationSummary(), OnboardingProgress.defaults(), List.of(), List.of(), 0);
         }
     }
 
     private PlayerGameState rewriteMetadata(PlayerGameState state, OnboardingProgress onboardingProgress, Instant now) {
         GameStateMetadata metadata = metadataOf(state, now);
-        return rewriteMetadata(state, onboardingProgress, metadata.resourceNodes(), metadata.castleBuildings(), now);
+        return rewriteMetadata(
+                state,
+                onboardingProgress,
+                metadata.resourceNodes(),
+                metadata.castleBuildings(),
+                metadata.interiorInstanceIndex(),
+                now
+        );
     }
 
     private PlayerGameState rewriteMetadata(
@@ -265,6 +281,7 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             OnboardingProgress onboardingProgress,
             List<ResourceNodeData> resourceNodes,
             List<CastleBuildingData> castleBuildings,
+            int interiorInstanceIndex,
             Instant now
     ) {
         try {
@@ -272,7 +289,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                     state.populationSummary(),
                     onboardingProgress,
                     resourceNodes,
-                    castleBuildings
+                    castleBuildings,
+                    interiorInstanceIndex
             );
             String json = objectMapper.writeValueAsString(metadata);
             return state.withMetadataJson(json, now);
@@ -286,5 +304,39 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             return state.castleAssetType();
         }
         return DEFAULT_CASTLE_ASSET_TYPE;
+    }
+
+    @Override
+    public int interiorInstanceIndex(PlayerGameState state) {
+        if (state == null) {
+            return 0;
+        }
+        GameStateMetadata metadata = metadataOf(state, resolveNow(state));
+        return Math.max(0, metadata.interiorInstanceIndex());
+    }
+
+    @Override
+    public PlayerGameState bumpInteriorInstanceIndex(PlayerGameState state, Instant now) {
+        if (state == null) {
+            return null;
+        }
+        Instant effectiveNow = now == null ? Instant.now() : now;
+        GameStateMetadata metadata = metadataOf(state, effectiveNow);
+        int nextIndex = metadata.interiorInstanceIndex() + 1;
+        return rewriteMetadata(
+                state,
+                metadata.onboardingProgress(),
+                metadata.resourceNodes(),
+                metadata.castleBuildings(),
+                nextIndex,
+                effectiveNow
+        );
+    }
+
+    private Instant resolveNow(PlayerGameState state) {
+        if (state == null) {
+            return Instant.now();
+        }
+        return state.updatedAt() == null ? Instant.now() : state.updatedAt();
     }
 }

@@ -16,6 +16,7 @@ import com.tavall.hytale.resourcegame.population.PromotionCost;
 import com.tavall.hytale.resourcegame.world.CastleBuildingStructureService;
 import com.tavall.hytale.resourcegame.world.CastleBuildingVisualRefs;
 import com.tavall.hytale.resourcegame.world.ProtectedStructureType;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.time.Instant;
 import java.util.List;
@@ -67,7 +68,7 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
             CastleBuildingVisualRefs refs = entry.getValue();
             World world = Universe.get().getWorld(refs.worldName());
             if (world != null) {
-                world.execute(() -> clearRefsOnWorld(world, refs));
+                WorldTasks.executeSafe(world, "CastleBuildingVisualService.clearRefsOnWorld", () -> clearRefsOnWorld(world, refs));
                 continue;
             }
             for (Ref<EntityStore> ref : refs.allRefs()) {
@@ -108,7 +109,7 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
             if (world == null) {
                 continue;
             }
-            world.execute(() -> {
+            WorldTasks.executeSafe(world, "CastleBuildingVisualService.rebuildBuilding(" + building.buildingId() + ")", () -> {
                 List<Ref<EntityStore>> labelRefs = spawnLabels(world, summary);
                 protectionService.replaceStructure(
                         structureKey(building.buildingId()),
@@ -140,7 +141,7 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
             CastleBuildingVisualRefs refs = entry.getValue();
             World world = Universe.get().getWorld(refs.worldName());
             if (world != null) {
-                world.execute(() -> clearRefsOnWorld(world, refs));
+                WorldTasks.executeSafe(world, "CastleBuildingVisualService.clearRefsOnWorld", () -> clearRefsOnWorld(world, refs));
                 continue;
             }
             for (Ref<EntityStore> ref : refs.allRefs()) {
@@ -160,7 +161,10 @@ public final class CastleBuildingVisualService implements ICastleBuildingVisualS
         if (ref == null || !ref.isValid()) {
             return;
         }
-        ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
+        try {
+            ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
+        } catch (Throwable ignored) {
+        }
     }
 
     private List<Ref<EntityStore>> spawnLabels(World world, CastleBuildingSummary summary) {

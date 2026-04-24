@@ -26,6 +26,11 @@ public final class RecordingPopulationDisplayGateway implements PopulationDispla
         summaries.put(playerId, summary);
     }
 
+    @Override
+    public void clearDisplays(UUID playerId) {
+        summaries.remove(playerId);
+    }
+
     public PopulationSummary lastSummary(UUID playerId) {
         return summaries.get(playerId);
     }

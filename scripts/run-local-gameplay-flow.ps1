@@ -6,6 +6,7 @@
     [int]$Port = 5520,
     [string]$Username = "GameplayBot",
     [string]$StableUuid = "",
+    [string]$LeadingArg = "",
     [string]$LogDir = "",
     [string]$AuthDomain = "",
     [string]$IdentityToken = "",
@@ -58,6 +59,38 @@ function Write-LogLine {
     Write-Host $Message
 }
 
+function Write-ConsoleBlock {
+    param([string[]]$Lines)
+    foreach ($line in $Lines) {
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            Write-Host $line
+        }
+    }
+}
+
+function Write-ResultSummary {
+    param(
+        [string]$ResultPath,
+        [string[]]$StdoutLines,
+        [string[]]$StderrLines
+    )
+
+    if (Test-Path $ResultPath) {
+        $interesting = Get-Content -Path $ResultPath | Where-Object {
+            $_ -match '^(name|success|error|finalServerMessage):'
+        }
+        if ($interesting.Count -gt 0) {
+            Write-ConsoleBlock -Lines $interesting
+            return
+        }
+    }
+
+    $tail = @($StdoutLines + $StderrLines | Select-Object -Last 20)
+    if ($tail.Count -gt 0) {
+        Write-ConsoleBlock -Lines $tail
+    }
+}
+
 function Invoke-ProcessCapture {
     param(
         [string]$FilePath,
@@ -66,6 +99,8 @@ function Invoke-ProcessCapture {
 
     $stdoutPath = [System.IO.Path]::GetTempFileName()
     $stderrPath = [System.IO.Path]::GetTempFileName()
+    $stdoutLines = [System.Collections.Generic.List[string]]::new()
+    $stderrLines = [System.Collections.Generic.List[string]]::new()
     try {
         $process = Start-Process -FilePath $FilePath `
             -ArgumentList $Arguments `
@@ -81,11 +116,19 @@ function Invoke-ProcessCapture {
             }
             Get-Content -Path $path | ForEach-Object {
                 Add-Content -Path $logPath -Value $_ -Encoding utf8
-                Write-Host $_
+                if ($path -eq $stdoutPath) {
+                    $stdoutLines.Add($_)
+                } else {
+                    $stderrLines.Add($_)
+                }
             }
         }
 
-        return [int]$process.ExitCode
+        return [pscustomobject]@{
+            ExitCode = [int]$process.ExitCode
+            StdoutLines = $stdoutLines.ToArray()
+            StderrLines = $stderrLines.ToArray()
+        }
     } finally {
         foreach ($path in @($stdoutPath, $stderrPath)) {
             if (Test-Path $path) {
@@ -135,7 +178,11 @@ try {
         $env:RESOURCE_GAME_BOT_TRACE = "compact"
     }
 
-    $arguments = @($scenarioPath, $ServerHost, ([string]$Port), $Username, $StableUuid, $outputDir)
+    $arguments = @($scenarioPath)
+    if (-not [string]::IsNullOrWhiteSpace($LeadingArg)) {
+        $arguments += @($LeadingArg)
+    }
+    $arguments += @($ServerHost, ([string]$Port), $Username, $StableUuid, $outputDir)
 
     Write-LogLine ("[{0}] Starting local gameplay flow" -f $startedAt)
     Write-LogLine ("[{0}] Scenario={1}" -f (Get-Date).ToString("o"), $ScenarioName)
@@ -143,7 +190,9 @@ try {
     Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHost, $Port)
     Write-LogLine ("[{0}] Username={1}" -f (Get-Date).ToString("o"), $Username)
 
-    $exitCode = Invoke-ProcessCapture -FilePath "node.exe" -Arguments $arguments
+    $processResult = Invoke-ProcessCapture -FilePath "node.exe" -Arguments $arguments
+    $exitCode = $processResult.ExitCode
+    Write-ResultSummary -ResultPath $resultPath -StdoutLines $processResult.StdoutLines -StderrLines $processResult.StderrLines
 } finally {
     if ($KeepTranscript -eq $false) {
         Minimize-TranscriptArtifact -Path $tracePath

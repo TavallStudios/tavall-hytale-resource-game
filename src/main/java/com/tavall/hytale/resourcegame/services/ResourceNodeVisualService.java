@@ -3,6 +3,7 @@ package com.tavall.hytale.resourcegame.services;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -15,6 +16,7 @@ import com.tavall.hytale.resourcegame.domain.ResourceNodeSummary;
 import com.tavall.hytale.resourcegame.world.ProtectedStructureType;
 import com.tavall.hytale.resourcegame.world.ResourceNodeStructureService;
 import com.tavall.hytale.resourcegame.world.ResourceNodeVisualRefs;
+import com.tavall.hytale.resourcegame.tasks.WorldTasks;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.logging.Logger;
  */
 public final class ResourceNodeVisualService implements IResourceNodeVisualService, IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(ResourceNodeVisualService.class.getName());
+    private static final int NODE_PLACEMENT_BLOCK_RADIUS = 10;
 
     private final IResourceNodeService resourceNodeService;
     private final ResourceNodeStructureService structureService;
@@ -68,7 +71,7 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
             protectionService.clearStructure(structureKey(entry.getKey()));
             World world = Universe.get().getWorld(refs.worldName());
             if (world != null) {
-                world.execute(() -> clearRefsOnWorld(world, refs));
+                WorldTasks.executeSafe(world, "ResourceNodeVisualService.clearRefsOnWorld", () -> clearRefsOnWorld(world, refs));
                 continue;
             }
             removeRefs(refs);
@@ -106,7 +109,7 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
             if (world == null) {
                 continue;
             }
-            world.execute(() -> {
+            WorldTasks.executeSafe(world, "ResourceNodeVisualService.rebuildNode(" + node.nodeId() + ")", () -> {
                 ResourceNodeSummary summary = resourceNodeService.summary(state, node);
                 protectionService.replaceStructure(
                         structureKey(node.nodeId()),
@@ -115,6 +118,13 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
                         world.getName(),
                         node.resourceType().name().toLowerCase(),
                         structureService.ensureNodeSite(world, node, summary)
+                );
+                protectionService.replacePlacementZone(
+                        structureKey(node.nodeId()),
+                        ProtectedStructureType.RESOURCE_NODE,
+                        world.getName(),
+                        new Vector3i((int) Math.floor(node.x()), (int) Math.floor(node.y()), (int) Math.floor(node.z())),
+                        NODE_PLACEMENT_BLOCK_RADIUS
                 );
                 List<Ref<EntityStore>> labelRefs = worldLabelService.spawnLabelStack(
                         world,
@@ -143,7 +153,7 @@ public final class ResourceNodeVisualService implements IResourceNodeVisualServi
             protectionService.clearStructure(structureKey(entry.getKey()));
             World world = Universe.get().getWorld(refs.worldName());
             if (world != null) {
-                world.execute(() -> clearRefsOnWorld(world, refs));
+                WorldTasks.executeSafe(world, "ResourceNodeVisualService.clearRefsOnWorld", () -> clearRefsOnWorld(world, refs));
                 continue;
             }
             removeRefs(refs);

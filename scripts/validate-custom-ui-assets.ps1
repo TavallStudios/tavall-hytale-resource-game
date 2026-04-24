@@ -46,11 +46,35 @@ function Invoke-MavenBuild {
         if (-not (Get-Command $mavenCommand -ErrorAction SilentlyContinue)) {
             $mavenCommand = "C:\Tools\apache-maven-3.9.9\bin\mvn.cmd"
         }
-        $process = Start-Process -FilePath $mavenCommand -ArgumentList @("-q", "test", "package") -Wait -NoNewWindow -PassThru
+        $stdoutPath = [System.IO.Path]::GetTempFileName()
+        $stderrPath = [System.IO.Path]::GetTempFileName()
+        $process = Start-Process `
+            -FilePath $mavenCommand `
+            -ArgumentList @("-q", "test", "package") `
+            -Wait `
+            -NoNewWindow `
+            -PassThru `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+        $stdoutLines = if (Test-Path $stdoutPath) { Get-Content -Path $stdoutPath } else { @() }
+        $stderrLines = if (Test-Path $stderrPath) { Get-Content -Path $stderrPath } else { @() }
         if ($process.ExitCode -ne 0) {
+            $combinedLines = @($stdoutLines + $stderrLines) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+            if ($combinedLines.Count -gt 0) {
+                Write-Host "Maven build failed. Recent output:"
+                $combinedLines | Select-Object -Last 120 | ForEach-Object { Write-Host $_ }
+            }
             throw "Maven build failed with exit code $($process.ExitCode)"
         }
+        $warningCount = (@($stdoutLines + $stderrLines) | Where-Object { $_ -match '\bWARN\b|\bWARNING\b' }).Count
+        $errorCount = (@($stdoutLines + $stderrLines) | Where-Object { $_ -match '\bERROR\b|\bSEVERE\b' }).Count
+        Write-Host ("Maven build completed successfully. warnings={0} errors={1}" -f $warningCount, $errorCount)
     } finally {
+        foreach ($capturePath in @($stdoutPath, $stderrPath)) {
+            if ($capturePath -and (Test-Path $capturePath)) {
+                Remove-Item -Path $capturePath -Force
+            }
+        }
         Pop-Location
     }
 }

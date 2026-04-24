@@ -10,8 +10,14 @@ import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.Frozen;
+import com.hypixel.hytale.server.core.modules.entity.component.AudioComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
+import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.MovementAudioComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.PersistentModel;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -31,6 +37,7 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
     private static final double DEFAULT_LINE_SPACING = 0.42D;
 
     private volatile Model markerModel;
+    private volatile boolean markerModelLookupComplete;
 
     public Ref<EntityStore> spawnLabel(World world, Vector3d position, String text) {
         if (world == null || position == null || text == null || text.isBlank()) {
@@ -63,36 +70,74 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
             return;
         }
         Store<EntityStore> store = ref.getStore();
-        store.putComponent(ref, Nameplate.getComponentType(), new Nameplate(text));
+        try {
+            store.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
+            store.putComponent(ref, Nameplate.getComponentType(), new Nameplate(text));
+            store.ensureComponent(ref, Frozen.getComponentType());
+            store.ensureComponent(ref, Intangible.getComponentType());
+            store.ensureComponent(ref, Invulnerable.getComponentType());
+            silenceEntity(store, ref);
+        } catch (RuntimeException ignored) {
+        }
     }
 
     private Ref<EntityStore> spawnSingleLabel(World world, Vector3d position, String text) {
+        Model model = resolveMarkerModel();
+        if (model == null) {
+            LOGGER.warning(() -> "Skipping world label spawn because marker model '" + DEFAULT_MARKER_MODEL_ID + "' is unavailable.");
+            return null;
+        }
         Store<EntityStore> store = world.getEntityStore().getStore();
         Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
         holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, Vector3f.ZERO));
         holder.ensureComponent(UUIDComponent.getComponentType());
         holder.ensureComponent(Intangible.getComponentType());
+        holder.ensureComponent(Invulnerable.getComponentType());
+        holder.ensureComponent(Frozen.getComponentType());
+        holder.addComponent(DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
         holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
-        Model model = resolveMarkerModel();
-        if (model != null) {
-            holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
-            holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-        }
+        holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+        holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
         return store.addEntity(holder, AddReason.SPAWN);
     }
 
     private Model resolveMarkerModel() {
+        if (markerModelLookupComplete) {
+            return markerModel;
+        }
         Model cached = markerModel;
         if (cached != null) {
             return cached;
         }
-        ModelAsset asset = (ModelAsset) ModelAsset.getAssetMap().getAsset(DEFAULT_MARKER_MODEL_ID);
-        if (asset == null) {
-            LOGGER.warning(() -> "Unable to resolve default world-label model '" + DEFAULT_MARKER_MODEL_ID + "'. Labels will render nameplates only.");
-            return null;
+        synchronized (this) {
+            if (markerModelLookupComplete) {
+                return markerModel;
+            }
+            ModelAsset asset = (ModelAsset) ModelAsset.getAssetMap().getAsset(DEFAULT_MARKER_MODEL_ID);
+            if (asset == null) {
+                markerModelLookupComplete = true;
+                markerModel = null;
+                LOGGER.warning(() -> "Unable to resolve default world-label model '" + DEFAULT_MARKER_MODEL_ID + "'. World-label spawns will be skipped.");
+                return null;
+            }
+            Model created = Model.createUnitScaleModel(asset);
+            markerModel = created;
+            markerModelLookupComplete = true;
+            return created;
         }
-        Model created = Model.createUnitScaleModel(asset);
-        markerModel = created;
-        return created;
+    }
+
+    private void silenceEntity(Store<EntityStore> store, Ref<EntityStore> ref) {
+        if (store == null || ref == null) {
+            return;
+        }
+        try {
+            store.removeComponent(ref, AudioComponent.getComponentType());
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            store.removeComponent(ref, MovementAudioComponent.getComponentType());
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 }

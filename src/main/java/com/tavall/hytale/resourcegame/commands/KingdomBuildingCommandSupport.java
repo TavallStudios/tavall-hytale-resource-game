@@ -67,18 +67,20 @@ public final class KingdomBuildingCommandSupport implements IDependencyInjectabl
 
     public void handle(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd buildings place|stage|list|status|select|align|goto|upgrade|finish|clear").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd buildings place|stage|spawn|list|status|select|align|goto|upgrade|cancel|finish|clear").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(Locale.ROOT);
         switch (action) {
             case "place" -> handlePlacement(context, player, tokens);
             case "stage" -> handleStage(context, player, tokens, session);
+            case "spawn" -> handleSpawn(context, player, tokens, session);
             case "list" -> handleList(context, session);
             case "status" -> handleStatus(context, player, tokens, session);
             case "select" -> handleSelect(context, player, tokens, session);
             case "align", "goto" -> handleGoto(context, player, tokens, session);
             case "upgrade" -> handleUpgrade(context, player, tokens, session);
+            case "cancel" -> handleCancel(context, player, tokens, session);
             case "finish" -> handleFinish(context, player, tokens, session);
             case "clear" -> handleClear(context, session);
             default -> context.sendMessage(Message.raw("Unknown buildings action.").color("red"));
@@ -139,6 +141,46 @@ public final class KingdomBuildingCommandSupport implements IDependencyInjectabl
         Vector3i stagedTargetBlock = stagedTargetBlock(anchor);
         placementModeService.armBuildingPlacement(player, buildingType, stagedTargetBlock);
         context.sendMessage(Message.raw(stageMessage(buildingType, stagedTargetBlock)).color("green"));
+    }
+
+    private void handleSpawn(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 4) {
+            context.sendMessage(Message.raw("Usage: /kd buildings spawn <type> <level>").color("yellow"));
+            return;
+        }
+        BuildingType buildingType = BuildingType.parse(tokens.get(2));
+        if (buildingType == null) {
+            context.sendMessage(Message.raw("Unknown building type.").color("red"));
+            return;
+        }
+        int level;
+        try {
+            level = Integer.parseInt(tokens.get(3));
+        } catch (NumberFormatException ex) {
+            context.sendMessage(Message.raw("Level must be a whole number.").color("red"));
+            return;
+        }
+        String worldName = buildingPlacementPlanner.recommendedWorldName(session.playerId(), session.gameState(), buildingType);
+        Vector3d anchor = buildingPlacementPlanner.recommendedPosition(session.playerId(), session.gameState(), buildingType);
+        if (worldName == null || anchor == null) {
+            context.sendMessage(Message.raw("Unable to resolve a spawn anchor for " + buildingType.displayName() + ".").color("red"));
+            return;
+        }
+        var targetWorld = Universe.get().getWorld(worldName);
+        if (targetWorld == null) {
+            context.sendMessage(Message.raw(missingStageWorldMessage(buildingType)).color("red"));
+            return;
+        }
+        if (player.getWorld() == null || !player.getWorld().getName().equals(targetWorld.getName())) {
+            context.sendMessage(Message.raw(wrongAreaStageMessage(buildingType)).color("red"));
+            return;
+        }
+        BuildingMutationResult mutationResult = buildingService.spawnBuilding(session.playerId(), buildingType, level, worldName, anchor, Instant.now());
+        if (mutationResult.state() != null && mutationResult.changed()) {
+            buildingVisualService.refreshBuildings(session.playerId(), mutationResult.state());
+            uiNavigator.refreshTrackedPage(session.playerId(), mutationResult.state());
+        }
+        context.sendMessage(Message.raw(mutationResult.message()).color(mutationResult.changed() ? "green" : "red"));
     }
 
     private void handleList(CommandContext context, PlayerSession session) {
@@ -212,6 +254,23 @@ public final class KingdomBuildingCommandSupport implements IDependencyInjectabl
             return;
         }
         BuildingMutationResult mutationResult = buildingService.startUpgrade(session.playerId(), building.get().buildingId(), Instant.now());
+        if (mutationResult.state() != null && mutationResult.changed()) {
+            buildingVisualService.refreshBuildings(session.playerId(), mutationResult.state());
+            uiNavigator.refreshTrackedPage(session.playerId(), mutationResult.state());
+        }
+        context.sendMessage(Message.raw(mutationResult.message()).color(mutationResult.changed() ? "green" : "red"));
+    }
+
+    private void handleCancel(CommandContext context, Player player, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw("Usage: /kd buildings cancel <index|type|id_prefix|focus>").color("yellow"));
+            return;
+        }
+        Optional<CastleBuildingData> building = resolveBuilding(context, player, session, tokens.get(2));
+        if (building.isEmpty()) {
+            return;
+        }
+        BuildingMutationResult mutationResult = buildingService.cancelUpgrade(session.playerId(), building.get().buildingId(), Instant.now());
         if (mutationResult.state() != null && mutationResult.changed()) {
             buildingVisualService.refreshBuildings(session.playerId(), mutationResult.state());
             uiNavigator.refreshTrackedPage(session.playerId(), mutationResult.state());
