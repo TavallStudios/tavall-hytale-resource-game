@@ -1,0 +1,820 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": true
+  },
+  "name": "Lumber Mill Level 22",
+  "model_identifier": "resource_game:buildings/lumber_mill/level_22",
+  "visible_box": [
+    3,
+    3,
+    3
+  ],
+  "variable_placeholders": "",
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {
+      "name": "lumber_mill_level_22_pad",
+      "uuid": "c9089c78-6cd3-5bda-899c-b16b649a7b10",
+      "type": "cube",
+      "from": [
+        -18,
+        0,
+        -18
+      ],
+      "to": [
+        18,
+        3,
+        18
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 1,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_core",
+      "uuid": "a5e1ca0a-7ee1-536c-8af2-11d8c68d85ec",
+      "type": "cube",
+      "from": [
+        -13,
+        3,
+        -13
+      ],
+      "to": [
+        13,
+        26,
+        13
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 2,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_roof",
+      "uuid": "a38ef292-a23b-518b-a759-90e2cb7fb008",
+      "type": "cube",
+      "from": [
+        -15,
+        26,
+        -15
+      ],
+      "to": [
+        15,
+        29,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_north_wing",
+      "uuid": "5bdc524c-59c0-56c4-bff9-906de7683899",
+      "type": "cube",
+      "from": [
+        -5,
+        4,
+        -18
+      ],
+      "to": [
+        5,
+        11,
+        -9
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_south_wing",
+      "uuid": "91c83949-35dc-59f6-8a82-e32d92bbd25e",
+      "type": "cube",
+      "from": [
+        -5,
+        4,
+        9
+      ],
+      "to": [
+        5,
+        11,
+        18
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_east_wing",
+      "uuid": "21a0c349-f784-59de-9673-95299c03c6cf",
+      "type": "cube",
+      "from": [
+        9,
+        4,
+        -5
+      ],
+      "to": [
+        18,
+        11,
+        5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_west_wing",
+      "uuid": "cd99f956-0cd8-5a46-abad-e2bf0a4a92b5",
+      "type": "cube",
+      "from": [
+        -18,
+        4,
+        -5
+      ],
+      "to": [
+        -9,
+        11,
+        5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "lumber_mill_level_22_cap",
+      "uuid": "69e51df3-2522-5334-87dc-8be8c572429c",
+      "type": "cube",
+      "from": [
+        -4,
+        29,
+        -4
+      ],
+      "to": [
+        4,
+        37,
+        4
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "saw_x_22",
+      "uuid": "c28228d3-3604-5051-a516-f7989c7fc70d",
+      "type": "cube",
+      "from": [
+        -24,
+        13,
+        -2
+      ],
+      "to": [
+        24,
+        16,
+        2
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "saw_z_22",
+      "uuid": "0a6acb40-45e7-5313-bb43-5f8b0643cd13",
+      "type": "cube",
+      "from": [
+        -2,
+        13,
+        -24
+      ],
+      "to": [
+        2,
+        16,
+        24
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "outliner": [
+    "c9089c78-6cd3-5bda-899c-b16b649a7b10",
+    "a5e1ca0a-7ee1-536c-8af2-11d8c68d85ec",
+    "a38ef292-a23b-518b-a759-90e2cb7fb008",
+    "5bdc524c-59c0-56c4-bff9-906de7683899",
+    "91c83949-35dc-59f6-8a82-e32d92bbd25e",
+    "21a0c349-f784-59de-9673-95299c03c6cf",
+    "cd99f956-0cd8-5a46-abad-e2bf0a4a92b5",
+    "69e51df3-2522-5334-87dc-8be8c572429c",
+    "c28228d3-3604-5051-a516-f7989c7fc70d",
+    "0a6acb40-45e7-5313-bb43-5f8b0643cd13"
+  ],
+  "textures": [
+    {
+      "path": "../../textures/lumber_mill_texture.png",
+      "name": "lumber_mill_texture.png",
+      "folder": "textures",
+      "namespace": "",
+      "id": "0",
+      "particle": true,
+      "render_mode": "default",
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "1c95aa4c-8d90-5c0b-acf8-ad6fcdc9a615",
+      "relative_path": "../../textures/lumber_mill_texture.png",
+      "source": "../../textures/lumber_mill_texture.png"
+    }
+  ]
+}

@@ -1,0 +1,820 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": true
+  },
+  "name": "Barracks Level 08",
+  "model_identifier": "resource_game:buildings/barracks/level_08",
+  "visible_box": [
+    3,
+    3,
+    3
+  ],
+  "variable_placeholders": "",
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {
+      "name": "barracks_level_08_pad",
+      "uuid": "d9eaeca3-9fdd-5640-ba4e-32da06153a4c",
+      "type": "cube",
+      "from": [
+        -15,
+        0,
+        -15
+      ],
+      "to": [
+        15,
+        3,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 1,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_core",
+      "uuid": "66235698-096c-50ad-98f1-fe12e4389c87",
+      "type": "cube",
+      "from": [
+        -10,
+        3,
+        -10
+      ],
+      "to": [
+        10,
+        18,
+        10
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 2,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_roof",
+      "uuid": "f27262d2-e97b-5b6b-bc8d-206777bc1bd4",
+      "type": "cube",
+      "from": [
+        -12,
+        18,
+        -12
+      ],
+      "to": [
+        12,
+        21,
+        12
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 3,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_north_wing",
+      "uuid": "7a39c496-afa4-5ea2-833a-f3f83f006aa5",
+      "type": "cube",
+      "from": [
+        -5,
+        4,
+        -15
+      ],
+      "to": [
+        5,
+        8,
+        -9
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_south_wing",
+      "uuid": "49cc2997-85c4-5922-bd36-1808c34da11c",
+      "type": "cube",
+      "from": [
+        -5,
+        4,
+        9
+      ],
+      "to": [
+        5,
+        8,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_east_wing",
+      "uuid": "dd4db73f-f6de-51b2-8a2e-fcd438eb94e2",
+      "type": "cube",
+      "from": [
+        9,
+        4,
+        -5
+      ],
+      "to": [
+        15,
+        8,
+        5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_west_wing",
+      "uuid": "81a501fa-899f-51c1-beb7-b30de1b15b56",
+      "type": "cube",
+      "from": [
+        -15,
+        4,
+        -5
+      ],
+      "to": [
+        -9,
+        8,
+        5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "barracks_level_08_cap",
+      "uuid": "ede39f80-1adb-5ea1-8b5f-57c387ddcbef",
+      "type": "cube",
+      "from": [
+        -4,
+        21,
+        -4
+      ],
+      "to": [
+        4,
+        26,
+        4
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "tower_ne_08",
+      "uuid": "10ce5095-94b4-547b-8629-1cb89ff91e11",
+      "type": "cube",
+      "from": [
+        9,
+        3,
+        9
+      ],
+      "to": [
+        15,
+        28,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "tower_sw_08",
+      "uuid": "69732fbb-e68d-554c-bccd-96159bbc59e5",
+      "type": "cube",
+      "from": [
+        -15,
+        3,
+        -15
+      ],
+      "to": [
+        -9,
+        28,
+        -9
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 4,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "outliner": [
+    "d9eaeca3-9fdd-5640-ba4e-32da06153a4c",
+    "66235698-096c-50ad-98f1-fe12e4389c87",
+    "f27262d2-e97b-5b6b-bc8d-206777bc1bd4",
+    "7a39c496-afa4-5ea2-833a-f3f83f006aa5",
+    "49cc2997-85c4-5922-bd36-1808c34da11c",
+    "dd4db73f-f6de-51b2-8a2e-fcd438eb94e2",
+    "81a501fa-899f-51c1-beb7-b30de1b15b56",
+    "ede39f80-1adb-5ea1-8b5f-57c387ddcbef",
+    "10ce5095-94b4-547b-8629-1cb89ff91e11",
+    "69732fbb-e68d-554c-bccd-96159bbc59e5"
+  ],
+  "textures": [
+    {
+      "path": "../../textures/barracks_texture.png",
+      "name": "barracks_texture.png",
+      "folder": "textures",
+      "namespace": "",
+      "id": "0",
+      "particle": true,
+      "render_mode": "default",
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "ae7fb293-f2b4-5206-a899-d4785b7f3b85",
+      "relative_path": "../../textures/barracks_texture.png",
+      "source": "../../textures/barracks_texture.png"
+    }
+  ]
+}

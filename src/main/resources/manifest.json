@@ -13,8 +13,10 @@
   "Website": "",
   "DisabledByDefault": false,
   "IncludesAssetPack": true,
-  "Dependencies": {},
+  "Dependencies": {
+    "Ellie:HyUI": "=0.9.5"
+  },
   "OptionalDependencies": {},
-  "ServerVersion": "*",
+  "ServerVersion": "${hytale.server.version}",
   "Main": "${plugin.main.class}"
 }

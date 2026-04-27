@@ -47,3 +47,8 @@ The repo originally mixed direct command placement with focus-driven interaction
 - Placement for any future castle-surface buildings should enter through this stack instead of adding new one-off spawn commands.
 - Better preview rules for invalid terrain and overlap rejection.
 - Real click-driven bot coverage once native world-click packets are available in the shared bot client.
+## Castle Building Placement
+- Castle buildings are placed inside the player's interior world, not around the castle surface.
+- Resource nodes remain surface-world objects near the castle and keep using castle-world placement validation.
+- `/kd buildings stage <type>` and `/kd buildings spawn <type> <level>` resolve the correct world through `BuildingPlacementPlanner` and require the player to be in that world.
+- Normal placement respects `AccountProgression` unlock levels. Admin/debug spawn still clamps to the building max level and can place any supported level from 1 to 30.

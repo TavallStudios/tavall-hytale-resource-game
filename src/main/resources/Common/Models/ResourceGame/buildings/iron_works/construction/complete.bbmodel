@@ -1,0 +1,742 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": true
+  },
+  "name": "Iron Works Complete",
+  "model_identifier": "resource_game:buildings/iron_works/construction/complete",
+  "visible_box": [
+    3,
+    3,
+    3
+  ],
+  "variable_placeholders": "",
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {
+      "name": "iron_works_complete_pad",
+      "uuid": "b61c09be-35ab-50ff-a283-82c49634e17d",
+      "type": "cube",
+      "from": [
+        -15,
+        0,
+        -15
+      ],
+      "to": [
+        15,
+        3,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 1,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_post_ne",
+      "uuid": "0404d941-03a7-57ca-af99-b9d3913f8627",
+      "type": "cube",
+      "from": [
+        11,
+        3,
+        11
+      ],
+      "to": [
+        15,
+        18,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_post_nw",
+      "uuid": "1fbed105-fbd6-5e7d-b6ec-8017cbd70ba4",
+      "type": "cube",
+      "from": [
+        -15,
+        3,
+        11
+      ],
+      "to": [
+        -11,
+        18,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_post_se",
+      "uuid": "233c9c83-b61c-52f3-b648-30dd1a58efa7",
+      "type": "cube",
+      "from": [
+        11,
+        3,
+        -15
+      ],
+      "to": [
+        15,
+        18,
+        -11
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_post_sw",
+      "uuid": "91e22aa6-0b92-5c39-9d96-52a3f6b067b9",
+      "type": "cube",
+      "from": [
+        -15,
+        3,
+        -15
+      ],
+      "to": [
+        -11,
+        18,
+        -11
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_shell_core",
+      "uuid": "65267b77-8153-5423-b759-49b0ad4f53c1",
+      "type": "cube",
+      "from": [
+        -9,
+        3,
+        -9
+      ],
+      "to": [
+        9,
+        15,
+        9
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 3,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_roof_rim_x",
+      "uuid": "77429294-e52c-56cd-a0cf-f94b2f0d2517",
+      "type": "cube",
+      "from": [
+        -15,
+        15,
+        -3
+      ],
+      "to": [
+        15,
+        19,
+        3
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_roof_rim_z",
+      "uuid": "bc9e30e2-024f-5f07-9d84-a61e6d08f5b5",
+      "type": "cube",
+      "from": [
+        -3,
+        15,
+        -15
+      ],
+      "to": [
+        3,
+        19,
+        15
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "iron_works_complete_cap",
+      "uuid": "4f95c23f-e7df-5dfb-b0b3-1adde611b0bd",
+      "type": "cube",
+      "from": [
+        -5,
+        19,
+        -5
+      ],
+      "to": [
+        5,
+        23,
+        5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "color": 5,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "outliner": [
+    "b61c09be-35ab-50ff-a283-82c49634e17d",
+    "0404d941-03a7-57ca-af99-b9d3913f8627",
+    "1fbed105-fbd6-5e7d-b6ec-8017cbd70ba4",
+    "233c9c83-b61c-52f3-b648-30dd1a58efa7",
+    "91e22aa6-0b92-5c39-9d96-52a3f6b067b9",
+    "65267b77-8153-5423-b759-49b0ad4f53c1",
+    "77429294-e52c-56cd-a0cf-f94b2f0d2517",
+    "bc9e30e2-024f-5f07-9d84-a61e6d08f5b5",
+    "4f95c23f-e7df-5dfb-b0b3-1adde611b0bd"
+  ],
+  "textures": [
+    {
+      "path": "../../../textures/iron_works_texture.png",
+      "name": "iron_works_texture.png",
+      "folder": "textures",
+      "namespace": "",
+      "id": "0",
+      "particle": true,
+      "render_mode": "default",
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "f7ceaa8e-d34c-5e5e-a030-960d5d34f1a0",
+      "relative_path": "../../../textures/iron_works_texture.png",
+      "source": "../../../textures/iron_works_texture.png"
+    }
+  ]
+}

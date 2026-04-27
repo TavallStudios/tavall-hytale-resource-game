@@ -1,8 +1,10 @@
 Group {
   Anchor: (Width: 880, Height: 620);
-  Background: (Color: #0e141c(0.88));
+  Background: PatchStyle(TexturePath: "../Textures/ResourceGame/panels/ui_panel_workshop_base.png");
   Padding: (Full: 16);
   LayoutMode: Top;
+
+  AssetImage #UpgradeIcon { Anchor: (Width: 64, Height: 64, Bottom: 8); AssetPath: "../Textures/ResourceGame/icons/ui_icon_action_upgrade.png"; }
 
   Label { Text: "Citizen to Troop Upgrades"; Style: (FontSize: 22, RenderBold: true); Anchor: (Bottom: 12); }
   Label { Text: "Use the world anchors outside and the interior displays together. This page only drives the prototype rules."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 12); }
@@ -54,8 +56,8 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #PromoteButton { Text: "Promote Citizen"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #DemoteButton { Text: "Demote Troop"; Padding: (Full: 6); }
+    TextButton #PromoteButton { Text: "Promote Citizen"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_confirm_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #DemoteButton { Text: "Demote Troop"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
   }
 
   Label #PromotionCost { Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 8); }
@@ -66,5 +68,5 @@ Group {
 
   Label { Text: "Future: branching upgrade paths, training buildings, equipment, and role-specific promotions."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
-  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); } }
 }

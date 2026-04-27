@@ -9,6 +9,7 @@ import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingSummary;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
+import com.tavall.hytale.resourcegame.interior.InteriorLayout;
 import com.tavall.hytale.resourcegame.interior.InteriorLayoutService;
 
 import java.time.Instant;
@@ -60,12 +61,9 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
             CastleBuildingSummary summary = buildingService.summary(playerId, state, existing.get(), Instant.now());
             return new Vector3d(summary.worldX(), summary.worldY(), summary.worldZ());
         }
-        return switch (buildingType) {
-            case FARMSTEAD -> surfaceOffset(state, 8.0D, 0.0D, 8.0D);
-            case LUMBER_MILL -> surfaceOffset(state, -8.0D, 0.0D, 8.0D);
-            case IRON_WORKS -> surfaceOffset(state, 8.0D, 0.0D, -8.0D);
-            case BARRACKS -> interiorOffset(state, -5.0D, 0.0D, 0.0D);
-            case WORKSHOP -> interiorOffset(state, 5.0D, 0.0D, 0.0D);
+        return switch (buildingType.areaType()) {
+            case CASTLE_SURFACE -> surfaceOffset(state, 8.0D, 0.0D, 8.0D);
+            case CASTLE_INTERIOR -> interiorBuildingAnchor(state, buildingType);
         };
     }
 
@@ -88,5 +86,11 @@ public final class BuildingPlacementPlanner implements IDependencyInjectableConc
                 origin.getY() + offsetY,
                 origin.getZ() + offsetZ
         );
+    }
+
+    private Vector3d interiorBuildingAnchor(PlayerGameState state, BuildingType buildingType) {
+        int interiorIndex = gameStateService.interiorInstanceIndex(state);
+        InteriorLayout layout = interiorLayoutService.createLayoutForCastle(state.castleLocation(), interiorIndex);
+        return layout.buildingAnchor(buildingType);
     }
 }

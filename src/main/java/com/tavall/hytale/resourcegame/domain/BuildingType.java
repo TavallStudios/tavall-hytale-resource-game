@@ -8,9 +8,9 @@ import java.util.Locale;
  * Supported upgradeable building types for the vertical slice.
  */
 public enum BuildingType {
-    FARMSTEAD("Farmstead", BuildingAreaType.CASTLE_SURFACE, "Passive food income and larger farm visuals.", 30),
-    LUMBER_MILL("Lumber Mill", BuildingAreaType.CASTLE_SURFACE, "Passive wood income and visible saw-yard visuals.", 30),
-    IRON_WORKS("Iron Works", BuildingAreaType.CASTLE_SURFACE, "Passive iron income and forge-like placeholder visuals.", 30),
+    FARMSTEAD("Farmstead", BuildingAreaType.CASTLE_INTERIOR, "Passive food income and larger farm visuals.", 30),
+    LUMBER_MILL("Lumber Mill", BuildingAreaType.CASTLE_INTERIOR, "Passive wood income and visible saw-yard visuals.", 30),
+    IRON_WORKS("Iron Works", BuildingAreaType.CASTLE_INTERIOR, "Passive iron income and forge-like placeholder visuals.", 30),
     BARRACKS("Barracks", BuildingAreaType.CASTLE_INTERIOR, "Reduces citizen-to-troop promotion cost and expands troop staging.", 30),
     WORKSHOP("Workshop", BuildingAreaType.CASTLE_INTERIOR, "Speeds up future construction and upgrade work.", 30);
 

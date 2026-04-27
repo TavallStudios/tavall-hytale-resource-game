@@ -1,0 +1,20 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_interior_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .title { font-size: 24; font-weight: bold; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .status { font-size: 16; font-weight: bold; color: #e2c168; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="InteriorIcon" src="Textures/ResourceGame/icons/ui_icon_kingdom_castle.png" width="64" height="64">
+    <p class="title">Castle Interior</p>
+    <p class="label">Same-process private interior world with citizen and troop anchors.</p>
+    <p id="TutorialStatus" class="status">{{$TutorialStatus}}</p>
+    <div class="row">
+        <button id="ExitInteriorButton">Exit Interior</button>
+        <button id="BuildingsButton" class="secondary-button">Buildings</button>
+        <button id="BackButton" class="secondary-button">Castle Menu</button>
+    </div>
+    <p class="label">Future: build stations, upgrade rooms, worker routes, and richer interior decor.</p>
+</div>

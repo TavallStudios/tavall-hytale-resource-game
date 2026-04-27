@@ -1,8 +1,10 @@
 Group {
   Anchor: (Width: 820, Height: 520);
-  Background: (Color: #10161d(0.9));
+  Background: PatchStyle(TexturePath: "../Textures/ResourceGame/panels/ui_panel_node_detail_base.png");
   Padding: (Full: 16);
   LayoutMode: Top;
+
+  AssetImage #NodeIcon { Anchor: (Width: 64, Height: 64, Bottom: 8); AssetPath: "../Textures/ResourceGame/icons/ui_icon_node_marker.png"; }
 
   Label #NodeTitle {
     Text: "Resource Node";
@@ -98,22 +100,22 @@ Group {
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 12);
-    TextButton #AssignOneButton { Text: "Send 1"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #AssignThreeButton { Text: "Send 3"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #AssignFiveButton { Text: "Send 5"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #AssignAllButton { Text: "Send All"; Padding: (Full: 6); }
+    TextButton #AssignOneButton { Text: "Send 1"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_primary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignThreeButton { Text: "Send 3"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_primary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignFiveButton { Text: "Send 5"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_primary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #AssignAllButton { Text: "Send All"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_primary_normal.png"); Padding: (Full: 6); }
   }
 
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 20);
-    TextButton #RecallOneButton { Text: "Recall 1"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #RecallAllButton { Text: "Recall All"; Padding: (Full: 6); Anchor: (Right: 12); }
-    TextButton #PillageButton { Text: "Pillage Node"; Padding: (Full: 6); }
+    TextButton #RecallOneButton { Text: "Recall 1"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #RecallAllButton { Text: "Recall All"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 12); }
+    TextButton #PillageButton { Text: "Pillage Node"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_danger_normal.png"); Padding: (Full: 6); }
   }
 
   Group {
     LayoutMode: Right;
-    TextButton #BackButton { Text: "Back"; Padding: (Full: 6); }
+    TextButton #BackButton { Text: "Back"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
   }
 }

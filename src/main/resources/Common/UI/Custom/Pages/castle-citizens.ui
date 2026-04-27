@@ -1,8 +1,10 @@
 Group {
   Anchor: (Width: 880, Height: 620);
-  Background: (Color: #0e141c(0.88));
+  Background: PatchStyle(TexturePath: "../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png");
   Padding: (Full: 16);
   LayoutMode: Top;
+
+  AssetImage #CitizensIcon { Anchor: (Width: 64, Height: 64, Bottom: 8); AssetPath: "../Textures/ResourceGame/icons/ui_icon_population_worker.png"; }
 
   Label { Text: "Citizens"; Style: (FontSize: 24, RenderBold: true); Anchor: (Bottom: 12); }
 
@@ -98,5 +100,5 @@ Group {
 
   Label { Text: "Future: job assignment, productivity medians, task-copy NPCs, and real-time aging."; Style: (FontSize: 14, TextColor: #a7b0ba); Anchor: (Bottom: 16); }
 
-  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Padding: (Full: 6); } }
+  Group { LayoutMode: Right; TextButton #BackButton { Text: "Back"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); } }
 }

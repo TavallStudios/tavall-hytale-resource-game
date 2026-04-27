@@ -18,6 +18,9 @@ This repo is split into explicit gameplay and infrastructure systems. `SYSTEMS.m
 - [RESOURCE_SYSTEM.md](./RESOURCE_SYSTEM.md): Resource inventory, passive gain, node yield, and mutation commands.
 - [INTERIOR_SYSTEM.md](./INTERIOR_SYSTEM.md): Interior world instances, teleport flow, anchor displays, and tutorial pathing.
 - [UI_SYSTEM.md](./UI_SYSTEM.md): Custom UI page registry, page models, actions, and page-event routing.
+- [ART_DIRECTION.md](./ART_DIRECTION.md): UI asset style, menu direction, button states, icon families, and future asset prompts.
+- [ASSET_PIPELINE.md](./ASSET_PIPELINE.md): Generated UI textures, font sheets, Blockbench model sources, and prefab recipes.
+- [FONT_TEMPLATES.md](./FONT_TEMPLATES.md): Custom display/menu font direction and glyph template sheets.
 - [PERSISTENCE_SYSTEM.md](./PERSISTENCE_SYSTEM.md): Player profile/game-state persistence, metadata hydration, and async writes.
 - [CLOCK_SYSTEM.md](./CLOCK_SYSTEM.md): Kingdom clock, timezone ownership, and world day/night application.
 - [COMMAND_SYSTEM.md](./COMMAND_SYSTEM.md): Debug/admin command surface, aliases, placement helpers, and bot-friendly controls.

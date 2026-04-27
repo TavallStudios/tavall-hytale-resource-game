@@ -2,7 +2,7 @@
 import { captureWorldSnapshot, delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured, } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
-  const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
+  const command = snapshot?.commands?.slice().reverse().find((entry) => entry.type === "Set" && entry.selector === selector);
   if (!command) {
     return null;
   }
@@ -12,6 +12,39 @@ function readSelectorValue(snapshot, selector) {
   } catch {
     return null;
   }
+}
+
+async function waitForSnapshot(bot, predicate, timeoutMs, label) {
+  const startedAt = Date.now();
+  while ((Date.now() - startedAt) < timeoutMs) {
+    const snapshot = bot.snapshotPage();
+    if (snapshot && predicate(snapshot)) {
+      return snapshot;
+    }
+    await delay(150);
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function openWoodNodeDetail(bot, timeoutMs = 15_000) {
+  const startedAt = Date.now();
+  let attempt = 0;
+  while ((Date.now() - startedAt) < timeoutMs) {
+    bot.chat("/kingdom nodes select 1");
+    attempt += 1;
+    try {
+      return await waitForSnapshot(
+        bot,
+        (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.ResourceNodePage"
+          && `${readSelectorValue(snapshot, "#NodeTitle.Text")}`.toLowerCase().includes("wood"),
+        Math.min(4_000, Math.max(1_000, timeoutMs - (Date.now() - startedAt))),
+        `wood node detail attempt ${attempt}`
+      );
+    } catch {
+      await delay(500);
+    }
+  }
+  throw new Error(`Timed out waiting for wood node detail; finalSnapshot=${JSON.stringify(bot.snapshotPage())}`);
 }
 
 async function main() {
@@ -53,14 +86,12 @@ async function main() {
     await delay(1_200);
     assertions.push("node-placement-confirmed");
 
-    bot.chat("/kingdom nodes select 1");
-    const nodePage = await bot.waitForPage("com.tavall.hytale.resourcegame.ui.ResourceNodePage", 10_000);
-    const nodeSnapshot = bot.snapshotPage();
+    const nodeSnapshot = await openWoodNodeDetail(bot);
     const title = `${readSelectorValue(nodeSnapshot, "#NodeTitle.Text")}`.toLowerCase();
     if (!title.includes("wood")) {
       throw new Error(`Unexpected node title after placement: ${JSON.stringify(nodeSnapshot)}`);
     }
-    pages.push({ key: nodePage.key, title: nodePage.title ?? null, snapshot: nodeSnapshot });
+    pages.push({ key: nodeSnapshot.key, title: null, snapshot: nodeSnapshot });
     assertions.push("node-ui-opened-after-placement");
 
     const result = {
@@ -88,6 +119,10 @@ async function main() {
       assertions,
       pages,
       error: error instanceof Error ? error.message : String(error),
+      finalPageSnapshot: bot.snapshotPage(),
+      clientSnapshot: {
+        final: captureWorldSnapshot(bot, 16)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {

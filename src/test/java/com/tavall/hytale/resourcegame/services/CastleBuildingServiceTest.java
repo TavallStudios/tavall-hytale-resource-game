@@ -8,6 +8,7 @@ import com.tavall.hytale.resourcegame.domain.BuildingMutationResult;
 import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.PlayerProfile;
 import com.tavall.hytale.resourcegame.domain.ResourceInventory;
@@ -54,14 +55,18 @@ public final class CastleBuildingServiceTest {
                 new CastleLocationData("overworld", 10.0, 72.0, 10.0),
                 start
         );
+        initialState = gameStateService.setAccountLevel(initialState, 50, start);
         sessionStore.put(new PlayerSession(
                 playerId,
                 new PlayerProfile(201L, playerId, "BuilderBot", "UTC", "hash", start, start, start),
                 initialState
         ));
 
-        Vector3d buildPosition = new Vector3d(18.0, 73.0, 18.0);
-        BuildingMutationResult placement = buildingService.placeBuilding(playerId, BuildingType.FARMSTEAD, "overworld", buildPosition, start);
+        String interiorWorld = new StubInteriorInstanceService().worldNameFor(playerId);
+        Vector3d buildPosition = new com.tavall.hytale.resourcegame.interior.InteriorLayoutService()
+                .createLayoutForCastle(initialState.castleLocation())
+                .buildingAnchor(BuildingType.FARMSTEAD);
+        BuildingMutationResult placement = buildingService.placeBuilding(playerId, BuildingType.FARMSTEAD, interiorWorld, buildPosition, start);
 
         assertTrue(placement.changed());
         assertEquals("Farmstead construction started.", placement.message());
@@ -125,6 +130,7 @@ public final class CastleBuildingServiceTest {
                 new CastleLocationData("overworld", 12.0, 72.0, 12.0),
                 start
         ).withResources(new ResourceInventory(200, 200, 200), start);
+        seededState = gameStateService.setAccountLevel(seededState, 50, start);
         sessionStore.put(new PlayerSession(
                 playerId,
                 new PlayerProfile(205L, playerId, "BonusBot", "UTC", "hash", start, start, start),
@@ -164,8 +170,8 @@ public final class CastleBuildingServiceTest {
         BuildingMutationResult farmsteadPlacement = buildingService.placeBuilding(
                 playerId,
                 BuildingType.FARMSTEAD,
-                "overworld",
-                new Vector3d(20.0, 73.0, 20.0),
+                interiorWorld,
+                layoutService.createLayoutForCastle(seededState.castleLocation()).buildingAnchor(BuildingType.FARMSTEAD),
                 start.plusSeconds(63)
         );
         assertTrue(farmsteadPlacement.changed());
@@ -201,6 +207,7 @@ public final class CastleBuildingServiceTest {
                 new CastleLocationData("overworld", 10.0, 72.0, 10.0),
                 start
         );
+        initialState = gameStateService.setAccountLevel(initialState, 50, start);
         sessionStore.put(new PlayerSession(
                 playerId,
                 new PlayerProfile(209L, playerId, "ValidateBot", "UTC", "hash", start, start, start),
@@ -216,8 +223,69 @@ public final class CastleBuildingServiceTest {
         );
 
         assertFalse(blocked.changed());
-        assertEquals("Place Farmstead between 5 and 18 blocks from the castle center.", blocked.message());
+        assertEquals("Interior buildings must be placed inside the interior world.", blocked.message());
         assertTrue(buildingService.listBuildings(sessionStore.get(playerId).gameState()).isEmpty());
+    }
+
+    @Test
+    void debugModeBypassesBuildingAccountLevelRestrictions() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore gameStateStore = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService gameStateService = new PlayerGameStateService(
+                gameStateStore,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("building-debug-mode"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "building-debug-mode"),
+                mapperProvider.mapper()
+        );
+        PlayerSessionStore sessionStore = new PlayerSessionStore();
+        StubInteriorInstanceService interiorInstanceService = new StubInteriorInstanceService();
+        com.tavall.hytale.resourcegame.interior.InteriorLayoutService layoutService = new com.tavall.hytale.resourcegame.interior.InteriorLayoutService();
+        CastleBuildingService buildingService = new CastleBuildingService(
+                sessionStore,
+                gameStateService,
+                interiorInstanceService,
+                layoutService,
+                mapperProvider.mapper()
+        );
+
+        UUID playerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-04-27T19:20:00Z");
+        PlayerGameState initialState = gameStateService.loadOrCreate(
+                610L,
+                playerId,
+                new CastleLocationData("overworld", 10.0, 72.0, 10.0),
+                now
+        ).withResources(new ResourceInventory(200, 200, 200), now);
+        sessionStore.put(new PlayerSession(
+                playerId,
+                new PlayerProfile(610L, playerId, "DebugBuilder", "UTC", "hash", now, now, now),
+                initialState
+        ));
+
+        Vector3d buildPosition = layoutService.createLayoutForCastle(initialState.castleLocation()).buildingAnchor(BuildingType.WORKSHOP);
+        BuildingMutationResult blocked = buildingService.placeBuilding(
+                playerId,
+                BuildingType.WORKSHOP,
+                interiorInstanceService.worldNameFor(playerId),
+                buildPosition,
+                now.plusSeconds(1)
+        );
+        assertFalse(blocked.changed());
+        assertEquals("Workshop unlocks at account level 35.", blocked.message());
+
+        PlayerGameState debugState = gameStateService.setDebugMode(initialState, DebugModeState.enabled(), now.plusSeconds(2));
+        sessionStore.get(playerId).updateGameState(debugState);
+
+        BuildingMutationResult allowed = buildingService.placeBuilding(
+                playerId,
+                BuildingType.WORKSHOP,
+                interiorInstanceService.worldNameFor(playerId),
+                buildPosition,
+                now.plusSeconds(3)
+        );
+
+        assertTrue(allowed.changed());
+        assertEquals("Workshop construction started.", allowed.message());
     }
 
     @Test
@@ -248,6 +316,7 @@ public final class CastleBuildingServiceTest {
                 new CastleLocationData("overworld", 10.0, 72.0, 10.0),
                 now
         ).withResources(new ResourceInventory(200, 200, 200), now);
+        initialState = gameStateService.setAccountLevel(initialState, 50, now);
         PlayerGameState indexed = gameStateService.bumpInteriorInstanceIndex(initialState, now.plusSeconds(1));
         sessionStore.put(new PlayerSession(
                 playerId,
@@ -259,8 +328,10 @@ public final class CastleBuildingServiceTest {
         BuildingMutationResult placement = buildingService.placeBuilding(
                 playerId,
                 BuildingType.FARMSTEAD,
-                "overworld",
-                new Vector3d(18.0, 73.0, 18.0),
+                interiorInstanceService.worldNameFor(playerId),
+                new com.tavall.hytale.resourcegame.interior.InteriorLayoutService()
+                        .createLayoutForCastle(indexed.castleLocation(), gameStateService.interiorInstanceIndex(indexed))
+                        .buildingAnchor(BuildingType.FARMSTEAD),
                 now.plusSeconds(2)
         );
         assertTrue(placement.changed());

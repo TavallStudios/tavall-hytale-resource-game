@@ -21,6 +21,8 @@ public final class PopulationDisplayRefs {
     private final Map<CitizenJobType, Ref<EntityStore>> workerRefs;
     private final Ref<EntityStore> troopsRef;
     private final String troopLabel;
+    private final int citizenCount;
+    private final int troopCount;
 
     public PopulationDisplayRefs(
             String worldName,
@@ -28,7 +30,9 @@ public final class PopulationDisplayRefs {
             Map<CitizenJobType, String> workerLabels,
             Map<CitizenJobType, Ref<EntityStore>> workerRefs,
             Ref<EntityStore> troopsRef,
-            String troopLabel
+            String troopLabel,
+            int citizenCount,
+            int troopCount
     ) {
         this.worldName = worldName;
         this.workerPositions = Map.copyOf(new EnumMap<>(workerPositions));
@@ -36,6 +40,8 @@ public final class PopulationDisplayRefs {
         this.workerRefs = Map.copyOf(workerRefs);
         this.troopsRef = troopsRef;
         this.troopLabel = troopLabel;
+        this.citizenCount = citizenCount;
+        this.troopCount = troopCount;
     }
 
     public String worldName() {
@@ -60,6 +66,14 @@ public final class PopulationDisplayRefs {
 
     public String troopLabel() {
         return troopLabel;
+    }
+
+    public int citizenCount() {
+        return citizenCount;
+    }
+
+    public int troopCount() {
+        return troopCount;
     }
 
     public Map<CitizenJobType, Ref<EntityStore>> workerRefs() {

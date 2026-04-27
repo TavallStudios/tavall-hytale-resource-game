@@ -1,0 +1,461 @@
+{
+  "schema": "resource-game-prefab-recipe/v1",
+  "name": "resource_game:farmstead",
+  "hytalePrefabTarget": "prefabs/resource_game/farmstead.prefab.json",
+  "anchor": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "symmetry": "horizontal+vertical around anchor",
+  "notes": [
+    "This recipe is a source-of-truth block plan for generating a Hytale BlockSelection prefab.",
+    "Use PrefabStore.getAssetPrefab or an in-game /editprefab save pass once the official prefab serializer is available in the dev workflow."
+  ],
+  "blocks": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -2,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": 0,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": 1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": -1,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": 2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": -2,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": 3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": -3,
+      "y": 0,
+      "z": -3,
+      "block": "Rock_Shale"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 1,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 1,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 1,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 2,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 2,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 2,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 3,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 3,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 3,
+      "z": 3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 3,
+      "z": -3,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": -3,
+      "y": 3,
+      "z": 0,
+      "block": "Rock_Stone"
+    },
+    {
+      "x": 0,
+      "y": 4,
+      "z": 0,
+      "block": "Rock_Stone"
+    }
+  ]
+}

@@ -26,6 +26,7 @@ import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -34,6 +35,12 @@ import java.util.logging.Logger;
 public final class WorldLabelService implements IDependencyInjectableConcrete {
     private static final Logger LOGGER = Logger.getLogger(WorldLabelService.class.getName());
     private static final String DEFAULT_MARKER_MODEL_ID = "Objective_Location_Marker";
+    private static final List<String> MARKER_MODEL_CANDIDATES = List.of(
+            "Objective_Location_Marker",
+            "resource_game:props/hologram_pedestal",
+            "resource_game:hologram_pedestal",
+            "resource_game:building_marker"
+    );
     private static final double DEFAULT_LINE_SPACING = 0.42D;
 
     private volatile Model markerModel;
@@ -41,6 +48,7 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
 
     public Ref<EntityStore> spawnLabel(World world, Vector3d position, String text) {
         if (world == null || position == null || text == null || text.isBlank()) {
+            LOGGER.warning(() -> "Skipping world label spawn because world, position, or text is missing.");
             return null;
         }
         return spawnSingleLabel(world, position, text);
@@ -48,6 +56,7 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
 
     public List<Ref<EntityStore>> spawnLabelStack(World world, Vector3d topPosition, List<String> lines) {
         if (world == null || topPosition == null || lines == null || lines.isEmpty()) {
+            LOGGER.warning(() -> "Skipping world label stack spawn because world, position, or lines are missing.");
             return List.of();
         }
         List<Ref<EntityStore>> refs = new ArrayList<>();
@@ -77,28 +86,37 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
             store.ensureComponent(ref, Intangible.getComponentType());
             store.ensureComponent(ref, Invulnerable.getComponentType());
             silenceEntity(store, ref);
-        } catch (RuntimeException ignored) {
+            LOGGER.info(() -> "Updated world label nameplate text to '" + text + "'.");
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.WARNING, "Failed to update world label text.", ex);
         }
     }
 
     private Ref<EntityStore> spawnSingleLabel(World world, Vector3d position, String text) {
         Model model = resolveMarkerModel();
-        if (model == null) {
-            LOGGER.warning(() -> "Skipping world label spawn because marker model '" + DEFAULT_MARKER_MODEL_ID + "' is unavailable.");
+        try {
+            Store<EntityStore> store = world.getEntityStore().getStore();
+            Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
+            holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, Vector3f.ZERO));
+            holder.ensureComponent(UUIDComponent.getComponentType());
+            holder.ensureComponent(Intangible.getComponentType());
+            holder.ensureComponent(Invulnerable.getComponentType());
+            holder.ensureComponent(Frozen.getComponentType());
+            holder.addComponent(DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
+            holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
+            if (model != null) {
+                holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
+                holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
+            }
+            Ref<EntityStore> ref = store.addEntity(holder, AddReason.SPAWN);
+            LOGGER.info(() -> "Spawned world label '" + text + "' at "
+                    + position.getX() + ", " + position.getY() + ", " + position.getZ()
+                    + " with " + (model == null ? "nameplate-only fallback" : "marker model") + ".");
+            return ref;
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to spawn world label '" + text + "'.", ex);
             return null;
         }
-        Store<EntityStore> store = world.getEntityStore().getStore();
-        Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
-        holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, Vector3f.ZERO));
-        holder.ensureComponent(UUIDComponent.getComponentType());
-        holder.ensureComponent(Intangible.getComponentType());
-        holder.ensureComponent(Invulnerable.getComponentType());
-        holder.ensureComponent(Frozen.getComponentType());
-        holder.addComponent(DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
-        holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
-        holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
-        holder.addComponent(PersistentModel.getComponentType(), new PersistentModel(model.toReference()));
-        return store.addEntity(holder, AddReason.SPAWN);
     }
 
     private Model resolveMarkerModel() {
@@ -113,17 +131,22 @@ public final class WorldLabelService implements IDependencyInjectableConcrete {
             if (markerModelLookupComplete) {
                 return markerModel;
             }
-            ModelAsset asset = (ModelAsset) ModelAsset.getAssetMap().getAsset(DEFAULT_MARKER_MODEL_ID);
-            if (asset == null) {
+            for (String candidateId : MARKER_MODEL_CANDIDATES) {
+                ModelAsset asset = (ModelAsset) ModelAsset.getAssetMap().getAsset(candidateId);
+                if (asset == null) {
+                    continue;
+                }
+                Model created = Model.createUnitScaleModel(asset);
+                markerModel = created;
                 markerModelLookupComplete = true;
-                markerModel = null;
-                LOGGER.warning(() -> "Unable to resolve default world-label model '" + DEFAULT_MARKER_MODEL_ID + "'. World-label spawns will be skipped.");
-                return null;
+                LOGGER.info(() -> "Resolved world-label marker model '" + candidateId + "'.");
+                return created;
             }
-            Model created = Model.createUnitScaleModel(asset);
-            markerModel = created;
-            markerModelLookupComplete = true;
-            return created;
+            markerModel = null;
+            markerModelLookupComplete = false;
+            LOGGER.warning(() -> "Unable to resolve any world-label marker model from " + MARKER_MODEL_CANDIDATES
+                    + ". Falling back to a nameplate-only hologram entity.");
+            return null;
         }
     }
 

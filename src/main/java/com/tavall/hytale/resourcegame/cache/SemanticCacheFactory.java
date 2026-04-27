@@ -39,8 +39,28 @@ public final class SemanticCacheFactory {
             }
             return reachable;
         } catch (Exception ex) {
-            LOGGER.log(Level.WARNING, "Redis is configured but unavailable. Falling back to memory-only semantic cache.", ex);
+            LOGGER.log(
+                    Level.WARNING,
+                    "Redis is configured but unavailable. Falling back to memory-only semantic cache. endpoint="
+                            + redisEndpoint()
+                            + " cause="
+                            + ex.getClass().getSimpleName()
+                            + ": "
+                            + safeMessage(ex)
+            );
             return false;
         }
+    }
+
+    private String redisEndpoint() {
+        String protocol = cacheConfig.redisTls() ? "rediss" : "redis";
+        return protocol + "://" + cacheConfig.redisHost() + ":" + cacheConfig.redisPort();
+    }
+
+    private String safeMessage(Exception exception) {
+        if (exception == null || exception.getMessage() == null || exception.getMessage().isBlank()) {
+            return "unknown";
+        }
+        return exception.getMessage();
     }
 }

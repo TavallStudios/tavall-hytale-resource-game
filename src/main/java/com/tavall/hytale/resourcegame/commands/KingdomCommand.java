@@ -29,6 +29,8 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeService
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IResourceService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiNavigator;
+import com.tavall.hytale.resourcegame.domain.AccountProgression;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.InfrastructureHealthSnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
@@ -164,6 +166,7 @@ public final class KingdomCommand extends AbstractAsyncCommand {
                         case "citizens" -> handleCitizens(context, tokens, player.getUuid());
                         case "troops" -> handleTroops(context, tokens, player.getUuid());
                         case "resources" -> handleResources(context, tokens, player.getUuid());
+                        case "account" -> handleAccount(context, player, tokens, session);
                         case "buildings" -> buildingCommandSupport.handle(context, player, tokens, session);
                         case "nodes" -> nodeCommandSupport.handle(context, player, tokens, session);
                         case "place" -> placementCommandSupport.handle(context, player, tokens);
@@ -301,6 +304,130 @@ public final class KingdomCommand extends AbstractAsyncCommand {
             }
             default -> context.sendMessage(Message.raw("Usage: /kd castle [align|move|open|goto|refresh]").color("yellow"));
         }
+    }
+
+    private void handleAccount(CommandContext context, Player sender, List<String> tokens, PlayerSession session) {
+        if (tokens.size() < 2 || "status".equalsIgnoreCase(tokens.get(1))) {
+            PlayerSession targetSession = resolveAccountTarget(context, sender, tokens, 2, session);
+            if (targetSession == null) {
+                return;
+            }
+            context.sendMessage(Message.raw(accountStatusLine(targetSession)).color("yellow"));
+            return;
+        }
+        String action = tokens.get(1).toLowerCase(Locale.ROOT);
+        if ("debug".equals(action) || "debugmode".equals(action)) {
+            handleAccountDebug(context, sender, tokens, session);
+            return;
+        }
+        if (tokens.size() < 3) {
+            context.sendMessage(Message.raw(accountUsage()).color("yellow"));
+            return;
+        }
+        OptionalInt parsedValue = parseAmount(tokens.get(2));
+        if (parsedValue.isEmpty()) {
+            context.sendMessage(Message.raw("Account value must be a whole number.").color("red"));
+            return;
+        }
+        PlayerSession targetSession = resolveAccountTarget(context, sender, tokens, 3, session);
+        if (targetSession == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        PlayerGameState updatedState = switch (action) {
+            case "addxp", "xp" -> gameStateService.addAccountExperience(targetSession.gameState(), parsedValue.getAsInt(), now);
+            case "setlevel", "level" -> gameStateService.setAccountLevel(targetSession.gameState(), parsedValue.getAsInt(), now);
+            default -> null;
+        };
+        if (updatedState == null) {
+            context.sendMessage(Message.raw(accountUsage()).color("yellow"));
+            return;
+        }
+        persistAccountState(targetSession, updatedState, now);
+        context.sendMessage(Message.raw(accountStatusLine(targetSession)).color("green"));
+    }
+
+    private void handleAccountDebug(CommandContext context, Player sender, List<String> tokens, PlayerSession fallbackSession) {
+        if (tokens.size() < 3 || "status".equalsIgnoreCase(tokens.get(2))) {
+            PlayerSession targetSession = resolveAccountTarget(context, sender, tokens, 3, fallbackSession);
+            if (targetSession == null) {
+                return;
+            }
+            context.sendMessage(Message.raw(debugStatusLine(targetSession)).color("yellow"));
+            return;
+        }
+        Boolean enabled = parseToggle(tokens.get(2));
+        if (enabled == null) {
+            context.sendMessage(Message.raw("Usage: /kd account debug on|off|status [player_name|uuid_prefix]").color("yellow"));
+            return;
+        }
+        PlayerSession targetSession = resolveAccountTarget(context, sender, tokens, 3, fallbackSession);
+        if (targetSession == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        PlayerGameState updatedState = gameStateService.setDebugMode(targetSession.gameState(), new DebugModeState(enabled), now);
+        persistAccountState(targetSession, updatedState, now);
+        context.sendMessage(Message.raw(debugStatusLine(targetSession)).color("green"));
+    }
+
+    private PlayerSession resolveAccountTarget(CommandContext context, Player sender, List<String> tokens, int targetIndex, PlayerSession fallbackSession) {
+        if (tokens.size() <= targetIndex) {
+            return fallbackSession;
+        }
+        Player target = resolveOnlinePlayer(tokens.get(targetIndex));
+        if (target == null) {
+            context.sendMessage(Message.raw("Player not found. Target players must be online for account debug commands.").color("red"));
+            return null;
+        }
+        PlayerSession targetSession = sessionStore.get(target.getUuid());
+        if (targetSession == null) {
+            context.sendMessage(Message.raw("Target player session is not ready.").color("red"));
+            return null;
+        }
+        if (!target.getUuid().equals(sender.getUuid())) {
+            LOGGER.at(Level.INFO).log("Account debug command for %s executed by %s.", target.getDisplayName(), sender.getDisplayName());
+        }
+        return targetSession;
+    }
+
+    private void persistAccountState(PlayerSession session, PlayerGameState updatedState, Instant now) {
+        session.updateGameState(updatedState);
+        gameStateService.cacheState(session.playerId(), updatedState);
+        AsyncTask.runAsync(() -> gameStateService.persistState(updatedState, now));
+    }
+
+    private String accountStatusLine(PlayerSession session) {
+        AccountProgression progression = gameStateService.accountProgression(session.gameState());
+        return session.profile().name() + " | " + accountStatusLine(progression) + " | " + debugStatusSummary(session.gameState());
+    }
+
+    private String accountStatusLine(AccountProgression progression) {
+        return "Account level " + progression.level()
+                + " | XP " + progression.experience() + "/" + progression.requiredExperienceForNextLevel()
+                + " | total " + progression.totalExperience();
+    }
+
+    private String debugStatusLine(PlayerSession session) {
+        return session.profile().name() + " debug mode: " + debugStatusSummary(session.gameState());
+    }
+
+    private String debugStatusSummary(PlayerGameState state) {
+        return gameStateService.debugModeState(state).levelRestrictionsIgnored()
+                ? "level restrictions ignored"
+                : "level restrictions enforced";
+    }
+
+    private Boolean parseToggle(String token) {
+        return switch (token.toLowerCase(Locale.ROOT)) {
+            case "on", "true", "enable", "enabled", "yes" -> Boolean.TRUE;
+            case "off", "false", "disable", "disabled", "no" -> Boolean.FALSE;
+            default -> null;
+        };
+    }
+
+    private String accountUsage() {
+        return "Usage: /kd account status [player]|addxp <amount> [player]|setlevel <level> [player]|debug on|off|status [player]";
     }
 
     private void handleInterior(Player player, List<String> tokens) {
@@ -515,7 +642,8 @@ public final class KingdomCommand extends AbstractAsyncCommand {
         context.sendMessage(Message.raw("/kd focus").color("yellow"));
         context.sendMessage(Message.raw("/kd interact").color("yellow"));
         context.sendMessage(Message.raw("/kd scan").color("yellow"));
-        context.sendMessage(Message.raw("/kd hologram spawn <text>|stack <line1|line2|...>|clear").color("yellow"));
+        context.sendMessage(Message.raw("/kd account status|addxp <amount>|setlevel <level>|debug on|off|status [player]").color("yellow"));
+        context.sendMessage(Message.raw("/kd hologram spawn <text>|stack <line1|line2|...>|status|clear").color("yellow"));
         context.sendMessage(Message.raw("/kd bootstrap").color("yellow"));
         context.sendMessage(Message.raw("/kd scene refresh").color("yellow"));
         context.sendMessage(Message.raw("/kd tick run [count]").color("yellow"));

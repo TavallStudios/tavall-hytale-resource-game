@@ -104,11 +104,11 @@ public final class PopulationService implements IPopulationService, IDependencyI
                 || resources.iron() < adjustedCost.ironCost()) {
             return false;
         }
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.FOOD, resources.food() - adjustedCost.foodCost());
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.WOOD, resources.wood() - adjustedCost.woodCost());
-        resourceService.setResource(playerId, com.tavall.hytale.resourcegame.resources.ResourceType.IRON, resources.iron() - adjustedCost.ironCost());
-        updatePopulation(playerId, -1, 1);
-        return true;
+        ResourceInventory updatedResources = resources
+                .withFood(resources.food() - adjustedCost.foodCost())
+                .withWood(resources.wood() - adjustedCost.woodCost())
+                .withIron(resources.iron() - adjustedCost.ironCost());
+        return updatePopulation(playerId, -1, 1, updatedResources) != null;
     }
 
     public boolean demoteTroop(UUID playerId) {
@@ -175,6 +175,10 @@ public final class PopulationService implements IPopulationService, IDependencyI
     }
 
     private PlayerGameState updatePopulation(UUID playerId, int citizenDelta, int troopDelta) {
+        return updatePopulation(playerId, citizenDelta, troopDelta, null);
+    }
+
+    private PlayerGameState updatePopulation(UUID playerId, int citizenDelta, int troopDelta, ResourceInventory resourceOverride) {
         PlayerSession session = sessionStore.get(playerId);
         if (session == null) {
             return null;
@@ -191,6 +195,9 @@ public final class PopulationService implements IPopulationService, IDependencyI
         );
         Instant now = Instant.now();
         PlayerGameState updated = session.gameState().withPopulation(updatedSummary, now);
+        if (resourceOverride != null) {
+            updated = updated.withResources(resourceOverride, now);
+        }
         updated = resourceNodeService.normalizeAssignments(updated, now);
         session.updateGameState(updated);
         displayService.updateDisplays(playerId, updatedSummary);

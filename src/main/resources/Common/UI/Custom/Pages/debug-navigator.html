@@ -1,0 +1,43 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_war_table_base.png'); }
+    .row { layout-mode: left; padding-bottom: 8; }
+    .title { font-size: 22; font-weight: bold; color: #f4d27a; }
+    .section { font-size: 18; font-weight: bold; text-transform: uppercase; color: #d6e1eb; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .feedback { font-size: 14; color: #cfd8e1; padding-bottom: 8; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="DebugIcon" src="Textures/ResourceGame/icons/ui_icon_action_move.png" width="64" height="64">
+    <p class="title">Debug UI Navigator</p>
+    <p class="section">Infra Status</p>
+    <p id="CacheStatus" class="label">{{$CacheStatus}}</p>
+    <p id="PersistenceStatus" class="label">{{$PersistenceStatus}}</p>
+    <p class="section">Onboarding Status</p>
+    <p id="InteriorTutorialStatus" class="label">{{$InteriorTutorialStatus}}</p>
+    <p id="InteriorTourStatus" class="label">{{$InteriorTourStatus}}</p>
+    <p id="UpgradeTutorialStatus" class="label">{{$UpgradeTutorialStatus}}</p>
+    <p class="section">Command Runner</p>
+    <p id="CommandFeedback" class="feedback">{{$CommandFeedback}}</p>
+    <div class="row">
+        <button id="PlaceCastleButton">Place Castle</button><button id="PlaceFoodNodeButton">Place Food Node</button><button id="PlaceWoodNodeButton">Place Wood Node</button><button id="PlaceIronNodeButton">Place Iron Node</button>
+    </div>
+    <div class="row">
+        <button id="ConfirmPlacementButton">Confirm Placement</button><button id="CancelPlacementButton" class="secondary-button">Cancel Placement</button><button id="MoveNegXButton" class="secondary-button">Move -X</button><button id="MovePosXButton" class="secondary-button">Move +X</button><button id="MoveNegZButton" class="secondary-button">Move -Z</button><button id="MovePosZButton" class="secondary-button">Move +Z</button>
+    </div>
+    <div class="row">
+        <button id="InteriorRebuildButton" class="secondary-button">Rebuild Interior</button><button id="InteriorMoveButton" class="secondary-button">Move Interior</button><button id="InteriorExitButton" class="secondary-button">Exit Interior</button><button id="SceneRefreshButton" class="secondary-button">Scene Refresh</button><button id="HologramTestButton" class="secondary-button">Hologram Test</button><button id="TutorialResetButton" class="secondary-button">Reset Tutorial</button>
+    </div>
+    <div class="row">
+        <button id="NodesClearButton" class="secondary-button">Clear Nodes</button><button id="NodesListButton" class="secondary-button">List Nodes</button><button id="BuildingsListButton" class="secondary-button">List Buildings</button><button id="FocusButton" class="secondary-button">Focus</button><button id="InteractButton" class="secondary-button">Interact</button>
+    </div>
+    <div class="row">
+        <button id="StageFarmsteadButton">Stage Farmstead</button><button id="StageLumberMillButton">Stage Lumber Mill</button><button id="StageIronWorksButton">Stage Iron Works</button><button id="StageBarracksButton">Stage Barracks</button><button id="StageWorkshopButton">Stage Workshop</button>
+    </div>
+    <div class="row">
+        <button id="CastleMainButton" class="secondary-button">Castle Main</button><button id="CastleInfoButton" class="secondary-button">Castle Info</button><button id="CitizensButton" class="secondary-button">Citizens</button><button id="TroopsButton" class="secondary-button">Troops</button><button id="ResourcesButton" class="secondary-button">Resources</button><button id="UpgradesButton" class="secondary-button">Upgrades</button>
+    </div>
+    <div class="row">
+        <button id="InteriorButton">Enter Interior</button><button id="CloseButton" class="secondary-button">Close</button>
+    </div>
+</div>

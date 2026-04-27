@@ -55,7 +55,11 @@ $allProcessIds = @(
 
 foreach ($processId in $allProcessIds) {
     try {
-        & taskkill.exe /F /T /PID $processId | Out-Null
+        $taskKillOutput = & taskkill.exe /F /T /PID $processId 2>&1
+        $taskKillExitCode = $LASTEXITCODE
+        if ($taskKillExitCode -ne 0 -and (Get-Process -Id $processId -ErrorAction SilentlyContinue)) {
+            Write-Warning ("Failed to stop local Hytale process tree {0}: {1}" -f $processId, ($taskKillOutput -join " "))
+        }
     } catch {
         Write-Warning ("Failed to stop local Hytale process tree {0}: {1}" -f $processId, $_.Exception.Message)
     }

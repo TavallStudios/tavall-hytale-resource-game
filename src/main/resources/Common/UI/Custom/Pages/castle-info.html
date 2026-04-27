@@ -1,0 +1,29 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png'); }
+    .column { layout-mode: top; padding-bottom: 12; }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .title { font-size: 24; font-weight: bold; text-transform: uppercase; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 16; color: #fff1c2; padding-bottom: 8; }
+    .feedback { font-size: 14; color: #e2c168; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="CastleInfoIcon" src="Textures/ResourceGame/icons/ui_icon_kingdom_castle.png" width="64" height="64">
+    <p class="title">Castle Info</p>
+    <div class="column">
+        <p class="label">Owner</p><p id="OwnerName" class="value">{{$OwnerName}}</p>
+        <p class="label">Castle ID</p><p id="CastleId" class="value">{{$CastleId}}</p>
+        <p class="label">World</p><p id="WorldName" class="value">{{$WorldName}}</p>
+        <p class="label">Troops</p><p id="TroopCount" class="value">{{$TroopCount}}</p>
+        <p class="label">Might</p><p id="MightCount" class="value">{{$MightCount}}</p>
+    </div>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <div class="row">
+        <button id="AttackButton" class="secondary-button">Attack (Future)</button>
+        <button id="FriendButton" class="secondary-button">Add Friend (Future)</button>
+        <button id="GuildButton" class="secondary-button">Guild Access (Future)</button>
+    </div>
+    <p class="label">Future: defenses, scouting, friend trust, guild permissions, banners, and dedicated castle assets.</p>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

@@ -71,7 +71,7 @@ async function main() {
     await delay(1_500);
 
     bot.chat("/kingdom citizens set 21");
-    await delay(350);
+    await delay(1_250);
     bot.chat("/kingdom troops set 5");
     await delay(1_250);
     assertions.push("interior-population-updated");

@@ -7,10 +7,12 @@ import com.tavall.hytale.resourcegame.cache.JacksonCacheCodec;
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableConcrete;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.domain.AgingState;
+import com.tavall.hytale.resourcegame.domain.AccountProgression;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import com.tavall.hytale.resourcegame.domain.CastleBuildingData;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
 import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -189,6 +191,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         GameStateMetadata metadata = GameStateMetadata.fromPopulation(
                 state.populationSummary(),
                 progress,
+                existingMetadata.accountProgression(),
+                existingMetadata.debugModeState(),
                 existingMetadata.resourceNodes(),
                 existingMetadata.castleBuildings(),
                 existingMetadata.interiorInstanceIndex()
@@ -211,6 +215,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             return rewriteMetadata(
                     hydrated,
                     metadata.onboardingProgress(),
+                    metadata.accountProgression(),
+                    metadata.debugModeState(),
                     metadata.resourceNodes(),
                     metadata.castleBuildings(),
                     metadata.interiorInstanceIndex(),
@@ -254,6 +260,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
                     decoded.agingState() == null ? AgingState.defaults(now) : decoded.agingState(),
                     resolveJobCounts(decoded),
                     onboarding,
+                    decoded.accountProgression(),
+                    decoded.debugModeState(),
                     decoded.resourceNodes(),
                     decoded.castleBuildings(),
                     decoded.interiorInstanceIndex()
@@ -269,6 +277,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         return rewriteMetadata(
                 state,
                 onboardingProgress,
+                metadata.accountProgression(),
+                metadata.debugModeState(),
                 metadata.resourceNodes(),
                 metadata.castleBuildings(),
                 metadata.interiorInstanceIndex(),
@@ -279,6 +289,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
     private PlayerGameState rewriteMetadata(
             PlayerGameState state,
             OnboardingProgress onboardingProgress,
+            AccountProgression accountProgression,
+            DebugModeState debugModeState,
             List<ResourceNodeData> resourceNodes,
             List<CastleBuildingData> castleBuildings,
             int interiorInstanceIndex,
@@ -288,6 +300,8 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
             GameStateMetadata metadata = GameStateMetadata.fromPopulation(
                     state.populationSummary(),
                     onboardingProgress,
+                    accountProgression,
+                    debugModeState,
                     resourceNodes,
                     castleBuildings,
                     interiorInstanceIndex
@@ -326,9 +340,84 @@ public final class PlayerGameStateService implements IPlayerGameStateService, ID
         return rewriteMetadata(
                 state,
                 metadata.onboardingProgress(),
+                metadata.accountProgression(),
+                metadata.debugModeState(),
                 metadata.resourceNodes(),
                 metadata.castleBuildings(),
                 nextIndex,
+                effectiveNow
+        );
+    }
+
+    @Override
+    public AccountProgression accountProgression(PlayerGameState state) {
+        if (state == null) {
+            return AccountProgression.defaults();
+        }
+        return metadataOf(state, resolveNow(state)).accountProgression();
+    }
+
+    @Override
+    public PlayerGameState setAccountLevel(PlayerGameState state, int level, Instant now) {
+        if (state == null) {
+            return null;
+        }
+        Instant effectiveNow = now == null ? Instant.now() : now;
+        GameStateMetadata metadata = metadataOf(state, effectiveNow);
+        return rewriteMetadata(
+                state,
+                metadata.onboardingProgress(),
+                metadata.accountProgression().withLevel(level),
+                metadata.debugModeState(),
+                metadata.resourceNodes(),
+                metadata.castleBuildings(),
+                metadata.interiorInstanceIndex(),
+                effectiveNow
+        );
+    }
+
+    @Override
+    public PlayerGameState addAccountExperience(PlayerGameState state, int experience, Instant now) {
+        if (state == null) {
+            return null;
+        }
+        Instant effectiveNow = now == null ? Instant.now() : now;
+        GameStateMetadata metadata = metadataOf(state, effectiveNow);
+        return rewriteMetadata(
+                state,
+                metadata.onboardingProgress(),
+                metadata.accountProgression().withAddedExperience(experience),
+                metadata.debugModeState(),
+                metadata.resourceNodes(),
+                metadata.castleBuildings(),
+                metadata.interiorInstanceIndex(),
+                effectiveNow
+        );
+    }
+
+    @Override
+    public DebugModeState debugModeState(PlayerGameState state) {
+        if (state == null) {
+            return DebugModeState.disabled();
+        }
+        return metadataOf(state, resolveNow(state)).debugModeState();
+    }
+
+    @Override
+    public PlayerGameState setDebugMode(PlayerGameState state, DebugModeState debugModeState, Instant now) {
+        if (state == null) {
+            return null;
+        }
+        Instant effectiveNow = now == null ? Instant.now() : now;
+        GameStateMetadata metadata = metadataOf(state, effectiveNow);
+        return rewriteMetadata(
+                state,
+                metadata.onboardingProgress(),
+                metadata.accountProgression(),
+                debugModeState == null ? DebugModeState.disabled() : debugModeState,
+                metadata.resourceNodes(),
+                metadata.castleBuildings(),
+                metadata.interiorInstanceIndex(),
                 effectiveNow
         );
     }

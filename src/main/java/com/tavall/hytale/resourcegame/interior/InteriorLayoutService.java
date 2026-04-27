@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.interior;
 
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 
@@ -73,6 +74,7 @@ public final class InteriorLayoutService {
         Vector3d workerPlatformAnchor = new Vector3d(origin.getX(), origin.getY() + 1.0, origin.getZ() + 8.0);
         Vector3d workerPortalAnchor = new Vector3d(origin.getX(), origin.getY() + 1.0, origin.getZ() + 4.8);
         Map<CitizenJobType, Vector3d> workerAnchors = workerAnchors(origin);
+        Map<BuildingType, Vector3d> buildingAnchors = buildingAnchors(origin);
         Vector3d exitPoint = new Vector3d(origin.getX(), origin.getY(), origin.getZ() - 4.0);
         List<InteriorTourStop> tourStops = List.of(
                 new InteriorTourStop(
@@ -101,12 +103,31 @@ public final class InteriorLayoutService {
                 ),
                 new InteriorTourStop(
                         5,
+                        "Building Wing",
+                        "Unlocked castle buildings appear in reserved interior lots so they never box the castle surface.",
+                        new Vector3d(origin.getX(), origin.getY() + 1.0, origin.getZ() + 15.0)
+                ),
+                new InteriorTourStop(
+                        6,
                         "Exit Gate",
                         "Use this path to leave the prototype interior cleanly.",
                         new Vector3d(origin.getX(), origin.getY() + 1.0, origin.getZ() - 3.0)
                 )
         );
-        return new InteriorLayout(origin, entryPoint, citizenAnchor, troopAnchor, workerPlatformAnchor, workerPortalAnchor, workerAnchors, exitPoint, tourStops);
+        return new InteriorLayout(origin, entryPoint, citizenAnchor, troopAnchor, workerPlatformAnchor, workerPortalAnchor, workerAnchors, buildingAnchors, exitPoint, tourStops);
+    }
+
+    private Map<BuildingType, Vector3d> buildingAnchors(Vector3d origin) {
+        EnumMap<BuildingType, Vector3d> anchors = new EnumMap<>(BuildingType.class);
+        double x = origin.getX();
+        double y = origin.getY() + 1.0;
+        double z = origin.getZ();
+        anchors.put(BuildingType.FARMSTEAD, new Vector3d(x - 8.0, y, z + 12.0));
+        anchors.put(BuildingType.LUMBER_MILL, new Vector3d(x, y, z + 12.0));
+        anchors.put(BuildingType.IRON_WORKS, new Vector3d(x + 8.0, y, z + 12.0));
+        anchors.put(BuildingType.BARRACKS, new Vector3d(x - 4.0, y, z + 18.0));
+        anchors.put(BuildingType.WORKSHOP, new Vector3d(x + 4.0, y, z + 18.0));
+        return anchors;
     }
 
     private Map<CitizenJobType, Vector3d> workerAnchors(Vector3d origin) {

@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.interior;
 
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import org.junit.jupiter.api.Test;
 
@@ -45,8 +46,13 @@ public final class InteriorLayoutServiceTest {
         assertEquals(96.5, layout.workerAnchors().get(CitizenJobType.IDLE).getX());
         assertEquals(104.5, layout.workerAnchors().get(CitizenJobType.MINER).getX());
         assertEquals(312.0, layout.workerAnchors().get(CitizenJobType.SOLDIER).getZ());
+        assertEquals(5, layout.buildingAnchors().size());
+        assertEquals(92.5, layout.buildingAnchor(BuildingType.FARMSTEAD).getX());
+        assertEquals(312.5, layout.buildingAnchor(BuildingType.FARMSTEAD).getZ());
+        assertEquals(108.5, layout.buildingAnchor(BuildingType.IRON_WORKS).getX());
+        assertEquals(318.5, layout.buildingAnchor(BuildingType.WORKSHOP).getZ());
 
-        assertEquals(5, layout.tourStops().size());
+        assertEquals(6, layout.tourStops().size());
         assertEquals("Entry Lane", layout.tourStops().get(0).label());
         assertEquals(100.5, layout.tourStops().get(0).position().getX());
         assertEquals(201.0, layout.tourStops().get(0).position().getY());
@@ -63,10 +69,14 @@ public final class InteriorLayoutServiceTest {
         assertEquals(100.5, layout.tourStops().get(3).position().getX());
         assertEquals(201.0, layout.tourStops().get(3).position().getY());
         assertEquals(307.5, layout.tourStops().get(3).position().getZ());
-        assertEquals("Exit Gate", layout.tourStops().get(4).label());
+        assertEquals("Building Wing", layout.tourStops().get(4).label());
         assertEquals(100.5, layout.tourStops().get(4).position().getX());
         assertEquals(201.0, layout.tourStops().get(4).position().getY());
-        assertEquals(297.5, layout.tourStops().get(4).position().getZ());
+        assertEquals(315.5, layout.tourStops().get(4).position().getZ());
+        assertEquals("Exit Gate", layout.tourStops().get(5).label());
+        assertEquals(100.5, layout.tourStops().get(5).position().getX());
+        assertEquals(201.0, layout.tourStops().get(5).position().getY());
+        assertEquals(297.5, layout.tourStops().get(5).position().getZ());
     }
 
     @Test

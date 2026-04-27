@@ -12,6 +12,8 @@ public final class GameStateMetadata {
     private final AgingState agingState;
     private final Map<CitizenJobType, Integer> jobCounts;
     private final OnboardingProgress onboardingProgress;
+    private final AccountProgression accountProgression;
+    private final DebugModeState debugModeState;
     private final List<ResourceNodeData> resourceNodes;
     private final List<CastleBuildingData> castleBuildings;
     private final int interiorInstanceIndex;
@@ -22,6 +24,8 @@ public final class GameStateMetadata {
             AgingState agingState,
             Map<CitizenJobType, Integer> jobCounts,
             OnboardingProgress onboardingProgress,
+            AccountProgression accountProgression,
+            DebugModeState debugModeState,
             List<ResourceNodeData> resourceNodes,
             List<CastleBuildingData> castleBuildings,
             Integer interiorInstanceIndex
@@ -31,6 +35,8 @@ public final class GameStateMetadata {
         this.agingState = agingState;
         this.jobCounts = jobCounts == null ? Map.of() : Map.copyOf(jobCounts);
         this.onboardingProgress = onboardingProgress == null ? OnboardingProgress.defaults() : onboardingProgress;
+        this.accountProgression = accountProgression == null ? AccountProgression.defaults() : accountProgression;
+        this.debugModeState = debugModeState == null ? DebugModeState.disabled() : debugModeState;
         this.resourceNodes = resourceNodes == null ? List.of() : List.copyOf(resourceNodes);
         this.castleBuildings = castleBuildings == null ? List.of() : List.copyOf(castleBuildings);
         this.interiorInstanceIndex = interiorInstanceIndex == null ? 0 : Math.max(0, interiorInstanceIndex);
@@ -54,6 +60,14 @@ public final class GameStateMetadata {
 
     public OnboardingProgress onboardingProgress() {
         return onboardingProgress;
+    }
+
+    public AccountProgression accountProgression() {
+        return accountProgression;
+    }
+
+    public DebugModeState debugModeState() {
+        return debugModeState;
     }
 
     public List<ResourceNodeData> resourceNodes() {
@@ -100,12 +114,37 @@ public final class GameStateMetadata {
             List<CastleBuildingData> castleBuildings,
             int interiorInstanceIndex
     ) {
+        return fromPopulation(populationSummary, onboardingProgress, AccountProgression.defaults(), DebugModeState.disabled(), resourceNodes, castleBuildings, interiorInstanceIndex);
+    }
+
+    public static GameStateMetadata fromPopulation(
+            PopulationSummary populationSummary,
+            OnboardingProgress onboardingProgress,
+            AccountProgression accountProgression,
+            List<ResourceNodeData> resourceNodes,
+            List<CastleBuildingData> castleBuildings,
+            int interiorInstanceIndex
+    ) {
+        return fromPopulation(populationSummary, onboardingProgress, accountProgression, DebugModeState.disabled(), resourceNodes, castleBuildings, interiorInstanceIndex);
+    }
+
+    public static GameStateMetadata fromPopulation(
+            PopulationSummary populationSummary,
+            OnboardingProgress onboardingProgress,
+            AccountProgression accountProgression,
+            DebugModeState debugModeState,
+            List<ResourceNodeData> resourceNodes,
+            List<CastleBuildingData> castleBuildings,
+            int interiorInstanceIndex
+    ) {
         return new GameStateMetadata(
                 populationSummary.citizenMetaData(),
                 populationSummary.troopMetaData(),
                 populationSummary.agingState(),
                 populationSummary.citizenMetaData().jobCounts(),
                 onboardingProgress,
+                accountProgression,
+                debugModeState,
                 resourceNodes,
                 castleBuildings,
                 interiorInstanceIndex

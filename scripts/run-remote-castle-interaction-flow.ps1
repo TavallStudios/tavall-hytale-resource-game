@@ -2,9 +2,11 @@
     [string]$SshAlias = "novus-remote",
     [string]$RemoteHarnessDir = "/srv/hytale/_bot/hytale-sim",
     [string]$ScenarioScriptPath = "F:/workspace/TavallMonoRepo/tavall-java-hytale-games/tavall-hytale-resource-game/scripts/remote-castle-interaction-flow.mjs",
+    [string]$ServerRoot = "/srv/hytale-startup-patch-test",
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5522,
     [string]$Username = "CastleBot",
+    [string]$StableUuid = "223e4567-e89b-12d3-a456-426614174000",
     [string]$LogDir = ""
 )
 
@@ -76,6 +78,7 @@ $startedAt = (Get-Date).ToString("o")
 Write-LogLine ("[{0}] Starting remote castle interaction flow" -f $startedAt)
 Write-LogLine ("[{0}] SSH alias={1}" -f (Get-Date).ToString("o"), $SshAlias)
 Write-LogLine ("[{0}] Host={1} Port={2}" -f (Get-Date).ToString("o"), $ServerHost, $Port)
+Write-LogLine ("[{0}] StableUuid={1}" -f (Get-Date).ToString("o"), $StableUuid)
 
 $copyScriptExit = Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
@@ -98,10 +101,10 @@ Ensure-RemoteQuicBridge `
     -LogPath $logPath `
     -BridgePort $Port `
     -ServerHost $ServerHost `
-    -ServerPort $Port
+    -ServerPort $Port `
+    -ServerRoot $ServerRoot
 
- $authDomain = if (-not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) { $env:HYTALE_AUTH_DOMAIN } else { "auth.sanasol.ws" }
- $remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=$authDomain && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $remoteOutputDir"
+ $remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && unset HYTALE_AUTH_DOMAIN HYTALE_IDENTITY_TOKEN HYTALE_SESSION_TOKEN HYTALE_AUTH_PASSWORD HYTALE_AUTH_SCOPES && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"
  $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
      "-F", "C:\Users\TJ\.ssh\config",
      $SshAlias,
@@ -131,6 +134,7 @@ $summary = [ordered]@{
     host = $ServerHost
     port = $Port
     username = $Username
+    stableUuid = $StableUuid
     remoteHarnessDir = $RemoteHarnessDir
     remoteScriptPath = $remoteScriptPath
     remoteOutputDir = $remoteOutputDir

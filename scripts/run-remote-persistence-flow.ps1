@@ -167,7 +167,7 @@ export TAVALL_REDIS_HOST='{5}'
 export TAVALL_REDIS_PORT='{6}'
 export TAVALL_REDIS_PASSWORD=''
 export TAVALL_REDIS_TLS='false'
-nohup ./start.sh --transport {7} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {7} --auth-mode OFFLINE --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
 '@ -f $Port, $ServerRoot, $jdbcUrl, $PostgresUser, $PostgresPassword, $RedisHost, $RedisPort, $Transport
     Invoke-RemoteBash -Script $script | Out-Null
     Wait-RemoteServerReady -SshAlias $SshAlias -LogPath $logPath -Transport $Transport -Port $Port -StartOutPath "$ServerRoot/start.out"
@@ -181,8 +181,7 @@ function Invoke-RemoteScenario {
         [string]$LocalTracePath
     )
 
-    $authDomain = if (-not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) { $env:HYTALE_AUTH_DOMAIN } else { "auth.sanasol.ws" }
-    $remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=$authDomain && mkdir -p $RemoteOutputDir && node $remoteScriptPath $Mode $ServerHost $Port $Username $StableUuid $RemoteOutputDir"
+    $remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && unset HYTALE_AUTH_DOMAIN HYTALE_IDENTITY_TOKEN HYTALE_SESSION_TOKEN HYTALE_AUTH_PASSWORD HYTALE_AUTH_SCOPES && mkdir -p $RemoteOutputDir && node $remoteScriptPath $Mode $ServerHost $Port $Username $StableUuid $RemoteOutputDir"
     $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
         "-F", "C:\Users\TJ\.ssh\config",
         $SshAlias,
@@ -231,6 +230,8 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     $PluginJarPath,
     ("{0}:{1}" -f $SshAlias, $RemotePluginJarPath)
 ) | Out-Null
+$remoteModsDir = $RemotePluginJarPath -replace "/[^/]+$", ""
+powershell -ExecutionPolicy Bypass -File .\scripts\install-hyui-remote.ps1 -SshAlias $SshAlias -RemoteModsDir $remoteModsDir | Out-Null
 Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $schemaTempPath,

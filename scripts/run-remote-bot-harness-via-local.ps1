@@ -82,9 +82,6 @@ $authArgs = ""
 if ([string]::IsNullOrWhiteSpace($AuthDomain) -and -not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) {
     $AuthDomain = $env:HYTALE_AUTH_DOMAIN
 }
-if ([string]::IsNullOrWhiteSpace($AuthDomain)) {
-    $AuthDomain = "auth.sanasol.ws"
-}
 if (-not [string]::IsNullOrWhiteSpace($AuthDomain)) {
     $authArgs += " --auth-domain '$AuthDomain'"
 }

@@ -1,7 +1,9 @@
 package com.tavall.hytale.resourcegame.dependency.interfaces;
 
 import com.tavall.hytale.resourcegame.dependency.IDependencyInjectableInterface;
+import com.tavall.hytale.resourcegame.domain.AccountProgression;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 
 import java.time.Instant;
@@ -34,4 +36,14 @@ public interface IPlayerGameStateService extends IDependencyInjectableInterface 
     int interiorInstanceIndex(PlayerGameState state);
 
     PlayerGameState bumpInteriorInstanceIndex(PlayerGameState state, Instant now);
+
+    AccountProgression accountProgression(PlayerGameState state);
+
+    DebugModeState debugModeState(PlayerGameState state);
+
+    PlayerGameState setAccountLevel(PlayerGameState state, int level, Instant now);
+
+    PlayerGameState addAccountExperience(PlayerGameState state, int experience, Instant now);
+
+    PlayerGameState setDebugMode(PlayerGameState state, DebugModeState debugModeState, Instant now);
 }

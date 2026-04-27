@@ -1,7 +1,9 @@
 param(
     [string]$ServerRoot = "C:\Users\TJ\Documents\HyTaleDevServer",
     [switch]$Build,
-    [string]$JarPath = ""
+    [string]$JarPath = "",
+    [string]$HyUiJarPath = "",
+    [switch]$SkipHyUiInstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,5 +60,10 @@ if (-not (Test-Path $modsDir)) {
 $destPath = Join-Path $modsDir "tavall-hytale-resource-game.jar"
 Copy-Item -Path $JarPath -Destination $destPath -Force
 & $validatorScript -RepoRoot $repoRoot -JarPath $JarPath -CompareJarPath $destPath | Out-Null
+
+if (-not $SkipHyUiInstall) {
+    $installHyUiScript = Join-Path $PSScriptRoot "install-hyui-local.ps1"
+    & $installHyUiScript -ServerRoot $ServerRoot -RepoRoot $repoRoot -HyUiJarPath $HyUiJarPath | Out-Null
+}
 
 Write-Host "Copied plugin jar to $destPath"

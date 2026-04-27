@@ -1,0 +1,30 @@
+<style>
+    .page-overlay { anchor-width: 860; anchor-height: 560; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_workshop_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .stat { anchor-width: 260; layout-mode: top; padding-right: 12; }
+    .title { font-size: 24; font-weight: bold; text-transform: uppercase; color: #f4d27a; }
+    .label { font-size: 14; color: #9eb0bf; }
+    .value { font-size: 18; color: #fff1c2; }
+    .body { font-size: 15; color: #cfd8e1; padding-bottom: 8; }
+    .feedback { font-size: 15; font-weight: bold; color: #e2c168; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="BuildingIcon" src="Textures/ResourceGame/icons/ui_icon_action_upgrade.png" width="64" height="64">
+    <p id="BuildingTitle" class="title">{{$BuildingTitle}}</p>
+    <p id="AreaText" class="label">{{$AreaText}}</p>
+    <p id="LocationText" class="label">{{$LocationText}}</p>
+    <div class="row">
+        <div class="stat"><p class="label">Level</p><p id="LevelText" class="value">{{$LevelText}}</p></div>
+        <div class="stat"><p class="label">Status</p><p id="StatusText" class="value">{{$StatusText}}</p></div>
+    </div>
+    <p id="EffectText" class="body">{{$EffectText}}</p>
+    <p id="NextUpgradeText" class="body">{{$NextUpgradeText}}</p>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <div class="row">
+        <button id="StartUpgradeButton">Start Upgrade</button>
+        <button id="CancelUpgradeButton" class="secondary-button">Cancel Upgrade</button>
+        <button id="OverviewButton" class="secondary-button">Building Overview</button>
+        <button id="BackButton" class="secondary-button">Castle Menu</button>
+    </div>
+</div>

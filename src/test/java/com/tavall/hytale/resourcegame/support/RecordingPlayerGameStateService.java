@@ -1,7 +1,9 @@
 package com.tavall.hytale.resourcegame.support;
 
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
+import com.tavall.hytale.resourcegame.domain.AccountProgression;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 
 import java.time.Instant;
@@ -77,8 +79,32 @@ public final class RecordingPlayerGameStateService implements IPlayerGameStateSe
         return state;
     }
 
+    @Override
+    public AccountProgression accountProgression(PlayerGameState state) {
+        return AccountProgression.defaults();
+    }
+
+    @Override
+    public DebugModeState debugModeState(PlayerGameState state) {
+        return DebugModeState.disabled();
+    }
+
+    @Override
+    public PlayerGameState setAccountLevel(PlayerGameState state, int level, Instant now) {
+        return state;
+    }
+
+    @Override
+    public PlayerGameState addAccountExperience(PlayerGameState state, int experience, Instant now) {
+        return state;
+    }
+
+    @Override
+    public PlayerGameState setDebugMode(PlayerGameState state, DebugModeState debugModeState, Instant now) {
+        return state;
+    }
+
     public PlayerGameState persistedState() {
         return persistedState.get();
     }
 }
-

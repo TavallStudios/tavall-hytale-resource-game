@@ -1,0 +1,33 @@
+<style>
+    .page-overlay { anchor-width: 900; anchor-height: 640; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_workshop_base.png'); }
+    .row { layout-mode: left; padding-bottom: 10; }
+    .title { font-size: 24; font-weight: bold; text-transform: uppercase; color: #f4d27a; }
+    .section { font-size: 18; font-weight: bold; color: #d6e1eb; padding-top: 6; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .status { font-size: 14; color: #cfd8e1; padding-bottom: 6; }
+    .footer { font-size: 15; font-weight: bold; color: #e2c168; padding-bottom: 10; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="BuildingsIcon" src="Textures/ResourceGame/icons/ui_icon_building_workshop.png" width="64" height="64">
+    <p class="title">Castle Buildings</p>
+    <p class="label">Surface buildings feed the economy. Interior buildings accelerate upgrades and military prep.</p>
+    <p class="section">Surface Yard</p>
+    <p id="FarmsteadStatus" class="status">{{$FarmsteadStatus}}</p>
+    <p id="LumberMillStatus" class="status">{{$LumberMillStatus}}</p>
+    <p id="IronWorksStatus" class="status">{{$IronWorksStatus}}</p>
+    <p class="section">Interior Wing</p>
+    <p id="BarracksStatus" class="status">{{$BarracksStatus}}</p>
+    <p id="WorkshopStatus" class="status">{{$WorkshopStatus}}</p>
+    <p class="label">Interaction: place with /kd buildings place &lt;type&gt;, then look at the structure and interact with it.</p>
+    <p id="FooterStatus" class="footer">{{$FooterStatus}}</p>
+    <p class="section">Quick Stage</p>
+    <div class="row">
+        <button id="StageFarmsteadButton">Stage Farmstead</button>
+        <button id="StageLumberMillButton">Stage Lumber Mill</button>
+        <button id="StageIronWorksButton">Stage Iron Works</button>
+        <button id="StageBarracksButton">Stage Barracks</button>
+        <button id="StageWorkshopButton">Stage Workshop</button>
+    </div>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

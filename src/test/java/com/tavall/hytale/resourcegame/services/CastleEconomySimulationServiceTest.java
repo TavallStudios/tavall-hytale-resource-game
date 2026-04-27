@@ -146,6 +146,7 @@ public final class CastleEconomySimulationServiceTest {
                 new CastleLocationData("overworld", 6.0, 72.0, 6.0),
                 start
         ).withResources(new ResourceInventory(200, 200, 200), start);
+        seededState = gameStateService.setAccountLevel(seededState, 50, start);
         sessionStore.put(new PlayerSession(
                 playerId,
                 new PlayerProfile(111L, playerId, "EconomyBuilderBot", "UTC", "hash", start, start, start),
@@ -155,8 +156,10 @@ public final class CastleEconomySimulationServiceTest {
         PlayerGameState placedState = buildingService.placeBuilding(
                 playerId,
                 BuildingType.FARMSTEAD,
-                "overworld",
-                new Vector3d(14.0, 73.0, 14.0),
+                new StubInteriorInstanceService().worldNameFor(playerId),
+                new com.tavall.hytale.resourcegame.interior.InteriorLayoutService()
+                        .createLayoutForCastle(seededState.castleLocation())
+                        .buildingAnchor(BuildingType.FARMSTEAD),
                 start
         ).state();
         int expectedFoodAfterTick = placedState.resources().food() + planner.snapshot(placedState).gainFor(ResourceType.FOOD) + 2;

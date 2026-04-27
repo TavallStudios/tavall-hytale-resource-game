@@ -1,13 +1,6 @@
 package com.tavall.hytale.resourcegame.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.ui.builder.EventData;
-import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IInfrastructureHealthService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
@@ -15,13 +8,14 @@ import com.tavall.hytale.resourcegame.domain.InfrastructureHealthSnapshot;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Debug navigator for UI pages.
  */
 public final class DebugNavigatorPage extends BaseUiPage {
-    private static final String PAGE_DOCUMENT = "Pages/debug-navigator.ui";
-    private final IInfrastructureHealthService infrastructureHealthService;
-    private final IPlayerGameStateService gameStateService;
+    private static final String PAGE_DOCUMENT = "Pages/debug-navigator.html";
 
     public DebugNavigatorPage(
             Player player,
@@ -31,83 +25,71 @@ public final class DebugNavigatorPage extends BaseUiPage {
             IInfrastructureHealthService infrastructureHealthService,
             IPlayerGameStateService gameStateService
     ) {
-        super(player, context, state, actionService);
-        this.infrastructureHealthService = infrastructureHealthService;
-        this.gameStateService = gameStateService;
+        super(player, context, state, actionService, PAGE_DOCUMENT, templateData(context, state, infrastructureHealthService, gameStateService), bindings());
     }
 
-    @Override
-    public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
+    private static Map<String, ?> templateData(
+            UiNavigationContext context,
+            PlayerGameState state,
+            IInfrastructureHealthService infrastructureHealthService,
+            IPlayerGameStateService gameStateService
+    ) {
         InfrastructureHealthSnapshot healthSnapshot = infrastructureHealthService.snapshot();
-        uiCommandBuilder.append(PAGE_DOCUMENT);
-        uiCommandBuilder.set("#CacheStatus.Text", healthSnapshot.cacheSummary());
-        uiCommandBuilder.set("#PersistenceStatus.Text", healthSnapshot.persistenceSummary());
-        uiCommandBuilder.set("#InteriorTutorialStatus.Text", tutorialStatus(gameStateService.isInteriorTutorialPending(state())));
-        uiCommandBuilder.set("#InteriorTourStatus.Text", tutorialStatus(gameStateService.isInteriorTourPending(state())));
-        uiCommandBuilder.set("#UpgradeTutorialStatus.Text", tutorialStatus(gameStateService.isUpgradeTutorialPending(state())));
-        uiCommandBuilder.set(
-                "#CommandFeedback.Text",
-                context().feedbackMessage().isBlank()
+        return Map.ofEntries(
+                Map.entry("CacheStatus", healthSnapshot.cacheSummary()),
+                Map.entry("PersistenceStatus", healthSnapshot.persistenceSummary()),
+                Map.entry("InteriorTutorialStatus", tutorialStatus(gameStateService.isInteriorTutorialPending(state))),
+                Map.entry("InteriorTourStatus", tutorialStatus(gameStateService.isInteriorTourPending(state))),
+                Map.entry("UpgradeTutorialStatus", tutorialStatus(gameStateService.isUpgradeTutorialPending(state))),
+                Map.entry(
+                        "CommandFeedback",
+                        context.feedbackMessage().isBlank()
                         ? "Run /kd commands from here. Buttons queue the exact command text."
-                        : context().feedbackMessage()
-        );
-        bind(uiEventBuilder, "#CastleMainButton", UiActions.OPEN_CASTLE_MAIN);
-        bind(uiEventBuilder, "#CastleInfoButton", UiActions.OPEN_CASTLE_INFO);
-        bind(uiEventBuilder, "#CitizensButton", UiActions.OPEN_CITIZENS);
-        bind(uiEventBuilder, "#TroopsButton", UiActions.OPEN_TROOPS);
-        bind(uiEventBuilder, "#ResourcesButton", UiActions.OPEN_RESOURCES);
-        bind(uiEventBuilder, "#UpgradesButton", UiActions.OPEN_UPGRADES);
-        bind(uiEventBuilder, "#InteriorButton", UiActions.ENTER_INTERIOR);
-        bindCommand(uiEventBuilder, "#PlaceCastleButton", "/kd place castle");
-        bindCommand(uiEventBuilder, "#PlaceFoodNodeButton", "/kd place node food");
-        bindCommand(uiEventBuilder, "#PlaceWoodNodeButton", "/kd place node wood");
-        bindCommand(uiEventBuilder, "#PlaceIronNodeButton", "/kd place node iron");
-        bindCommand(uiEventBuilder, "#ConfirmPlacementButton", "/kd place confirm");
-        bindCommand(uiEventBuilder, "#CancelPlacementButton", "/kd place cancel");
-        bindCommand(uiEventBuilder, "#MoveNegXButton", "/kd place move -1 0");
-        bindCommand(uiEventBuilder, "#MovePosXButton", "/kd place move 1 0");
-        bindCommand(uiEventBuilder, "#MoveNegZButton", "/kd place move 0 -1");
-        bindCommand(uiEventBuilder, "#MovePosZButton", "/kd place move 0 1");
-        bindCommand(uiEventBuilder, "#InteriorRebuildButton", "/kd interior rebuild");
-        bindCommand(uiEventBuilder, "#InteriorMoveButton", "/kd interior move");
-        bindCommand(uiEventBuilder, "#InteriorExitButton", "/kd interior exit");
-        bindCommand(uiEventBuilder, "#SceneRefreshButton", "/kd scene refresh");
-        bindCommand(uiEventBuilder, "#NodesClearButton", "/kd nodes clear");
-        bindCommand(uiEventBuilder, "#NodesListButton", "/kd nodes list");
-        bindCommand(uiEventBuilder, "#BuildingsListButton", "/kd buildings list");
-        bindCommand(uiEventBuilder, "#StageFarmsteadButton", "/kd buildings stage farmstead");
-        bindCommand(uiEventBuilder, "#StageLumberMillButton", "/kd buildings stage lumber_mill");
-        bindCommand(uiEventBuilder, "#StageIronWorksButton", "/kd buildings stage iron_works");
-        bindCommand(uiEventBuilder, "#StageBarracksButton", "/kd buildings stage barracks");
-        bindCommand(uiEventBuilder, "#StageWorkshopButton", "/kd buildings stage workshop");
-        bindCommand(uiEventBuilder, "#FocusButton", "/kd focus");
-        bindCommand(uiEventBuilder, "#InteractButton", "/kd interact");
-        bindCommand(uiEventBuilder, "#HologramTestButton", "/kd hologram stack Test hologram|Second line");
-        bindCommand(uiEventBuilder, "#TutorialResetButton", "/kd tutorial reset");
-        bind(uiEventBuilder, "#CloseButton", UiActions.CLOSE);
-    }
-
-    private void bind(UIEventBuilder uiEventBuilder, String selector, String action) {
-        uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                selector,
-                EventData.of(UiActionEventData.KEY_ACTION, action),
-                false
+                        : context.feedbackMessage()
+                )
         );
     }
 
-    private void bindCommand(UIEventBuilder uiEventBuilder, String selector, String commandLine) {
-        uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                selector,
-                new EventData()
-                        .put(UiActionEventData.KEY_ACTION, UiActions.RUN_COMMAND)
-                        .put(UiActionEventData.KEY_PAYLOAD, commandLine),
-                false
+    private static List<HyUiActionBinding> bindings() {
+        return List.of(
+                HyUiActionBinding.action("#CastleMainButton", UiActions.OPEN_CASTLE_MAIN),
+                HyUiActionBinding.action("#CastleInfoButton", UiActions.OPEN_CASTLE_INFO),
+                HyUiActionBinding.action("#CitizensButton", UiActions.OPEN_CITIZENS),
+                HyUiActionBinding.action("#TroopsButton", UiActions.OPEN_TROOPS),
+                HyUiActionBinding.action("#ResourcesButton", UiActions.OPEN_RESOURCES),
+                HyUiActionBinding.action("#UpgradesButton", UiActions.OPEN_UPGRADES),
+                HyUiActionBinding.action("#InteriorButton", UiActions.ENTER_INTERIOR),
+                HyUiActionBinding.command("#PlaceCastleButton", "/kd place castle"),
+                HyUiActionBinding.command("#PlaceFoodNodeButton", "/kd place node food"),
+                HyUiActionBinding.command("#PlaceWoodNodeButton", "/kd place node wood"),
+                HyUiActionBinding.command("#PlaceIronNodeButton", "/kd place node iron"),
+                HyUiActionBinding.command("#ConfirmPlacementButton", "/kd place confirm"),
+                HyUiActionBinding.command("#CancelPlacementButton", "/kd place cancel"),
+                HyUiActionBinding.command("#MoveNegXButton", "/kd place move -1 0"),
+                HyUiActionBinding.command("#MovePosXButton", "/kd place move 1 0"),
+                HyUiActionBinding.command("#MoveNegZButton", "/kd place move 0 -1"),
+                HyUiActionBinding.command("#MovePosZButton", "/kd place move 0 1"),
+                HyUiActionBinding.command("#InteriorRebuildButton", "/kd interior rebuild"),
+                HyUiActionBinding.command("#InteriorMoveButton", "/kd interior move"),
+                HyUiActionBinding.command("#InteriorExitButton", "/kd interior exit"),
+                HyUiActionBinding.command("#SceneRefreshButton", "/kd scene refresh"),
+                HyUiActionBinding.command("#NodesClearButton", "/kd nodes clear"),
+                HyUiActionBinding.command("#NodesListButton", "/kd nodes list"),
+                HyUiActionBinding.command("#BuildingsListButton", "/kd buildings list"),
+                HyUiActionBinding.command("#StageFarmsteadButton", "/kd buildings stage farmstead"),
+                HyUiActionBinding.command("#StageLumberMillButton", "/kd buildings stage lumber_mill"),
+                HyUiActionBinding.command("#StageIronWorksButton", "/kd buildings stage iron_works"),
+                HyUiActionBinding.command("#StageBarracksButton", "/kd buildings stage barracks"),
+                HyUiActionBinding.command("#StageWorkshopButton", "/kd buildings stage workshop"),
+                HyUiActionBinding.command("#FocusButton", "/kd focus"),
+                HyUiActionBinding.command("#InteractButton", "/kd interact"),
+                HyUiActionBinding.command("#HologramTestButton", "/kd hologram stack Test hologram|Second line"),
+                HyUiActionBinding.command("#TutorialResetButton", "/kd tutorial reset"),
+                HyUiActionBinding.action("#CloseButton", UiActions.CLOSE)
         );
     }
 
-    private String tutorialStatus(boolean pending) {
+    private static String tutorialStatus(boolean pending) {
         return pending ? "pending" : "complete";
     }
 }

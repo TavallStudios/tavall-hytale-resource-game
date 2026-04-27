@@ -9,6 +9,7 @@ import com.tavall.hytale.resourcegame.dependency.interfaces.IInteriorInstanceSer
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerGameStateService;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IPlayerSessionStore;
 import com.tavall.hytale.resourcegame.domain.AgingState;
+import com.tavall.hytale.resourcegame.domain.AccountProgression;
 import com.tavall.hytale.resourcegame.domain.BuildingAreaType;
 import com.tavall.hytale.resourcegame.domain.BuildingConstructionStage;
 import com.tavall.hytale.resourcegame.domain.BuildingLevelProfile;
@@ -43,7 +44,7 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
     private static final Logger LOGGER = Logger.getLogger(CastleBuildingService.class.getName());
     private static final double SURFACE_MIN_RADIUS = 5.0D;
     private static final double SURFACE_MAX_RADIUS = 18.0D;
-    private static final double INTERIOR_MAX_RADIUS = 5.75D;
+    private static final double INTERIOR_MAX_RADIUS = 22.0D;
     private static final double BUILDING_MIN_SPACING = 4.25D;
     private static final double INTERIOR_ANCHOR_CLEARANCE = 2.5D;
 
@@ -181,6 +182,14 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
         PlayerGameState state = session.gameState();
         if (listBuildings(state).stream().anyMatch(building -> building.buildingType() == buildingType)) {
             return BuildingMutationResult.unchanged(state, buildingType.displayName() + " already exists.");
+        }
+        AccountProgression accountProgression = metadataOf(state, now).accountProgression();
+        boolean ignoresLevelRestrictions = metadataOf(state, now).debugModeState().levelRestrictionsIgnored();
+        if (!ignoresLevelRestrictions && !accountProgression.isUnlocked(buildingType)) {
+            return BuildingMutationResult.unchanged(
+                    state,
+                    buildingType.displayName() + " unlocks at account level " + accountProgression.requiredLevel(buildingType) + '.'
+            );
         }
         String blockedReason = validatePlacement(playerId, state, buildingType, worldName, worldPosition);
         if (blockedReason != null) {
@@ -550,6 +559,8 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
                     metadata.agingState() == null ? AgingState.defaults(now) : metadata.agingState(),
                     metadata.jobCounts(),
                     metadata.onboardingProgress(),
+                    metadata.accountProgression(),
+                    metadata.debugModeState(),
                     metadata.resourceNodes(),
                     metadata.castleBuildings(),
                     metadata.interiorInstanceIndex()
@@ -568,6 +579,8 @@ public final class CastleBuildingService implements ICastleBuildingService, IDep
                 metadata.agingState(),
                 metadata.jobCounts(),
                 metadata.onboardingProgress(),
+                metadata.accountProgression(),
+                metadata.debugModeState(),
                 metadata.resourceNodes(),
                 buildings,
                 metadata.interiorInstanceIndex()

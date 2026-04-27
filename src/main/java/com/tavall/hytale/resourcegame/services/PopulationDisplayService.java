@@ -46,7 +46,7 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
             return;
         }
         clearDisplays(playerId);
-        spawnDisplays(playerId, world, snapshot);
+        spawnDisplays(playerId, world, snapshot, "ready");
     }
 
     @Override
@@ -68,10 +68,10 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
             return;
         }
         clearDisplays(playerId);
-        spawnDisplays(playerId, world, snapshot);
+        spawnDisplays(playerId, world, snapshot, "updated");
     }
 
-    private void spawnDisplays(UUID playerId, World world, DisplaySnapshot snapshot) {
+    private void spawnDisplays(UUID playerId, World world, DisplaySnapshot snapshot, String action) {
         if (playerId == null || world == null || snapshot == null) {
             return;
         }
@@ -91,10 +91,13 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
                 snapshot.workerLabels(),
                 workerRefs,
                 troopsRef,
-                snapshot.troopLabel()
+                snapshot.troopLabel(),
+                snapshot.citizenCount(),
+                snapshot.troopCount()
         ));
         LOGGER.info(() -> String.format(
-                "Population displays ready for %s in world %s. citizens=%s troops=%s",
+                "Population displays %s for %s in world %s. citizens=%s troops=%s",
+                action,
                 playerId,
                 world.getName(),
                 snapshot.citizenCount(),
@@ -168,6 +171,9 @@ public final class PopulationDisplayService implements PopulationDisplayGateway 
             return false;
         }
         if (!snapshot.troopLabel().equals(refs.troopLabel())) {
+            return false;
+        }
+        if (snapshot.citizenCount() != refs.citizenCount() || snapshot.troopCount() != refs.troopCount()) {
             return false;
         }
         return hasCompleteAnchors(refs, snapshot.workerPositions().keySet());

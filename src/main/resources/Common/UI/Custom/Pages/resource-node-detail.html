@@ -1,0 +1,42 @@
+<style>
+    .page-overlay { anchor-width: 820; anchor-height: 520; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_node_detail_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .stat { anchor-width: 155; layout-mode: top; padding-right: 10; }
+    .wide { anchor-width: 210; layout-mode: top; padding-right: 10; }
+    .title { font-size: 24; font-weight: bold; text-transform: uppercase; color: #f4d27a; }
+    .label { font-size: 14; color: #9eb0bf; }
+    .value { font-size: 18; color: #fff1c2; }
+    .feedback { font-size: 14; color: #cfd8e1; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="NodeIcon" src="Textures/ResourceGame/icons/ui_icon_node_marker.png" width="64" height="64">
+    <p id="NodeTitle" class="title">{{$NodeTitle}}</p>
+    <p id="NodeSummary" class="label">{{$NodeSummary}}</p>
+    <div class="row">
+        <div class="stat"><p class="label">Assigned Troops</p><p id="AssignedTroops" class="value">{{$AssignedTroops}}</p></div>
+        <div class="stat"><p class="label">Auto Workers</p><p id="AssignedWorkers" class="value">{{$AssignedWorkers}}</p></div>
+        <div class="stat"><p class="label">Reserve Troops</p><p id="AvailableTroops" class="value">{{$AvailableTroops}}</p></div>
+        <div class="wide"><p class="label">Yield</p><p id="GainPerTick" class="value">{{$GainPerTick}}</p></div>
+    </div>
+    <div class="row">
+        <div class="wide"><p class="label">Node Stock</p><p id="StockStatus" class="value">{{$StockStatus}}</p></div>
+        <div class="stat"><p class="label">Regeneration</p><p id="RegenStatus" class="value">{{$RegenStatus}}</p></div>
+        <div class="stat"><p class="label">Status</p><p id="StatusText" class="value">{{$StatusText}}</p></div>
+        <div class="wide"><p class="label">Supply Lane</p><p id="RouteStatus" class="value">{{$RouteStatus}}</p></div>
+        <div class="stat"><p class="label">Pillage</p><p id="PillageReward" class="value">{{$PillageReward}}</p></div>
+    </div>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <div class="row">
+        <button id="AssignOneButton">Send 1</button>
+        <button id="AssignThreeButton">Send 3</button>
+        <button id="AssignFiveButton">Send 5</button>
+        <button id="AssignAllButton">Send All</button>
+    </div>
+    <div class="row">
+        <button id="RecallOneButton" class="secondary-button">Recall 1</button>
+        <button id="RecallAllButton" class="secondary-button">Recall All</button>
+        <button id="PillageButton" class="secondary-button">Pillage Node</button>
+        <button id="BackButton" class="secondary-button">Back</button>
+    </div>
+</div>

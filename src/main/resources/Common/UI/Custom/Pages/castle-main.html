@@ -1,0 +1,46 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .column { layout-mode: top; padding-right: 18; }
+    .stat { anchor-width: 125; layout-mode: top; padding-right: 12; }
+    .wide-stat { anchor-width: 160; layout-mode: top; padding-right: 12; }
+    .title { font-size: 26; font-weight: bold; text-transform: uppercase; color: #f4d27a; }
+    .section { font-size: 18; font-weight: bold; text-transform: uppercase; color: #d6e1eb; }
+    .muted { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 20; color: #fff1c2; }
+    .button-row { layout-mode: left; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="MenuCrest" src="Textures/ResourceGame/icons/ui_icon_kingdom_castle.png" width="64" height="64">
+    <div id="Header" class="column">
+        <p id="Title" class="title">Your Castle</p>
+        <p id="Subtitle" class="muted">{{$Subtitle}}</p>
+    </div>
+    <div id="Stats" class="row">
+        <div class="stat"><p class="section">Citizens</p><p id="CitizenCount" class="value">{{$CitizenCount}}</p></div>
+        <div class="stat"><p class="section">Troops</p><p id="TroopCount" class="value">{{$TroopCount}}</p></div>
+        <div class="stat"><p class="section">Might</p><p id="MightCount" class="value">{{$MightCount}}</p></div>
+        <div class="wide-stat"><p class="section">Food</p><p id="FoodCount" class="value">{{$FoodCount}}</p></div>
+        <div class="stat"><p class="section">Wood</p><p id="WoodCount" class="value">{{$WoodCount}}</p></div>
+        <div class="stat"><p class="section">Iron</p><p id="IronCount" class="value">{{$IronCount}}</p></div>
+    </div>
+    <p class="muted">Outside the menu: the castle is a stone marker with owner, troop, and Might text. Right-click while focused to interact.</p>
+    <div id="Actions" class="button-row">
+        <button id="EnterInteriorButton">Enter Interior</button>
+        <button id="CastleInfoButton" class="secondary-button">View Castle Info</button>
+        <button id="CitizensButton" class="secondary-button">Citizens</button>
+        <button id="TroopsButton" class="secondary-button">Troops</button>
+        <button id="ResourcesButton" class="secondary-button">Resources</button>
+        <button id="UpgradesButton" class="secondary-button">Upgrades</button>
+        <button id="BuildingsButton" class="secondary-button">Buildings</button>
+    </div>
+    <div id="WorldActions" class="button-row">
+        <button id="AttackButton" class="secondary-button">Attack Castle (Future)</button>
+        <button id="FriendButton" class="secondary-button">Add Friend (Future)</button>
+        <button id="GuildButton" class="secondary-button">Guild Access (Future)</button>
+    </div>
+    <div id="Footer" class="button-row">
+        <button id="CloseButton" class="secondary-button">Close</button>
+    </div>
+</div>

@@ -1,8 +1,10 @@
 Group {
   Anchor: (Width: 860, Height: 560);
-  Background: (Color: #10161d(0.92));
+  Background: PatchStyle(TexturePath: "../Textures/ResourceGame/panels/ui_panel_workshop_base.png");
   Padding: (Full: 16);
   LayoutMode: Top;
+
+  AssetImage #BuildingIcon { Anchor: (Width: 64, Height: 64, Bottom: 8); AssetPath: "../Textures/ResourceGame/icons/ui_icon_action_upgrade.png"; }
 
   Label #BuildingTitle { Text: "Building"; Style: (FontSize: 24, RenderBold: true, RenderUppercase: true); Anchor: (Bottom: 6); }
   Label #AreaText { Style: (FontSize: 14, TextColor: #9eb0bf); Anchor: (Bottom: 4); }
@@ -34,9 +36,9 @@ Group {
   Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
-    TextButton #StartUpgradeButton { Text: "Start Upgrade"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #CancelUpgradeButton { Text: "Cancel Upgrade"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #OverviewButton { Text: "Building Overview"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #BackButton { Text: "Castle Menu"; Padding: (Full: 6); }
+    TextButton #StartUpgradeButton { Text: "Start Upgrade"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_confirm_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CancelUpgradeButton { Text: "Cancel Upgrade"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_danger_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #OverviewButton { Text: "Building Overview"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #BackButton { Text: "Castle Menu"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
   }
 }

@@ -365,6 +365,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                 metadata.agingState(),
                 metadata.jobCounts(),
                 metadata.onboardingProgress(),
+                metadata.accountProgression(),
+                metadata.debugModeState(),
                 nodes,
                 metadata.castleBuildings(),
                 metadata.interiorInstanceIndex()
@@ -388,6 +390,8 @@ public final class ResourceNodeService implements IResourceNodeService, IDepende
                     metadata.agingState(),
                     metadata.jobCounts(),
                     metadata.onboardingProgress(),
+                    metadata.accountProgression(),
+                    metadata.debugModeState(),
                     metadata.resourceNodes(),
                     metadata.castleBuildings(),
                     metadata.interiorInstanceIndex()

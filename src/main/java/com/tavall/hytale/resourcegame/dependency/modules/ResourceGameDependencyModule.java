@@ -106,6 +106,7 @@ import com.tavall.hytale.resourcegame.services.ResourceNodeVisualPulseService;
 import com.tavall.hytale.resourcegame.services.ResourceNodeVisualService;
 import com.tavall.hytale.resourcegame.services.ResourceService;
 import com.tavall.hytale.resourcegame.services.StructureProtectionService;
+import com.tavall.hytale.resourcegame.services.VisualVerificationControlService;
 import com.tavall.hytale.resourcegame.services.WorkerNpcInteractionService;
 import com.tavall.hytale.resourcegame.services.WorldLabelService;
 import com.tavall.hytale.resourcegame.ui.CastleCitizensPage;
@@ -330,6 +331,11 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
                 interiorTourMarkerService,
                 uiNavigator
         );
+        VisualVerificationControlService visualVerificationControlService = new VisualVerificationControlService(
+                playerDataService,
+                sessionStore,
+                uiNavigator
+        );
         CastleInteractionService castleInteractionService = new CastleInteractionService(
                 sessionStore,
                 uiNavigator,
@@ -432,6 +438,7 @@ public final class ResourceGameDependencyModule implements IDependencyModule {
         registerSingleton(IIpHashService.class, ipHashService);
         registerSingleton(IKingdomClockService.class, clockService);
         registerSingleton(IPlayerDataService.class, playerDataService);
+        registerSingleton(VisualVerificationControlService.class, visualVerificationControlService);
         registerSingleton(ICastleInteractionService.class, castleInteractionService);
         registerSingleton(IFocusedWorldOverrideService.class, focusedWorldOverrideService);
         registerSingleton(IFocusedWorldInteractionService.class, focusedWorldInteractionService);

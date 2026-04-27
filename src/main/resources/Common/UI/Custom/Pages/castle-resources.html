@@ -1,0 +1,17 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png'); }
+    .title { font-size: 24; font-weight: bold; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 22; color: #fff1c2; }
+    .status { font-size: 13; color: #8ec3a8; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="ResourcesIcon" src="Textures/ResourceGame/icons/ui_icon_resource_gold.png" width="64" height="64">
+    <p class="title">Resources</p>
+    <p class="label">Food</p><p id="FoodCount" class="value">{{$FoodCount}}</p><p id="FoodNodeStatus" class="status">{{$FoodNodeStatus}}</p>
+    <p class="label">Wood</p><p id="WoodCount" class="value">{{$WoodCount}}</p><p id="WoodNodeStatus" class="status">{{$WoodNodeStatus}}</p>
+    <p class="label">Iron</p><p id="IronCount" class="value">{{$IronCount}}</p><p id="IronNodeStatus" class="status">{{$IronNodeStatus}}</p>
+    <p class="label">Future: storage buildings, hauling routes, and production chains.</p>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

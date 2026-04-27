@@ -7,9 +7,11 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.tavall.hytale.resourcegame.dependency.composition.domains.IResourceGameDomain;
+import com.tavall.hytale.resourcegame.dependency.DependencyLoaderAccess;
 import com.tavall.hytale.resourcegame.dependency.injection.helpers.DependencyInjectorHelper;
 import com.tavall.hytale.resourcegame.dependency.injection.helpers.interfaces.IDependencyInjectorHelper;
 import com.tavall.hytale.resourcegame.dependency.modules.ResourceGameDependencyModule;
+import com.tavall.hytale.resourcegame.services.VisualVerificationControlService;
 import com.tavall.hytale.resourcegame.tasks.AsyncTask;
 
 import javax.annotation.Nonnull;
@@ -54,6 +56,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getCastleEconomySimulationService().start();
         getResourceNodeVisualPulseService().start();
         getProtectedBlockSystemService().start();
+        DependencyLoaderAccess.findInstance(VisualVerificationControlService.class).start();
 
         List<AbstractAsyncCommand> commands = getDebugCommandService().commands();
         for (AbstractAsyncCommand command : commands) {
@@ -104,6 +107,7 @@ public class ResourceGamePlugin extends JavaPlugin implements IResourceGameDomai
         getCastleEconomySimulationService().shutdown();
         getResourceNodeVisualPulseService().shutdown();
         getProtectedBlockSystemService().shutdown();
+        DependencyLoaderAccess.findInstance(VisualVerificationControlService.class).shutdown();
         getKingdomClockService().shutdown();
         AsyncTask.shutdown();
     }

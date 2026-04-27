@@ -123,12 +123,53 @@ $unsafeTokens = @(
 )
 
 $requiredPages = @(
-    "Common/UI/Custom/Pages/castle-main.ui",
-    "Common/UI/Custom/Pages/castle-upgrades.ui",
-    "Common/UI/Custom/Pages/castle-buildings.ui",
-    "Common/UI/Custom/Pages/building-detail.ui",
-    "Common/UI/Custom/Pages/interior-main.ui",
-    "Common/UI/Custom/Pages/resource-node-detail.ui"
+    "Common/UI/Custom/Pages/castle-main.html",
+    "Common/UI/Custom/Pages/castle-info.html",
+    "Common/UI/Custom/Pages/castle-citizens.html",
+    "Common/UI/Custom/Pages/castle-troops.html",
+    "Common/UI/Custom/Pages/castle-resources.html",
+    "Common/UI/Custom/Pages/castle-upgrades.html",
+    "Common/UI/Custom/Pages/castle-buildings.html",
+    "Common/UI/Custom/Pages/building-detail.html",
+    "Common/UI/Custom/Pages/interior-main.html",
+    "Common/UI/Custom/Pages/resource-node-detail.html",
+    "Common/UI/Custom/Pages/debug-navigator.html"
+)
+
+$requiredGeneratedAssets = @(
+    "Common/UI/Custom/Textures/ResourceGame/resource-game-ui-assets.json",
+    "Common/UI/Custom/Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png",
+    "Common/UI/Custom/Textures/ResourceGame/panels/ui_panel_war_table_base.png",
+    "Common/UI/Custom/Textures/ResourceGame/panels/ui_panel_workshop_base.png",
+    "Common/UI/Custom/Textures/ResourceGame/panels/ui_panel_node_detail_base.png",
+    "Common/UI/Custom/Textures/ResourceGame/panels/ui_panel_interior_base.png",
+    "Common/UI/Custom/Textures/ResourceGame/buttons/ui_button_primary_normal.png",
+    "Common/UI/Custom/Textures/ResourceGame/buttons/ui_button_secondary_normal.png",
+    "Common/UI/Custom/Textures/ResourceGame/buttons/ui_button_confirm_normal.png",
+    "Common/UI/Custom/Textures/ResourceGame/buttons/ui_button_danger_normal.png",
+    "Common/UI/Custom/Textures/ResourceGame/icons/ui_icon_kingdom_castle.png",
+    "Common/UI/Custom/Textures/ResourceGame/icons/ui_icon_action_upgrade.png",
+    "Common/UI/Custom/Textures/ResourceGame/icons/ui_icon_node_marker.png",
+    "Common/UI/Custom/Textures/ResourceGame/selectors/ui_selector_building_valid.png",
+    "Common/UI/Custom/Textures/ResourceGame/selectors/ui_selector_building_blocked.png",
+    "Common/UI/Custom/Textures/ResourceGame/fonts/font_template_big_alphabet.png",
+    "Common/UI/Custom/Textures/ResourceGame/fonts/font_template_menu_alphabet.png",
+    "Common/UI/Custom/Textures/ResourceGame/fonts/font_template_numbers_symbols.png",
+    "Common/Models/ResourceGame/resource-game-model-assets.json",
+    "Common/Models/ResourceGame/castle_keep.bbmodel",
+    "Common/Models/ResourceGame/farmstead.bbmodel",
+    "Common/Models/ResourceGame/lumber_mill.bbmodel",
+    "Common/Models/ResourceGame/iron_works.bbmodel",
+    "Common/Models/ResourceGame/barracks.bbmodel",
+    "Common/Models/ResourceGame/workshop.bbmodel",
+    "Common/Models/ResourceGame/resource_node.bbmodel",
+    "Common/Prefabs/ResourceGame/castle_keep.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/farmstead.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/lumber_mill.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/iron_works.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/barracks.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/workshop.resource-prefab.json",
+    "Common/Prefabs/ResourceGame/resource_node.resource-prefab.json"
 )
 
 $zip = [System.IO.Compression.ZipFile]::OpenRead($JarPath)
@@ -138,34 +179,101 @@ try {
         throw "manifest.json does not enable IncludesAssetPack"
     }
 
-    $pageEntries = $zip.Entries | Where-Object { $_.FullName -like "Common/UI/Custom/Pages/*.ui" } | Sort-Object FullName
+    $pageEntries = $zip.Entries | Where-Object { $_.FullName -like "Common/UI/Custom/Pages/*.html" } | Sort-Object FullName
     if (-not $pageEntries) {
-        throw "No CustomUI pages were packaged into the plugin jar"
+        throw "No HyUI pages were packaged into the plugin jar"
     }
 
     foreach ($page in $requiredPages) {
         if (-not ($pageEntries.FullName -contains $page)) {
-            throw "Required CustomUI page is missing from the built jar: $page"
+            throw "Required HyUI page is missing from the built jar: $page"
+        }
+    }
+
+    foreach ($asset in $requiredGeneratedAssets) {
+        if (-not ($zip.Entries.FullName -contains $asset)) {
+            throw "Required generated asset is missing from the built jar: $asset"
+        }
+    }
+
+    $pngAssetCount = @($zip.Entries | Where-Object { $_.FullName -like "Common/UI/Custom/Textures/ResourceGame/*.png" -or $_.FullName -like "Common/UI/Custom/Textures/ResourceGame/*/*.png" }).Count
+    if ($pngAssetCount -lt 40) {
+        throw "Generated UI asset count is too low: $pngAssetCount"
+    }
+
+    $modelAssetCount = @($zip.Entries | Where-Object { $_.FullName -match '^Common/Models/ResourceGame/.+\.bbmodel$' }).Count
+    if ($modelAssetCount -lt 222) {
+        throw "Generated Blockbench model count is too low: $modelAssetCount"
+    }
+
+    $prefabRecipeCount = @($zip.Entries | Where-Object { $_.FullName -match '^Common/Prefabs/ResourceGame/.+\.resource-prefab\.json$' }).Count
+    if ($prefabRecipeCount -lt 222) {
+        throw "Generated prefab recipe count is too low: $prefabRecipeCount"
+    }
+
+    $modelManifestText = Read-ZipEntryText -Zip $zip -EntryName "Common/Models/ResourceGame/resource-game-model-assets.json"
+    $modelManifest = $modelManifestText | ConvertFrom-Json
+    if ($modelManifest.schema -ne "resource-game-model-assets/v1") {
+        throw "Model asset manifest has an unexpected schema: $($modelManifest.schema)"
+    }
+    if ($modelManifest.maxBuildingLevel -ne 30) {
+        throw "Model asset manifest has an unexpected maxBuildingLevel: $($modelManifest.maxBuildingLevel)"
+    }
+    if (@($modelManifest.assets).Count -ne $modelAssetCount) {
+        throw "Model asset manifest count does not match packaged Blockbench models: manifest=$(@($modelManifest.assets).Count) packaged=$modelAssetCount"
+    }
+    foreach ($assetNode in @($modelManifest.assets)) {
+        $modelEntryName = $assetNode.model -replace '^src/main/resources/', ''
+        $recipeEntryName = $assetNode.prefabRecipe -replace '^src/main/resources/', ''
+        if (-not ($zip.Entries.FullName -contains $modelEntryName)) {
+            throw "Model manifest references an unpackaged model: $modelEntryName"
+        }
+        if (-not ($zip.Entries.FullName -contains $recipeEntryName)) {
+            throw "Model manifest references an unpackaged prefab recipe: $recipeEntryName"
         }
     }
 
     foreach ($entry in $pageEntries) {
         $content = Read-ZipEntryText -Zip $zip -EntryName $entry.FullName
         if ([string]::IsNullOrWhiteSpace($content)) {
-            throw "CustomUI page is empty: $($entry.FullName)"
+            throw "HyUI page is empty: $($entry.FullName)"
         }
         if ($content[0] -eq [char]0xFEFF) {
-            throw "CustomUI page has UTF-8 BOM: $($entry.FullName)"
+            throw "HyUI page has UTF-8 BOM: $($entry.FullName)"
         }
-        if (-not $content.TrimStart().StartsWith("Group")) {
-            throw "CustomUI page does not start with a root Group: $($entry.FullName)"
+        if (-not $content.Contains('<style>')) {
+            throw "HyUI page is missing an inline style block: $($entry.FullName)"
+        }
+        if (-not $content.Contains('id="ResourceGamePageRoot"')) {
+            throw "HyUI page is missing the Resource Game page root: $($entry.FullName)"
         }
         if ($content.Contains("../Common.ui")) {
-            throw "CustomUI page still imports Common.ui: $($entry.FullName)"
+            throw "HyUI page still imports Common.ui: $($entry.FullName)"
+        }
+        if ($content -match '<script\b') {
+            throw "HyUI page contains unsupported script content: $($entry.FullName)"
+        }
+        if (-not $content.Contains("../Textures/ResourceGame/")) {
+            throw "HyUI page is not using generated ResourceGame textures: $($entry.FullName)"
+        }
+        if (-not $content.Contains("<img")) {
+            throw "HyUI page is not using a generated icon image: $($entry.FullName)"
+        }
+        if ($content.Contains('src="../Textures/ResourceGame/')) {
+            throw "HyUI page uses a native .ui-relative img src path that HyUI AssetImage cannot resolve: $($entry.FullName)"
+        }
+        if (-not $content.Contains('src="Textures/ResourceGame/')) {
+            throw "HyUI page is not using a HyUI AssetImage-compatible generated icon path: $($entry.FullName)"
+        }
+        if (-not $content.Contains("buttons/")) {
+            throw "HyUI page is not using generated button assets: $($entry.FullName)"
+        }
+        if (-not $content.Contains("<button")) {
+            throw "HyUI page has no interactive button elements: $($entry.FullName)"
         }
         foreach ($token in $unsafeTokens) {
             if ($content.Contains($token)) {
-                throw "CustomUI page uses unsafe token '$token': $($entry.FullName)"
+                throw "HyUI page uses unsafe token '$token': $($entry.FullName)"
             }
         }
     }
@@ -178,7 +286,12 @@ $result = [ordered]@{
     builtAt = (Get-Item $JarPath).LastWriteTime.ToString("o")
     manifestAssetPack = $true
     pageCount = $requiredPages.Count
+    generatedAssetCount = $requiredGeneratedAssets.Count
+    generatedUiPngCount = $pngAssetCount
+    generatedModelCount = $modelAssetCount
+    generatedPrefabRecipeCount = $prefabRecipeCount
     requiredPages = $requiredPages
+    requiredGeneratedAssets = $requiredGeneratedAssets
     compareJarPath = $null
     compareJarMatches = $null
 }

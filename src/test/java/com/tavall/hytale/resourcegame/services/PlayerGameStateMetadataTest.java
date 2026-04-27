@@ -7,6 +7,7 @@ import com.tavall.hytale.resourcegame.domain.AgingState;
 import com.tavall.hytale.resourcegame.domain.CastleLocationData;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 import com.tavall.hytale.resourcegame.domain.CitizenMetaData;
+import com.tavall.hytale.resourcegame.domain.DebugModeState;
 import com.tavall.hytale.resourcegame.domain.GameStateMetadata;
 import com.tavall.hytale.resourcegame.domain.OnboardingProgress;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
@@ -163,5 +164,57 @@ public final class PlayerGameStateMetadataTest {
 
         PlayerGameState bumpedAgain = service.bumpInteriorInstanceIndex(tutorialRewrite, now.plusSeconds(3));
         assertEquals(2, service.interiorInstanceIndex(bumpedAgain));
+    }
+
+    @Test
+    void accountProgressionPersistsAcrossMetadataRewrites() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        PlayerGameStateService service = new PlayerGameStateService(
+                new InMemoryPlayerGameStateStore(),
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("metadata-account-progression"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "metadata-account-progression"),
+                mapperProvider.mapper()
+        );
+
+        Instant now = Instant.parse("2026-04-27T18:00:00Z");
+        PlayerGameState state = service.loadOrCreate(
+                77L,
+                UUID.randomUUID(),
+                new CastleLocationData("overworld", 7.0, 68.0, 7.0),
+                now
+        );
+
+        PlayerGameState leveled = service.setAccountLevel(state, 50, now.plusSeconds(1));
+        PlayerGameState tutorialRewrite = service.markInteriorTutorialSeen(leveled, now.plusSeconds(2));
+        PlayerGameState indexedRewrite = service.bumpInteriorInstanceIndex(tutorialRewrite, now.plusSeconds(3));
+
+        assertEquals(50, service.accountProgression(indexedRewrite).level());
+    }
+
+    @Test
+    void debugModePersistsAcrossMetadataRewritesAndStoreRoundTrip() {
+        JsonMapperProvider mapperProvider = new JsonMapperProvider();
+        InMemoryPlayerGameStateStore store = new InMemoryPlayerGameStateStore();
+        PlayerGameStateService service = new PlayerGameStateService(
+                store,
+                new SemanticCacheFactory(new CacheConfig("", 6379, "", false)).build("metadata-debug-mode"),
+                new JacksonCacheCodec<>(mapperProvider.mapper(), PlayerGameState.class, "metadata-debug-mode"),
+                mapperProvider.mapper()
+        );
+
+        Instant now = Instant.parse("2026-04-27T19:00:00Z");
+        PlayerGameState state = service.loadOrCreate(
+                78L,
+                UUID.randomUUID(),
+                new CastleLocationData("overworld", 8.0, 68.0, 8.0),
+                now
+        );
+
+        PlayerGameState debugEnabled = service.setDebugMode(state, DebugModeState.enabled(), now.plusSeconds(1));
+        PlayerGameState tutorialRewrite = service.markInteriorTutorialSeen(debugEnabled, now.plusSeconds(2));
+        PlayerGameState persisted = service.persistState(tutorialRewrite, now.plusSeconds(3));
+
+        assertTrue(service.debugModeState(persisted).levelRestrictionsIgnored());
+        assertTrue(store.snapshot(78L).map(service::debugModeState).orElse(DebugModeState.disabled()).levelRestrictionsIgnored());
     }
 }

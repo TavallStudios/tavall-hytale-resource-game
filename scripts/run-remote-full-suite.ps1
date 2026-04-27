@@ -26,6 +26,16 @@ if ($LASTEXITCODE -ne 0) {
     throw "Custom UI asset-pack validation failed."
 }
 
+powershell -ExecutionPolicy Bypass -File .\scripts\install-hyui-remote.ps1
+if ($LASTEXITCODE -ne 0) {
+    throw "HyUI remote install failed."
+}
+
+powershell -ExecutionPolicy Bypass -File .\scripts\sync-remote-bot-harness.ps1
+if ($LASTEXITCODE -ne 0) {
+    throw "Remote bot harness sync failed."
+}
+
 $steps = @(
     @{ name = "persistence"; script = ".\scripts\run-remote-persistence-flow.ps1" },
     @{ name = "castle"; script = ".\scripts\run-remote-castle-interaction-flow.ps1" },

@@ -14,17 +14,22 @@
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <hytale.server.version>2026.02.19-1a311a592</hytale.server.version>
+        <hytale.server.version>2026.03.26-89796e57b</hytale.server.version>
         <plugin.main.class>com.tavall.hytale.resourcegame.ResourceGamePlugin</plugin.main.class>
         <jackson.version>2.18.3</jackson.version>
         <postgres.version>42.7.10</postgres.version>
         <junit.version>5.11.4</junit.version>
+        <hyui.curse.file>7820303</hyui.curse.file>
     </properties>
 
     <repositories>
         <repository>
             <id>codemc-hytale</id>
             <url>https://repo.codemc.io/repository/hytale/</url>
+        </repository>
+        <repository>
+            <id>cursemaven</id>
+            <url>https://www.cursemaven.com</url>
         </repository>
     </repositories>
 
@@ -33,6 +38,12 @@
             <groupId>com.hypixel.hytale</groupId>
             <artifactId>Server</artifactId>
             <version>${hytale.server.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>curse.maven</groupId>
+            <artifactId>hyui-1431415</artifactId>
+            <version>${hyui.curse.file}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -1,13 +1,6 @@
 package com.tavall.hytale.resourcegame.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.ui.builder.EventData;
-import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.domain.CastleEconomySnapshot;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
@@ -15,12 +8,14 @@ import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Citizens placeholder page.
  */
 public final class CastleCitizensPage extends BaseUiPage {
-    private static final String PAGE_DOCUMENT = "Pages/castle-citizens.ui";
-    private final CastleEconomyPlanner economyPlanner;
+    private static final String PAGE_DOCUMENT = "Pages/castle-citizens.html";
 
     public CastleCitizensPage(
             Player player,
@@ -29,42 +24,35 @@ public final class CastleCitizensPage extends BaseUiPage {
             IUiActionService actionService,
             CastleEconomyPlanner economyPlanner
     ) {
-        super(player, context, state, actionService);
-        this.economyPlanner = economyPlanner;
+        super(player, context, state, actionService, PAGE_DOCUMENT, templateData(context, state, economyPlanner), bindings());
     }
 
-    @Override
-    public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
-        uiCommandBuilder.append(PAGE_DOCUMENT);
-        uiCommandBuilder.set("#CitizenCount.Text", String.valueOf(state().populationSummary().citizenCount()));
-        CastleEconomySnapshot snapshot = economyPlanner.snapshot(state());
-        uiCommandBuilder.set("#IdleCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.IDLE)));
-        uiCommandBuilder.set("#GathererCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.GATHERER)));
-        uiCommandBuilder.set("#HunterCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.HUNTER)));
-        uiCommandBuilder.set("#CookCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.COOK)));
-        uiCommandBuilder.set("#MinerCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.MINER)));
-        uiCommandBuilder.set("#BuilderCount.Text", String.valueOf(builderSpecialistCount(snapshot)));
-        uiCommandBuilder.set("#BlacksmithCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.BLACKSMITH)));
-        uiCommandBuilder.set("#ArchitectCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.ARCHITECT)));
-        uiCommandBuilder.set("#GruntBuilderCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)));
-        uiCommandBuilder.set("#TraineeCount.Text", String.valueOf(snapshot.jobCount(CitizenJobType.TRAINEE)));
-        uiCommandBuilder.set("#FeedbackStatus.Text", context().feedbackMessage().isBlank() ? "Right-click an interior worker anchor to inspect that worker type." : context().feedbackMessage());
-        bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
+    private static Map<String, ?> templateData(UiNavigationContext context, PlayerGameState state, CastleEconomyPlanner economyPlanner) {
+        CastleEconomySnapshot snapshot = economyPlanner.snapshot(state);
+        return Map.ofEntries(
+                Map.entry("CitizenCount", String.valueOf(state.populationSummary().citizenCount())),
+                Map.entry("IdleCount", String.valueOf(snapshot.jobCount(CitizenJobType.IDLE))),
+                Map.entry("GathererCount", String.valueOf(snapshot.jobCount(CitizenJobType.GATHERER))),
+                Map.entry("HunterCount", String.valueOf(snapshot.jobCount(CitizenJobType.HUNTER))),
+                Map.entry("CookCount", String.valueOf(snapshot.jobCount(CitizenJobType.COOK))),
+                Map.entry("MinerCount", String.valueOf(snapshot.jobCount(CitizenJobType.MINER))),
+                Map.entry("BuilderCount", String.valueOf(builderSpecialistCount(snapshot))),
+                Map.entry("BlacksmithCount", String.valueOf(snapshot.jobCount(CitizenJobType.BLACKSMITH))),
+                Map.entry("ArchitectCount", String.valueOf(snapshot.jobCount(CitizenJobType.ARCHITECT))),
+                Map.entry("GruntBuilderCount", String.valueOf(snapshot.jobCount(CitizenJobType.GRUNT_BUILDER))),
+                Map.entry("TraineeCount", String.valueOf(snapshot.jobCount(CitizenJobType.TRAINEE))),
+                Map.entry("FeedbackStatus", context.feedbackMessage().isBlank() ? "Right-click an interior worker anchor to inspect that worker type." : context.feedbackMessage())
+        );
     }
 
-    private int builderSpecialistCount(CastleEconomySnapshot snapshot) {
+    private static int builderSpecialistCount(CastleEconomySnapshot snapshot) {
         return snapshot.jobCount(CitizenJobType.BLACKSMITH)
                 + snapshot.jobCount(CitizenJobType.ARCHITECT)
                 + snapshot.jobCount(CitizenJobType.GRUNT_BUILDER)
                 + snapshot.jobCount(CitizenJobType.BUILDER);
     }
 
-    private void bind(UIEventBuilder uiEventBuilder, String selector, String action) {
-        uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                selector,
-                EventData.of(UiActionEventData.KEY_ACTION, action),
-                false
-        );
+    private static List<HyUiActionBinding> bindings() {
+        return List.of(HyUiActionBinding.action("#BackButton", UiActions.OPEN_CASTLE_MAIN));
     }
 }

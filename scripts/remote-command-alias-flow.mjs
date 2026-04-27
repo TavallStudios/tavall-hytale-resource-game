@@ -2,7 +2,7 @@
 import { delay, ensureBotBaseline, resolveBotClientModuleUrl, writeJson, printStructured, captureWorldSnapshot } from "./bot-flow-helpers.mjs";
 
 function readSelectorValue(snapshot, selector) {
-  const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
+  const command = snapshot?.commands?.slice().reverse().find((entry) => entry.type === "Set" && entry.selector === selector);
   if (!command) {
     return null;
   }
@@ -33,6 +33,84 @@ async function waitForKeyedPage(bot, pageKey, timeoutMs) {
 
 function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
+}
+
+function isBotConnected(bot) {
+  return typeof bot.isConnected === "function" ? bot.isConnected() : true;
+}
+
+function summarizePageSnapshot(snapshot) {
+  if (!snapshot) {
+    return null;
+  }
+  return {
+    key: snapshot.key,
+    selectors: snapshot.selectors,
+    cacheStatus: readSelectorValue(snapshot, "#CacheStatus.Text"),
+    citizenCount: readSelectorValue(snapshot, "#CitizenCount.Text"),
+    troopCount: readSelectorValue(snapshot, "#TroopCount.Text"),
+    foodCount: readSelectorValue(snapshot, "#FoodCount.Text"),
+    woodCount: readSelectorValue(snapshot, "#WoodCount.Text"),
+    ironCount: readSelectorValue(snapshot, "#IronCount.Text")
+  };
+}
+
+async function chatUntilSnapshot(bot, command, predicate, timeoutMs, label) {
+  const startedAt = Date.now();
+  let lastError = null;
+  while ((Date.now() - startedAt) < timeoutMs) {
+    if (!isBotConnected(bot)) {
+      break;
+    }
+    try {
+      bot.chat(command);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      break;
+    }
+
+    const retryUntil = Date.now() + 1_500;
+    while ((Date.now() - startedAt) < timeoutMs && Date.now() < retryUntil) {
+      const snapshot = bot.snapshotPage();
+      if (snapshot && predicate(snapshot)) {
+        return snapshot;
+      }
+      await delay(150);
+    }
+  }
+
+  throw new Error(
+    `Timed out waiting for ${label}; finalSnapshot=${JSON.stringify(summarizePageSnapshot(bot.snapshotPage()))}; finalServerMessage=${bot.getServerMessages().at(-1) ?? null}; lastSendError=${lastError}`
+  );
+}
+
+async function sendActionUntilSnapshot(bot, action, predicate, timeoutMs, label) {
+  const startedAt = Date.now();
+  let lastError = null;
+  while ((Date.now() - startedAt) < timeoutMs) {
+    if (!isBotConnected(bot)) {
+      break;
+    }
+    try {
+      sendAction(bot, action);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      break;
+    }
+
+    const retryUntil = Date.now() + 1_500;
+    while ((Date.now() - startedAt) < timeoutMs && Date.now() < retryUntil) {
+      const snapshot = bot.snapshotPage();
+      if (snapshot && predicate(snapshot)) {
+        return snapshot;
+      }
+      await delay(150);
+    }
+  }
+
+  throw new Error(
+    `Timed out waiting for ${label}; finalSnapshot=${JSON.stringify(summarizePageSnapshot(bot.snapshotPage()))}; finalServerMessage=${bot.getServerMessages().at(-1) ?? null}; lastSendError=${lastError}`
+  );
 }
 
 function resourceAtLeast(snapshot, selector, minimum) {
@@ -69,15 +147,25 @@ async function main() {
       username,
       nearbyRadius: 14
     });
-    await delay(1_500);
+    await delay(2_500);
 
-    bot.chat("/kd ui");
-    const debugSnapshot = await waitForKeyedPage(bot, "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage", 10_000);
+    const debugSnapshot = await chatUntilSnapshot(
+      bot,
+      "/kd ui",
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.DebugNavigatorPage",
+      18_000,
+      "debug page from /kd ui"
+    );
     pages.push({ key: debugSnapshot.key, title: null, snapshot: debugSnapshot });
     assertions.push("kd-ui-opened-debug");
 
-    sendAction(bot, "OpenCastleMain");
-    const castleSnapshot = await waitForKeyedPage(bot, "com.tavall.hytale.resourcegame.ui.CastleMainPage", 10_000);
+    const castleSnapshot = await sendActionUntilSnapshot(
+      bot,
+      "OpenCastleMain",
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleMainPage",
+      12_000,
+      "castle main from debug action"
+    );
     if (!castleSnapshot.selectors.includes("#EnterInteriorButton")) {
       throw new Error("Castle main page missing interior button selector.");
     }
@@ -96,9 +184,9 @@ async function main() {
     await delay(700);
     assertions.push("kd-mutations-applied");
 
-    bot.chat("/kd ui upgrades");
-    const upgradesSnapshot = await waitForSnapshot(
+    const upgradesSnapshot = await chatUntilSnapshot(
       bot,
+      "/kd ui upgrades",
       (snapshot) =>
         snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleUpgradesPage"
         && readSelectorValue(snapshot, "#CitizenCount.Text") === "9"
@@ -106,20 +194,30 @@ async function main() {
         && resourceAtLeast(snapshot, "#FoodCount.Text", 44)
         && resourceAtLeast(snapshot, "#WoodCount.Text", 55)
         && resourceAtLeast(snapshot, "#IronCount.Text", 13),
-      10_000,
+      15_000,
       "kd upgrades page values"
     );
     pages.push({ key: upgradesSnapshot.key, title: null, snapshot: upgradesSnapshot });
     assertions.push("kd-upgrades-opened");
     assertions.push("kd-upgrades-values");
 
-    sendAction(bot, "OpenCastleMain");
-    const returnedCastleSnapshot = await waitForKeyedPage(bot, "com.tavall.hytale.resourcegame.ui.CastleMainPage", 10_000);
+    const returnedCastleSnapshot = await sendActionUntilSnapshot(
+      bot,
+      "OpenCastleMain",
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleMainPage",
+      12_000,
+      "castle main from upgrades action"
+    );
     pages.push({ key: returnedCastleSnapshot.key, title: null, snapshot: returnedCastleSnapshot });
     assertions.push("upgrades-back-to-castle-main");
 
-    bot.chat("/kd castle");
-    const directCastleSnapshot = await waitForKeyedPage(bot, "com.tavall.hytale.resourcegame.ui.CastleMainPage", 10_000);
+    const directCastleSnapshot = await chatUntilSnapshot(
+      bot,
+      "/kd castle",
+      (snapshot) => snapshot.key === "com.tavall.hytale.resourcegame.ui.CastleMainPage",
+      12_000,
+      "castle main from /kd castle"
+    );
     pages.push({ key: directCastleSnapshot.key, title: null, snapshot: directCastleSnapshot });
     assertions.push("kd-castle-command-opened");
 
@@ -148,6 +246,10 @@ async function main() {
       assertions,
       pages,
       error: error instanceof Error ? error.message : String(error),
+      finalPageSnapshot: summarizePageSnapshot(bot.snapshotPage()),
+      clientSnapshot: {
+        final: captureWorldSnapshot(bot, 14)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {

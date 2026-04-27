@@ -19,11 +19,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Debug command helpers for spawning and clearing hologram-style world labels.
  */
 public final class KingdomHologramCommandSupport implements IDependencyInjectableConcrete {
+    private static final Logger LOGGER = Logger.getLogger(KingdomHologramCommandSupport.class.getName());
+
     private final WorldLabelService worldLabelService;
     private final Map<UUID, List<Ref<EntityStore>>> hologramRefs = new ConcurrentHashMap<>();
 
@@ -33,13 +37,14 @@ public final class KingdomHologramCommandSupport implements IDependencyInjectabl
 
     public void handle(CommandContext context, Player player, List<String> tokens) {
         if (tokens.size() < 2) {
-            context.sendMessage(Message.raw("Usage: /kd hologram spawn <text> | stack <line1|line2|...> | clear").color("yellow"));
+            context.sendMessage(Message.raw("Usage: /kd hologram spawn <text> | stack <line1|line2|...> | status | clear").color("yellow"));
             return;
         }
         String action = tokens.get(1).toLowerCase(java.util.Locale.ROOT);
         switch (action) {
             case "spawn" -> handleSpawn(context, player, tokens);
             case "stack" -> handleStack(context, player, tokens);
+            case "status" -> handleStatus(context, player);
             case "clear" -> handleClear(context, player);
             default -> context.sendMessage(Message.raw("Unknown hologram action.").color("red"));
         }
@@ -61,13 +66,7 @@ public final class KingdomHologramCommandSupport implements IDependencyInjectabl
             return;
         }
         String joined = String.join(" ", tokens.subList(2, tokens.size()));
-        String[] parts = joined.split("\\\\|");
-        List<String> lines = new ArrayList<>();
-        for (String part : parts) {
-            if (part != null && !part.isBlank()) {
-                lines.add(part.trim());
-            }
-        }
+        List<String> lines = parseStackLines(joined);
         if (lines.isEmpty()) {
             context.sendMessage(Message.raw("No text lines provided.").color("red"));
             return;
@@ -81,20 +80,47 @@ public final class KingdomHologramCommandSupport implements IDependencyInjectabl
         context.sendMessage(Message.raw("Holograms cleared.").color("green"));
     }
 
+    private void handleStatus(CommandContext context, Player player) {
+        List<Ref<EntityStore>> refs = hologramRefs.getOrDefault(player.getUuid(), List.of());
+        long validCount = refs.stream().filter(ref -> ref != null && ref.isValid()).count();
+        context.sendMessage(Message.raw("Holograms: " + validCount + " active refs for this player.").color("yellow"));
+    }
+
+    static List<String> parseStackLines(String joined) {
+        if (joined == null || joined.isBlank()) {
+            return List.of();
+        }
+        String[] parts = joined.split("\\|");
+        List<String> lines = new ArrayList<>();
+        for (String part : parts) {
+            if (part != null && !part.isBlank()) {
+                lines.add(part.trim());
+            }
+        }
+        return List.copyOf(lines);
+    }
+
     private void spawnLabels(Player player, List<String> lines) {
         if (player == null || player.getWorld() == null || player.getTransformComponent() == null) {
+            LOGGER.warning("Unable to spawn hologram labels because the player, world, or transform component is missing.");
             return;
         }
         UUID playerId = player.getUuid();
         Vector3d base = player.getTransformComponent().getPosition();
         if (base == null) {
+            LOGGER.warning(() -> "Unable to spawn hologram labels for " + playerId + " because player position is missing.");
             return;
         }
         Vector3d topPosition = base.add(0.0D, 2.6D, 0.0D);
         WorldTasks.executeSafe(player.getWorld(), "KingdomHologramCommandSupport.spawnLabels", () -> {
-            clear(playerId);
-            List<Ref<EntityStore>> refs = worldLabelService.spawnLabelStack(player.getWorld(), topPosition, lines);
-            hologramRefs.put(playerId, refs);
+            try {
+                clear(playerId);
+                List<Ref<EntityStore>> refs = worldLabelService.spawnLabelStack(player.getWorld(), topPosition, lines);
+                hologramRefs.put(playerId, refs);
+                LOGGER.info(() -> "Spawned " + refs.size() + " hologram label refs for " + playerId + ".");
+            } catch (RuntimeException ex) {
+                LOGGER.log(Level.SEVERE, "Failed to spawn hologram label stack for " + playerId + ".", ex);
+            }
         });
     }
 
@@ -113,7 +139,11 @@ public final class KingdomHologramCommandSupport implements IDependencyInjectabl
         Store<EntityStore> store = ref.getStore();
         Runnable remove = () -> {
             if (ref.isValid()) {
-                store.removeEntity(ref, RemoveReason.REMOVE);
+                try {
+                    store.removeEntity(ref, RemoveReason.REMOVE);
+                } catch (RuntimeException ex) {
+                    LOGGER.log(Level.WARNING, "Failed to remove hologram entity.", ex);
+                }
             }
         };
         if (store.getExternalData() instanceof EntityStore entityStore) {

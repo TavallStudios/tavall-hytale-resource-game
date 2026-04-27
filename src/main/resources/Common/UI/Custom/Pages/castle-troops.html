@@ -1,0 +1,19 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png'); }
+    .title { font-size: 24; font-weight: bold; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 22; color: #fff1c2; padding-bottom: 12; }
+    .feedback { font-size: 14; color: #e2c168; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="TroopsIcon" src="Textures/ResourceGame/icons/ui_icon_population_troop.png" width="64" height="64">
+    <p class="title">Troops</p>
+    <p class="label">Total Troops</p>
+    <p id="TroopCount" class="value">{{$TroopCount}}</p>
+    <p class="label">Might</p>
+    <p id="MightCount" class="value">{{$MightCount}}</p>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <p class="label">Future: tiered troops, formations, combat readiness, and equipment layers.</p>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

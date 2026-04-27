@@ -1,0 +1,36 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_workshop_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .stat { anchor-width: 150; layout-mode: top; padding-right: 10; }
+    .title { font-size: 22; font-weight: bold; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 20; color: #fff1c2; }
+    .strong { font-size: 15; font-weight: bold; color: #e2c168; padding-bottom: 8; }
+    .feedback { font-size: 16; font-weight: bold; color: #f4d27a; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="UpgradeIcon" src="Textures/ResourceGame/icons/ui_icon_action_upgrade.png" width="64" height="64">
+    <p class="title">Citizen to Troop Upgrades</p>
+    <p class="label">Use the world anchors outside and the interior displays together. This page only drives the prototype rules.</p>
+    <div class="row">
+        <div class="stat"><p class="label">Citizens</p><p id="CitizenCount" class="value">{{$CitizenCount}}</p></div>
+        <div class="stat"><p class="label">Troops</p><p id="TroopCount" class="value">{{$TroopCount}}</p></div>
+    </div>
+    <div class="row">
+        <div class="stat"><p class="label">Food</p><p id="FoodCount" class="value">{{$FoodCount}}</p></div>
+        <div class="stat"><p class="label">Wood</p><p id="WoodCount" class="value">{{$WoodCount}}</p></div>
+        <div class="stat"><p class="label">Iron</p><p id="IronCount" class="value">{{$IronCount}}</p></div>
+    </div>
+    <div class="row">
+        <button id="PromoteButton">Promote Citizen</button>
+        <button id="DemoteButton" class="secondary-button">Demote Troop</button>
+    </div>
+    <p id="PromotionCost" class="label">{{$PromotionCost}}</p>
+    <p id="TutorialStatus" class="strong">{{$TutorialStatus}}</p>
+    <p id="PromoteStatus" class="label">{{$PromoteStatus}}</p>
+    <p id="DemoteStatus" class="label">{{$DemoteStatus}}</p>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <p class="label">Future: branching upgrade paths, training buildings, equipment, and role-specific promotions.</p>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

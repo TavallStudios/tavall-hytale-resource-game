@@ -141,7 +141,7 @@ fi
 cd {1}
 unset TAVALL_POSTGRES_URL TAVALL_POSTGRES_USER TAVALL_POSTGRES_PASSWORD
 unset TAVALL_REDIS_HOST TAVALL_REDIS_PORT TAVALL_REDIS_PASSWORD TAVALL_REDIS_TLS
-nohup ./start.sh --transport {2} --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
+nohup ./start.sh --transport {2} --auth-mode OFFLINE --allow-op --bind 0.0.0.0:{0} > start.out 2>&1 < /dev/null &
 '@ -f $Port, $ServerRoot, $Transport
     Invoke-RemoteBash -Script $script | Out-Null
     Wait-RemoteServerReady -SshAlias $SshAlias -LogPath $logPath -Transport $Transport -Port $Port -StartOutPath "$ServerRoot/start.out"
@@ -169,6 +169,9 @@ Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
     ("{0}:{1}" -f $SshAlias, $RemotePluginJarPath)
 ) | Out-Null
 
+$remoteModsDir = $RemotePluginJarPath -replace "/[^/]+$", ""
+powershell -ExecutionPolicy Bypass -File .\scripts\install-hyui-remote.ps1 -SshAlias $SshAlias -RemoteModsDir $remoteModsDir | Out-Null
+
 Restart-RemoteServer
 Ensure-RemoteQuicBridge `
     -SshAlias $SshAlias `
@@ -180,14 +183,33 @@ Ensure-RemoteQuicBridge `
     -ServerRoot $ServerRoot
 Start-Sleep -Seconds 2
 
-$authDomain = if (-not [string]::IsNullOrWhiteSpace($env:HYTALE_AUTH_DOMAIN)) { $env:HYTALE_AUTH_DOMAIN } else { "auth.sanasol.ws" }
-$remoteCommand = "cd $RemoteHarnessDir && export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar && export HYTALE_AUTH_DOMAIN=$authDomain && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"
+$botTraceMode = $env:RESOURCE_GAME_BOT_TRACE
+$botOutputMode = $env:RESOURCE_GAME_BOT_OUTPUT
+$remoteEnvironment = "export HYTALE_SERVER_JAR=$ServerRoot/Server/HytaleServer.jar"
+if (-not [string]::IsNullOrWhiteSpace($botTraceMode)) {
+    $remoteEnvironment += " RESOURCE_GAME_BOT_TRACE=$botTraceMode"
+}
+if (-not [string]::IsNullOrWhiteSpace($botOutputMode)) {
+    $remoteEnvironment += " RESOURCE_GAME_BOT_OUTPUT=$botOutputMode"
+}
+$remoteCommand = "cd $RemoteHarnessDir && $remoteEnvironment && unset HYTALE_AUTH_DOMAIN HYTALE_IDENTITY_TOKEN HYTALE_SESSION_TOKEN HYTALE_AUTH_PASSWORD HYTALE_AUTH_SCOPES && mkdir -p $remoteOutputDir && node $remoteScriptPath $ServerHost $Port $Username $StableUuid $remoteOutputDir"
 $exitCode = Invoke-ProcessCapture -FilePath "ssh.exe" -Arguments @(
     "-F", "C:\Users\TJ\.ssh\config",
     $SshAlias,
     $remoteCommand
 ) -AllowFailure
 if ($exitCode -ne 0) {
+    Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
+        "-F", "C:\Users\TJ\.ssh\config",
+        ("{0}:{1}/scenario-result.txt" -f $SshAlias, $remoteOutputDir),
+        $resultPath
+    ) -AllowFailure | Out-Null
+    Invoke-ProcessCapture -FilePath "scp.exe" -Arguments @(
+        "-F", "C:\Users\TJ\.ssh\config",
+        ("{0}:{1}/transcript.txt" -f $SshAlias, $remoteOutputDir),
+        $tracePath
+    ) -AllowFailure | Out-Null
+    Minimize-TranscriptArtifact -Path $tracePath
     throw "Remote building upgrade scenario failed"
 }
 

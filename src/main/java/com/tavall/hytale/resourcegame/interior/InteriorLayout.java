@@ -1,6 +1,7 @@
 package com.tavall.hytale.resourcegame.interior;
 
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.tavall.hytale.resourcegame.domain.BuildingType;
 import com.tavall.hytale.resourcegame.domain.CitizenJobType;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public final class InteriorLayout {
     private final Vector3d workerPlatformAnchor;
     private final Vector3d workerPortalAnchor;
     private final Map<CitizenJobType, Vector3d> workerAnchors;
+    private final Map<BuildingType, Vector3d> buildingAnchors;
     private final Vector3d exitPoint;
     private final List<InteriorTourStop> tourStops;
 
@@ -28,6 +30,7 @@ public final class InteriorLayout {
             Vector3d workerPlatformAnchor,
             Vector3d workerPortalAnchor,
             Map<CitizenJobType, Vector3d> workerAnchors,
+            Map<BuildingType, Vector3d> buildingAnchors,
             Vector3d exitPoint,
             List<InteriorTourStop> tourStops
     ) {
@@ -38,6 +41,7 @@ public final class InteriorLayout {
         this.workerPlatformAnchor = workerPlatformAnchor;
         this.workerPortalAnchor = workerPortalAnchor;
         this.workerAnchors = Map.copyOf(workerAnchors);
+        this.buildingAnchors = Map.copyOf(buildingAnchors);
         this.exitPoint = exitPoint;
         this.tourStops = List.copyOf(tourStops);
     }
@@ -68,6 +72,14 @@ public final class InteriorLayout {
 
     public Map<CitizenJobType, Vector3d> workerAnchors() {
         return workerAnchors;
+    }
+
+    public Map<BuildingType, Vector3d> buildingAnchors() {
+        return buildingAnchors;
+    }
+
+    public Vector3d buildingAnchor(BuildingType buildingType) {
+        return buildingAnchors.get(buildingType);
     }
 
     public Vector3d exitPoint() {

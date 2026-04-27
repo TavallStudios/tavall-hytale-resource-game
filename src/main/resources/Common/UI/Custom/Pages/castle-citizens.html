@@ -1,0 +1,35 @@
+<style>
+    .page-overlay { anchor-width: 880; anchor-height: 620; layout-mode: top; padding: 16; background-image: url('../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png'); }
+    .row { layout-mode: left; padding-bottom: 12; }
+    .stat { anchor-width: 170; layout-mode: top; padding-right: 10; }
+    .title { font-size: 24; font-weight: bold; color: #f4d27a; }
+    .label { font-size: 14; color: #a7b0ba; }
+    .value { font-size: 20; color: #fff1c2; }
+    .feedback { font-size: 14; color: #e2c168; padding-bottom: 12; }
+    button { padding: 6; background-image: url('../Textures/ResourceGame/buttons/ui_button_secondary_normal.png'); }
+</style>
+<div id="ResourceGamePageRoot" class="page-overlay">
+    <img id="CitizensIcon" src="Textures/ResourceGame/icons/ui_icon_population_worker.png" width="64" height="64">
+    <p class="title">Citizens</p>
+    <p class="label">Total Citizens</p>
+    <p id="CitizenCount" class="value">{{$CitizenCount}}</p>
+    <div class="row">
+        <div class="stat"><p class="label">Idle</p><p id="IdleCount" class="value">{{$IdleCount}}</p></div>
+        <div class="stat"><p class="label">Gatherers</p><p id="GathererCount" class="value">{{$GathererCount}}</p></div>
+        <div class="stat"><p class="label">Hunters</p><p id="HunterCount" class="value">{{$HunterCount}}</p></div>
+        <div class="stat"><p class="label">Cooks</p><p id="CookCount" class="value">{{$CookCount}}</p></div>
+    </div>
+    <div class="row">
+        <div class="stat"><p class="label">Miners</p><p id="MinerCount" class="value">{{$MinerCount}}</p></div>
+        <div class="stat"><p class="label">Builder Team</p><p id="BuilderCount" class="value">{{$BuilderCount}}</p></div>
+        <div class="stat"><p class="label">Blacksmiths</p><p id="BlacksmithCount" class="value">{{$BlacksmithCount}}</p></div>
+        <div class="stat"><p class="label">Architects</p><p id="ArchitectCount" class="value">{{$ArchitectCount}}</p></div>
+    </div>
+    <div class="row">
+        <div class="stat"><p class="label">Grunt Builders</p><p id="GruntBuilderCount" class="value">{{$GruntBuilderCount}}</p></div>
+        <div class="stat"><p class="label">Trainees</p><p id="TraineeCount" class="value">{{$TraineeCount}}</p></div>
+    </div>
+    <p id="FeedbackStatus" class="feedback">{{$FeedbackStatus}}</p>
+    <p class="label">Future: job assignment, productivity medians, task-copy NPCs, and real-time aging.</p>
+    <button id="BackButton" class="secondary-button">Back</button>
+</div>

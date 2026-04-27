@@ -85,8 +85,44 @@ export function formatStructuredText(value, indent = 0) {
     .join("\n");
 }
 
+function compactScenarioResult(value) {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  const pageKeys = Array.isArray(value.pages)
+    ? value.pages.map((entry) => entry?.key ?? entry?.snapshot?.key ?? null).filter(Boolean)
+    : [];
+  const result = {
+    name: value.name ?? null,
+    success: value.success ?? null,
+    startedAt: value.startedAt ?? null,
+    endedAt: value.endedAt ?? null,
+    assertions: Array.isArray(value.assertions) ? value.assertions : [],
+    pageKeys
+  };
+  if (value.error != null) {
+    result.error = value.error;
+  }
+  if (value.outputDir != null) {
+    result.outputDir = value.outputDir;
+  }
+  if (value.finalServerMessage != null) {
+    const finalMessage = typeof value.finalServerMessage === "string"
+      ? value.finalServerMessage
+      : value.finalServerMessage?.name ?? String(value.finalServerMessage);
+    result.finalServerMessage = finalMessage.length > 240
+      ? `${finalMessage.slice(0, 237)}...`
+      : finalMessage;
+  }
+  return result;
+}
+
 export function printStructured(value, useError = false) {
-  const output = `${formatStructuredText(value)}\n`;
+  const outputMode = (process.env.RESOURCE_GAME_BOT_OUTPUT ?? "compact").toLowerCase();
+  const printable = outputMode === "full" || outputMode === "verbose"
+    ? value
+    : compactScenarioResult(value);
+  const output = `${formatStructuredText(printable)}\n`;
   if (useError) {
     process.stderr.write(output);
     return;

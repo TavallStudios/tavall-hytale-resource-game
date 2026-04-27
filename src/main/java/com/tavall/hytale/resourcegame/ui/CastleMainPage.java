@@ -1,24 +1,19 @@
 package com.tavall.hytale.resourcegame.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.ui.builder.EventData;
-import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Main castle UI page.
  */
 public final class CastleMainPage extends BaseUiPage {
-    private static final String PAGE_DOCUMENT = "Pages/castle-main.ui";
-    private final CastleEconomyPlanner economyPlanner;
+    private static final String PAGE_DOCUMENT = "Pages/castle-main.html";
 
     public CastleMainPage(
             Player player,
@@ -27,40 +22,34 @@ public final class CastleMainPage extends BaseUiPage {
             IUiActionService actionService,
             CastleEconomyPlanner economyPlanner
     ) {
-        super(player, context, state, actionService);
-        this.economyPlanner = economyPlanner;
+        super(player, context, state, actionService, PAGE_DOCUMENT, templateData(state, economyPlanner), bindings());
     }
 
-    @Override
-    public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
-        uiCommandBuilder.append(PAGE_DOCUMENT);
-        uiCommandBuilder.set("#CitizenCount.Text", String.valueOf(state().populationSummary().citizenCount()));
-        uiCommandBuilder.set("#TroopCount.Text", String.valueOf(state().populationSummary().troopCount()));
-        uiCommandBuilder.set("#MightCount.Text", String.valueOf(state().populationSummary().might()));
-        uiCommandBuilder.set("#FoodCount.Text", String.valueOf(state().resources().food()));
-        uiCommandBuilder.set("#WoodCount.Text", String.valueOf(state().resources().wood()));
-        uiCommandBuilder.set("#IronCount.Text", String.valueOf(state().resources().iron()));
-        uiCommandBuilder.set("#Subtitle.Text", economyPlanner.workforceSummary(state()));
-
-        bind(uiEventBuilder, "#EnterInteriorButton", UiActions.ENTER_INTERIOR);
-        bind(uiEventBuilder, "#CastleInfoButton", UiActions.OPEN_CASTLE_INFO);
-        bind(uiEventBuilder, "#CitizensButton", UiActions.OPEN_CITIZENS);
-        bind(uiEventBuilder, "#TroopsButton", UiActions.OPEN_TROOPS);
-        bind(uiEventBuilder, "#ResourcesButton", UiActions.OPEN_RESOURCES);
-        bind(uiEventBuilder, "#UpgradesButton", UiActions.OPEN_UPGRADES);
-        bind(uiEventBuilder, "#BuildingsButton", UiActions.OPEN_BUILDINGS);
-        bind(uiEventBuilder, "#AttackButton", UiActions.CASTLE_ATTACK_PLACEHOLDER);
-        bind(uiEventBuilder, "#FriendButton", UiActions.CASTLE_FRIEND_PLACEHOLDER);
-        bind(uiEventBuilder, "#GuildButton", UiActions.CASTLE_GUILD_PLACEHOLDER);
-        bind(uiEventBuilder, "#CloseButton", UiActions.CLOSE);
+    private static Map<String, ?> templateData(PlayerGameState state, CastleEconomyPlanner economyPlanner) {
+        return Map.ofEntries(
+                Map.entry("CitizenCount", String.valueOf(state.populationSummary().citizenCount())),
+                Map.entry("TroopCount", String.valueOf(state.populationSummary().troopCount())),
+                Map.entry("MightCount", String.valueOf(state.populationSummary().might())),
+                Map.entry("FoodCount", String.valueOf(state.resources().food())),
+                Map.entry("WoodCount", String.valueOf(state.resources().wood())),
+                Map.entry("IronCount", String.valueOf(state.resources().iron())),
+                Map.entry("Subtitle", economyPlanner.workforceSummary(state))
+        );
     }
 
-    private void bind(UIEventBuilder uiEventBuilder, String selector, String action) {
-        uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                selector,
-                EventData.of(UiActionEventData.KEY_ACTION, action),
-                false
+    private static List<HyUiActionBinding> bindings() {
+        return List.of(
+                HyUiActionBinding.action("#EnterInteriorButton", UiActions.ENTER_INTERIOR),
+                HyUiActionBinding.action("#CastleInfoButton", UiActions.OPEN_CASTLE_INFO),
+                HyUiActionBinding.action("#CitizensButton", UiActions.OPEN_CITIZENS),
+                HyUiActionBinding.action("#TroopsButton", UiActions.OPEN_TROOPS),
+                HyUiActionBinding.action("#ResourcesButton", UiActions.OPEN_RESOURCES),
+                HyUiActionBinding.action("#UpgradesButton", UiActions.OPEN_UPGRADES),
+                HyUiActionBinding.action("#BuildingsButton", UiActions.OPEN_BUILDINGS),
+                HyUiActionBinding.action("#AttackButton", UiActions.CASTLE_ATTACK_PLACEHOLDER),
+                HyUiActionBinding.action("#FriendButton", UiActions.CASTLE_FRIEND_PLACEHOLDER),
+                HyUiActionBinding.action("#GuildButton", UiActions.CASTLE_GUILD_PLACEHOLDER),
+                HyUiActionBinding.action("#CloseButton", UiActions.CLOSE)
         );
     }
 }

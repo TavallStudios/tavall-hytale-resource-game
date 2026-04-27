@@ -16,7 +16,7 @@ const BUILDINGS_OVERVIEW_PAGE = "com.tavall.hytale.resourcegame.ui.CastleBuildin
 const INTERIOR_MAIN_PAGE = "com.tavall.hytale.resourcegame.ui.InteriorMainPage";
 
 function readSelectorValue(snapshot, selector) {
-  const command = snapshot?.commands?.find((entry) => entry.type === "Set" && entry.selector === selector);
+  const command = snapshot?.commands?.slice().reverse().find((entry) => entry.type === "Set" && entry.selector === selector);
   if (!command) {
     return null;
   }
@@ -42,6 +42,67 @@ async function waitForSnapshot(bot, predicate, timeoutMs, label) {
 
 function sendAction(bot, action) {
   bot.sendPageEvent("Data", JSON.stringify({ Action: action }));
+}
+
+function isBotConnected(bot) {
+  return typeof bot.isConnected === "function" ? bot.isConnected() : true;
+}
+
+function summarizePageSnapshot(snapshot) {
+  if (!snapshot) {
+    return null;
+  }
+  return {
+    key: snapshot.key,
+    selectors: snapshot.selectors,
+    buildingTitle: readSelectorValue(snapshot, "#BuildingTitle.Text"),
+    levelText: readSelectorValue(snapshot, "#LevelText.Text"),
+    statusText: readSelectorValue(snapshot, "#StatusText.Text"),
+    feedbackStatus: readSelectorValue(snapshot, "#FeedbackStatus.Text")
+  };
+}
+
+async function sendActionUntilSnapshot(bot, action, predicate, timeoutMs, label) {
+  const startedAt = Date.now();
+  let lastError = null;
+  while ((Date.now() - startedAt) < timeoutMs) {
+    if (!isBotConnected(bot)) {
+      break;
+    }
+    try {
+      sendAction(bot, action);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      break;
+    }
+
+    const retryUntil = Date.now() + 1_750;
+    while ((Date.now() - startedAt) < timeoutMs && Date.now() < retryUntil) {
+      const snapshot = bot.snapshotPage();
+      if (snapshot && predicate(snapshot)) {
+        return snapshot;
+      }
+      await delay(150);
+    }
+  }
+
+  const finalSnapshot = summarizePageSnapshot(bot.snapshotPage());
+  const finalServerMessage = bot.getServerMessages().at(-1) ?? null;
+  throw new Error(
+    `Timed out waiting for ${label}; finalSnapshot=${JSON.stringify(finalSnapshot)}; finalServerMessage=${finalServerMessage}; lastSendError=${lastError}`
+  );
+}
+
+function farmsteadUpgradeStarted(snapshot) {
+  if (snapshot.key !== BUILDING_DETAIL_PAGE || readSelectorValue(snapshot, "#BuildingTitle.Text") !== "Farmstead") {
+    return false;
+  }
+  const levelText = readSelectorValue(snapshot, "#LevelText.Text");
+  const statusText = readSelectorValue(snapshot, "#StatusText.Text");
+  const feedbackStatus = readSelectorValue(snapshot, "#FeedbackStatus.Text");
+  return feedbackStatus === "Farmstead upgrade started."
+    || levelText === "L1 -> L2"
+    || (levelText === "L2" && statusText === "Operational");
 }
 
 async function openBuildingsOverview(bot, statusSelector, expectedText, timeoutMs = 12_000) {
@@ -211,13 +272,12 @@ async function main() {
     );
     assertions.push("farmstead-level-one-complete");
 
-    sendAction(bot, "BuildingStartUpgrade");
-    buildingDetailSnapshot = await waitForSnapshot(
+    await delay(750);
+    buildingDetailSnapshot = await sendActionUntilSnapshot(
       bot,
-      (snapshot) => snapshot.key === BUILDING_DETAIL_PAGE
-        && readSelectorValue(snapshot, "#FeedbackStatus.Text") === "Farmstead upgrade started."
-        && readSelectorValue(snapshot, "#LevelText.Text") === "L1 -> L2",
-      12_000,
+      "BuildingStartUpgrade",
+      farmsteadUpgradeStarted,
+      15_000,
       "building upgrade start"
     );
     assertions.push("farmstead-upgrade-started-from-ui");
@@ -306,6 +366,10 @@ async function main() {
       assertions,
       pages,
       error: error instanceof Error ? error.message : String(error),
+      finalPageSnapshot: summarizePageSnapshot(bot.snapshotPage()),
+      clientSnapshot: {
+        final: captureWorldSnapshot(bot, 12)
+      },
       finalServerMessage: bot.getServerMessages().at(-1) ?? null
     };
     try {

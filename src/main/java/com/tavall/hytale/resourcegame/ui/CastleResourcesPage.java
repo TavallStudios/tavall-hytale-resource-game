@@ -1,25 +1,20 @@
 package com.tavall.hytale.resourcegame.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.ui.builder.EventData;
-import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.tavall.hytale.resourcegame.dependency.interfaces.IUiActionService;
 import com.tavall.hytale.resourcegame.domain.PlayerGameState;
 import com.tavall.hytale.resourcegame.domain.UiNavigationContext;
 import com.tavall.hytale.resourcegame.resources.ResourceType;
 import com.tavall.hytale.resourcegame.services.CastleEconomyPlanner;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Resource inventory page.
  */
 public final class CastleResourcesPage extends BaseUiPage {
-    private static final String PAGE_DOCUMENT = "Pages/castle-resources.ui";
-    private final CastleEconomyPlanner economyPlanner;
+    private static final String PAGE_DOCUMENT = "Pages/castle-resources.html";
 
     public CastleResourcesPage(
             Player player,
@@ -28,28 +23,21 @@ public final class CastleResourcesPage extends BaseUiPage {
             IUiActionService actionService,
             CastleEconomyPlanner economyPlanner
     ) {
-        super(player, context, state, actionService);
-        this.economyPlanner = economyPlanner;
+        super(player, context, state, actionService, PAGE_DOCUMENT, templateData(state, economyPlanner), bindings());
     }
 
-    @Override
-    public void build(Ref<EntityStore> entityRef, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder, Store<EntityStore> entityStore) {
-        uiCommandBuilder.append(PAGE_DOCUMENT);
-        uiCommandBuilder.set("#FoodCount.Text", String.valueOf(state().resources().food()));
-        uiCommandBuilder.set("#WoodCount.Text", String.valueOf(state().resources().wood()));
-        uiCommandBuilder.set("#IronCount.Text", String.valueOf(state().resources().iron()));
-        uiCommandBuilder.set("#FoodNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.FOOD));
-        uiCommandBuilder.set("#WoodNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.WOOD));
-        uiCommandBuilder.set("#IronNodeStatus.Text", economyPlanner.nodeSummary(state(), ResourceType.IRON));
-        bind(uiEventBuilder, "#BackButton", UiActions.OPEN_CASTLE_MAIN);
-    }
-
-    private void bind(UIEventBuilder uiEventBuilder, String selector, String action) {
-        uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                selector,
-                EventData.of(UiActionEventData.KEY_ACTION, action),
-                false
+    private static Map<String, ?> templateData(PlayerGameState state, CastleEconomyPlanner economyPlanner) {
+        return Map.ofEntries(
+                Map.entry("FoodCount", String.valueOf(state.resources().food())),
+                Map.entry("WoodCount", String.valueOf(state.resources().wood())),
+                Map.entry("IronCount", String.valueOf(state.resources().iron())),
+                Map.entry("FoodNodeStatus", economyPlanner.nodeSummary(state, ResourceType.FOOD)),
+                Map.entry("WoodNodeStatus", economyPlanner.nodeSummary(state, ResourceType.WOOD)),
+                Map.entry("IronNodeStatus", economyPlanner.nodeSummary(state, ResourceType.IRON))
         );
+    }
+
+    private static List<HyUiActionBinding> bindings() {
+        return List.of(HyUiActionBinding.action("#BackButton", UiActions.OPEN_CASTLE_MAIN));
     }
 }

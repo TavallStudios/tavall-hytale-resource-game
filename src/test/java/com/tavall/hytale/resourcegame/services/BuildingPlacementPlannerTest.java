@@ -42,12 +42,13 @@ public final class BuildingPlacementPlannerTest {
         UUID playerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         PlayerGameState state = seedSession(sessionStore, gameStateService, playerId, Instant.parse("2026-04-15T23:00:00Z"));
 
-        assertEquals("overworld", planner.recommendedWorldName(playerId, state, BuildingType.FARMSTEAD));
-        assertVector(planner.recommendedPosition(playerId, state, BuildingType.FARMSTEAD), 18.0D, 72.0D, 18.0D);
+        assertEquals(interiorInstanceService.worldNameFor(playerId), planner.recommendedWorldName(playerId, state, BuildingType.FARMSTEAD));
+        Vector3d farmsteadAnchor = layoutService.createLayoutForCastle(state.castleLocation()).buildingAnchor(BuildingType.FARMSTEAD);
+        assertVector(planner.recommendedPosition(playerId, state, BuildingType.FARMSTEAD), farmsteadAnchor.getX(), farmsteadAnchor.getY(), farmsteadAnchor.getZ());
 
         assertEquals(interiorInstanceService.worldNameFor(playerId), planner.recommendedWorldName(playerId, state, BuildingType.BARRACKS));
-        Vector3d interiorOrigin = layoutService.originForCastle(state.castleLocation());
-        assertVector(planner.recommendedPosition(playerId, state, BuildingType.BARRACKS), interiorOrigin.getX() - 5.0D, interiorOrigin.getY(), interiorOrigin.getZ());
+        Vector3d barracksAnchor = layoutService.createLayoutForCastle(state.castleLocation()).buildingAnchor(BuildingType.BARRACKS);
+        assertVector(planner.recommendedPosition(playerId, state, BuildingType.BARRACKS), barracksAnchor.getX(), barracksAnchor.getY(), barracksAnchor.getZ());
     }
 
     @Test
@@ -74,18 +75,20 @@ public final class BuildingPlacementPlannerTest {
         Instant now = Instant.parse("2026-04-15T23:10:00Z");
         PlayerGameState state = seedSession(sessionStore, gameStateService, playerId, now)
                 .withResources(new ResourceInventory(200, 200, 200), now);
+        state = gameStateService.setAccountLevel(state, 50, now);
         sessionStore.get(playerId).updateGameState(state);
+        Vector3d farmsteadAnchor = layoutService.createLayoutForCastle(state.castleLocation()).buildingAnchor(BuildingType.FARMSTEAD);
 
         PlayerGameState placedState = buildingService.placeBuilding(
                 playerId,
                 BuildingType.FARMSTEAD,
-                "overworld",
-                new Vector3d(22.5D, 73.0D, 20.5D),
+                interiorInstanceService.worldNameFor(playerId),
+                farmsteadAnchor,
                 now
         ).state();
 
-        assertEquals("overworld", planner.recommendedWorldName(playerId, placedState, BuildingType.FARMSTEAD));
-        assertVector(planner.recommendedPosition(playerId, placedState, BuildingType.FARMSTEAD), 22.5D, 73.0D, 20.5D);
+        assertEquals(interiorInstanceService.worldNameFor(playerId), planner.recommendedWorldName(playerId, placedState, BuildingType.FARMSTEAD));
+        assertVector(planner.recommendedPosition(playerId, placedState, BuildingType.FARMSTEAD), farmsteadAnchor.getX(), farmsteadAnchor.getY(), farmsteadAnchor.getZ());
     }
 
     private PlayerGameStateService gameStateService(String cacheNamespace) {

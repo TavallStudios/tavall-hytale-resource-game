@@ -1,8 +1,10 @@
 Group {
   Anchor: (Width: 880, Height: 620);
-  Background: (Color: #0e141c(0.88));
+  Background: PatchStyle(TexturePath: "../Textures/ResourceGame/panels/ui_panel_castle_ledger_base.png");
   Padding: (Full: 16);
   LayoutMode: Top;
+
+  AssetImage #MenuCrest { Anchor: (Width: 64, Height: 64, Bottom: 8); AssetPath: "../Textures/ResourceGame/icons/ui_icon_kingdom_castle.png"; }
 
   Group #Header {
     LayoutMode: Top;
@@ -78,26 +80,26 @@ Group {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #EnterInteriorButton { Text: "Enter Interior"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #CastleInfoButton { Text: "View Castle Info"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #CitizensButton { Text: "Citizens"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #TroopsButton { Text: "Troops"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #ResourcesButton { Text: "Resources"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #UpgradesButton { Text: "Upgrades"; Padding: (Full: 6); }
-    TextButton #BuildingsButton { Text: "Buildings"; Padding: (Full: 6); Anchor: (Left: 8); }
+    TextButton #EnterInteriorButton { Text: "Enter Interior"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_primary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CastleInfoButton { Text: "View Castle Info"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #CitizensButton { Text: "Citizens"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #TroopsButton { Text: "Troops"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #ResourcesButton { Text: "Resources"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #UpgradesButton { Text: "Upgrades"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
+    TextButton #BuildingsButton { Text: "Buildings"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Left: 8); }
   }
 
   Group #WorldActions {
     LayoutMode: Left;
     Anchor: (Bottom: 16);
 
-    TextButton #AttackButton { Text: "Attack Castle (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #FriendButton { Text: "Add Friend (Future)"; Padding: (Full: 6); Anchor: (Right: 8); }
-    TextButton #GuildButton { Text: "Guild Access (Future)"; Padding: (Full: 6); }
+    TextButton #AttackButton { Text: "Attack Castle (Future)"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_danger_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #FriendButton { Text: "Add Friend (Future)"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); Anchor: (Right: 8); }
+    TextButton #GuildButton { Text: "Guild Access (Future)"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
   }
 
   Group #Footer {
     LayoutMode: Right;
-    TextButton #CloseButton { Text: "Close"; Padding: (Full: 6); }
+    TextButton #CloseButton { Text: "Close"; Background: PatchStyle(TexturePath: "../Textures/ResourceGame/buttons/ui_button_secondary_normal.png"); Padding: (Full: 6); }
   }
 }

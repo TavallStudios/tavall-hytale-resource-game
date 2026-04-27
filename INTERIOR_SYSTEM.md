@@ -36,3 +36,9 @@ Own the same-process castle interior prototype as a structured but intentionally
 ## Deferred work
 - Dedicated interior servers remain a TODO, not current runtime behavior.
 - The current layout leaves room for future stations, upgrade props, and more specialized interior scenes.
+## Interior Building Lots
+- Castle buildings now belong to the castle interior. Resource nodes remain in the surface castle world.
+- `InteriorLayoutService` reserves deterministic lots for `FARMSTEAD`, `LUMBER_MILL`, `IRON_WORKS`, `BARRACKS`, and `WORKSHOP`.
+- Building staging and spawn commands should use `BuildingPlacementPlanner`, which resolves the active interior instance and returns the reserved lot for the selected building.
+- Players start without building unlocks. `AccountProgression` unlocks buildings by account level, with every building unlocked by level 50.
+- Account level has no maximum. After level 50 the XP requirement stops scaling and stays at the high fixed post-unlock requirement.
